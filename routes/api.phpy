@@ -1,0 +1,115 @@
+<?php
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+
+use App\Http\Controllers\ClientController;
+use App\Http\Controllers\CaregiverController;
+use App\Http\Controllers\VisitController;
+use App\Http\Controllers\CareNoteController;
+use App\Http\Controllers\EvvController;
+use App\Http\Controllers\AlertController;
+use App\Http\Controllers\BillingController;
+
+/*
+|--------------------------------------------------------------------------
+| KASS-CARE API ROUTES
+|--------------------------------------------------------------------------
+*/
+
+
+/*
+|--------------------------------------------------------------------------
+| CLIENT ROUTES
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/clients', [ClientController::class, 'index']);
+Route::post('/clients', [ClientController::class, 'store']);
+
+
+/*
+|--------------------------------------------------------------------------
+| CAREGIVER ROUTES
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/caregivers', [CaregiverController::class, 'index']);
+Route::post('/caregivers', [CaregiverController::class, 'store']);
+
+
+/*
+|--------------------------------------------------------------------------
+| VISIT ROUTES
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/visits', [VisitController::class, 'index']);
+Route::post('/visits', [VisitController::class, 'store']);
+
+
+/*
+|--------------------------------------------------------------------------
+| TODAY SCHEDULE
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/schedule/today', [VisitController::class, 'today']);
+
+
+/*
+|--------------------------------------------------------------------------
+| CARE NOTES
+|--------------------------------------------------------------------------
+*/
+
+Route::post('/notes', [CareNoteController::class, 'store']);
+Route::get('/visits/{visit_id}/notes', [CareNoteController::class, 'index']);
+
+
+/*
+|--------------------------------------------------------------------------
+| EVV CLOCK IN / CLOCK OUT
+|--------------------------------------------------------------------------
+*/
+
+Route::post('/visit/start', [EvvController::class, 'start']);
+Route::post('/visit/end', [EvvController::class, 'end']);
+
+
+/*
+|--------------------------------------------------------------------------
+| ALERT ENGINE
+|--------------------------------------------------------------------------
+*/
+
+Route::post('/alerts', [AlertController::class, 'store']);
+Route::get('/alerts', [AlertController::class, 'index']);
+
+
+/*
+|--------------------------------------------------------------------------
+| BILLING ENGINE
+|--------------------------------------------------------------------------
+*/
+
+Route::post('/billing/generate', [BillingController::class, 'generate']);
+Route::get('/billing', [BillingController::class, 'index']);
+
+
+/*
+|--------------------------------------------------------------------------
+| ADMIN DASHBOARD
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/admin/dashboard', function () {
+
+    return response()->json([
+        'total_visits' => \App\Models\Visit::count(),
+        'total_clients' => \App\Models\Client::count(),
+        'total_caregivers' => \App\Models\Caregiver::count(),
+        'today_visits' => \App\Models\Visit::whereDate('visit_date', today())->count(),
+    ]);
+
+});

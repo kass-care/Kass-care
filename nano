@@ -1,0 +1,32 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ClientController;
+use App\Http\Controllers\CaregiverController;
+
+Route::get('/', function () {
+    return view('welcome');
+});
+
+/*
+|--------------------------------------------------------------------------
+| CLIENT ROUTES
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/clients', [ClientController::class, 'index']);
+
+Route::get('/clients/{id}', [ClientController::class, 'show']);
+
+Route::post('/clients/{id}/assign-caregiver', [ClientController::class, 'assignCaregiver']);
+
+
+/*
+|--------------------------------------------------------------------------
+| CAREGIVER ROUTES
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/caregivers', [CaregiverController::class, 'index']);
+
+Route::get('/caregivers/{id}', [CaregiverController::class, 'show']);
