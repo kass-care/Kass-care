@@ -56,3 +56,6 @@ Route::resource('facilities', FacilityController::class);
 Route::resource('users', UserController::class);
 Route::resource('alerts', AlertController::class);
 Route::resource('labs', LabController::class);
+
+Route::resource('provider-visits', \App\Http\Controllers\ProviderVisitController::class);
+Route::resource('facility-visits', \App\Http\Controllers\FacilityVisitController::class);
