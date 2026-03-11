@@ -11,9 +11,9 @@ class CareLogController extends Controller
 {
     public function index()
     {
-        $carelogs = CareLog::with(['client','caregiver'])->latest()->get();
+        $careLogs = CareLog::orderBy('created_at','desc')->get();
 
-        return view('carelogs.index', compact('carelogs'));
+        return view('carelogs.index', compact('careLogs'));
     }
 
     public function create()
@@ -26,39 +26,48 @@ class CareLogController extends Controller
 
     public function store(Request $request)
     {
-        CareLog::create($request->all());
+        CareLog::create([
+            'client_id' => $request->client_id,
+            'caregiver_id' => $request->caregiver_id,
+            'notes' => $request->notes
+        ]);
 
-        return redirect()->route('carelogs.index');
+        return redirect()->route('care-logs.index');
     }
 
     public function show($id)
     {
-        $carelog = CareLog::findOrFail($id);
+        $careLog = CareLog::findOrFail($id);
 
-        return view('carelogs.show', compact('carelog'));
+        return view('carelogs.show', compact('careLog'));
     }
 
     public function edit($id)
     {
-        $carelog = CareLog::findOrFail($id);
+        $careLog = CareLog::findOrFail($id);
         $clients = Client::all();
         $caregivers = Caregiver::all();
 
-        return view('carelogs.edit', compact('carelog','clients','caregivers'));
+        return view('carelogs.edit', compact('careLog','clients','caregivers'));
     }
 
     public function update(Request $request, $id)
     {
-        $carelog = CareLog::findOrFail($id);
-        $carelog->update($request->all());
+        $careLog = CareLog::findOrFail($id);
 
-        return redirect()->route('carelogs.index');
+        $careLog->update([
+            'client_id' => $request->client_id,
+            'caregiver_id' => $request->caregiver_id,
+            'notes' => $request->notes
+        ]);
+
+        return redirect()->route('care-logs.index');
     }
 
     public function destroy($id)
     {
         CareLog::destroy($id);
 
-        return redirect()->route('carelogs.index');
+        return redirect()->route('care-logs.index');
     }
 }

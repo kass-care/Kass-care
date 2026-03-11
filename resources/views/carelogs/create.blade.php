@@ -4,123 +4,59 @@
 
 <div class="container">
 
-<h2>Create Care Log</h2>
+    <h2 class="mb-4">Create Care Log</h2>
 
-<form method="POST" action="/carelogs">
+    <form action="{{ route('care-logs.store') }}" method="POST">
 
-@csrf
+        @csrf
 
+        <div class="mb-3">
+            <label class="form-label">Client</label>
 
-<div class="mb-3">
-<label>Client</label>
+            <select name="client_id" class="form-control">
 
-<select name="client_id" class="form-control" required>
+                @foreach($clients as $client)
 
-<option value="">Select Client</option>
+                    <option value="{{ $client->id }}">
+                        {{ $client->id }}
+                    </option>
 
-@foreach($clients as $client)
+                @endforeach
 
-<option value="{{ $client->id }}">
-{{ $client->name }}
-</option>
+            </select>
+        </div>
 
-@endforeach
+        <div class="mb-3">
+            <label class="form-label">Caregiver</label>
 
-</select>
+            <select name="caregiver_id" class="form-control">
 
-</div>
+                @foreach($caregivers as $caregiver)
 
+                    <option value="{{ $caregiver->id }}">
+                        {{ $caregiver->id }}
+                    </option>
 
+                @endforeach
 
-<div class="mb-3">
-<label>Caregiver</label>
+            </select>
+        </div>
 
-<select name="caregiver_id" class="form-control" required>
+        <div class="mb-3">
+            <label class="form-label">Notes</label>
 
-<option value="">Select Caregiver</option>
+            <textarea name="notes" class="form-control" rows="4"></textarea>
+        </div>
 
-@foreach($caregivers as $caregiver)
+        <button class="btn btn-primary">
+            Save Care Log
+        </button>
 
-<option value="{{ $caregiver->id }}">
-{{ $caregiver->name }}
-</option>
+        <a href="{{ route('care-logs.index') }}" class="btn btn-secondary">
+            Cancel
+        </a>
 
-@endforeach
-
-</select>
-
-</div>
-
-
-
-<div class="mb-3">
-
-<label>Meal</label>
-
-<select name="meal" class="form-control">
-
-<option value="">Select</option>
-<option value="100%">100%</option>
-<option value="75%">75%</option>
-<option value="50%">50%</option>
-<option value="25%">25%</option>
-<option value="Refused">Refused</option>
-
-</select>
-
-</div>
-
-
-
-<div class="mb-3">
-
-<label>Bath</label>
-
-<select name="bath" class="form-control">
-
-<option value="">Select</option>
-<option value="Yes">Yes</option>
-<option value="No">No</option>
-
-</select>
-
-</div>
-
-
-
-<div class="mb-3">
-
-<label>BM</label>
-
-<select name="bm" class="form-control">
-
-<option value="">Select</option>
-<option value="Yes">Yes</option>
-<option value="No">No</option>
-
-</select>
-
-</div>
-
-
-
-<div class="mb-3">
-
-<label>Notes</label>
-
-<textarea name="notes" class="form-control"></textarea>
-
-</div>
-
-
-<button type="submit" class="btn btn-success">
-
-Save Care Log
-
-</button>
-
-
-</form>
+    </form>
 
 </div>
 

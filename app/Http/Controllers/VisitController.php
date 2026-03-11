@@ -4,44 +4,56 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Visit;
+use App\Models\Client;
+use App\Models\Caregiver;
 
 class VisitController extends Controller
 {
+
     public function index()
     {
-        $visits = Visit::with(['client','caregiver'])->latest()->get();
+        $visits = Visit::latest()->get();
+
         return view('visits.index', compact('visits'));
     }
 
-    public function show($id)
-    {
-        $visit = Visit::with(['client','caregiver'])->findOrFail($id);
-        return view('visits.show', compact('visit'));
-    }
 
     public function create()
     {
-        return view('visits.create');
+        $clients = Client::all();
+        $caregivers = Caregiver::all();
+
+        return view('visits.create', compact('clients','caregivers'));
     }
+
 
     public function store(Request $request)
     {
-        $visit = Visit::create([
-            'client_id' => $request->client_id,
-            'caregiver_id' => $request->caregiver_id,
-            'visit_date' => now(),
-            'start_time' => now(),
-            'status' => 'pending'
-        ]);
+        Visit::create($request->all());
 
-        return redirect('/visits/'.$visit->id);
+        return redirect()->route('visits.index')
+            ->with('success','Visit created successfully');
     }
+
+
+    public function show($id)
+    {
+        $visit = Visit::findOrFail($id);
+
+        return view('visits.show', compact('visit'));
+    }
+
 
     public function edit($id)
     {
         $visit = Visit::findOrFail($id);
-        return view('visits.edit', compact('visit'));
+
+        $clients = Client::all();
+        $caregivers = Caregiver::all();
+
+        return view('visits.edit', compact('visit','clients','caregivers'));
     }
+
 
     public function update(Request $request, $id)
     {
@@ -49,12 +61,17 @@ class VisitController extends Controller
 
         $visit->update($request->all());
 
-        return redirect('/visits/'.$visit->id);
+        return redirect()->route('visits.index')
+            ->with('success','Visit updated');
     }
+
 
     public function destroy($id)
     {
         Visit::destroy($id);
-        return redirect('/visits');
+
+        return redirect()->route('visits.index')
+            ->with('success','Visit deleted');
     }
+
 }

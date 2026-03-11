@@ -6,13 +6,11 @@
 
     <h2 class="mb-4">Care Logs</h2>
 
-    <div class="mb-3">
-        <a href="{{ route('care-logs.create') }}" class="btn btn-primary">
-            + Add Care Log
-        </a>
-    </div>
+    <a href="{{ route('care-logs.create') }}" class="btn btn-primary mb-3">
+        Add Care Log
+    </a>
 
-    <table class="table table-bordered table-striped">
+    <table class="table table-bordered">
 
         <thead>
             <tr>
@@ -21,7 +19,7 @@
                 <th>Caregiver</th>
                 <th>Date</th>
                 <th>Notes</th>
-                <th width="180">Actions</th>
+                <th width="220">Actions</th>
             </tr>
         </thead>
 
@@ -31,9 +29,13 @@
 
             <tr>
                 <td>{{ $log->id }}</td>
+
                 <td>{{ $log->client_id }}</td>
+
                 <td>{{ $log->caregiver_id }}</td>
+
                 <td>{{ $log->created_at }}</td>
+
                 <td>{{ $log->notes ?? 'N/A' }}</td>
 
                 <td>
@@ -46,26 +48,25 @@
                         Edit
                     </a>
 
-                    <form action="{{ route('care-logs.destroy', $log->id) }}" method="POST" style="display:inline-block">
+                    <form action="{{ route('care-logs.destroy', $log->id) }}" method="POST" style="display:inline">
 
                         @csrf
                         @method('DELETE')
 
-                        <button type="submit" class="btn btn-sm btn-danger">
+                        <button class="btn btn-sm btn-danger">
                             Delete
                         </button>
 
                     </form>
 
                 </td>
+
             </tr>
 
         @empty
 
             <tr>
-                <td colspan="6" class="text-center">
-                    No care logs found
-                </td>
+                <td colspan="6">No care logs found</td>
             </tr>
 
         @endforelse
