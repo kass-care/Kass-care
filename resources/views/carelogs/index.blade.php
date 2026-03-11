@@ -4,62 +4,75 @@
 
 <div class="container">
 
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+    <h2 class="mb-4">Care Logs</h2>
 
-<h2>Care Logs</h2>
+    <div class="mb-3">
+        <a href="{{ route('care-logs.create') }}" class="btn btn-primary">
+            + Add Care Log
+        </a>
+    </div>
 
-<a href="/carelogs/create" style="background:#3490dc;color:white;padding:10px 15px;text-decoration:none;border-radius:5px;">
-+ Add Care Log
-</a>
+    <table class="table table-bordered table-striped">
 
-</div>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Client</th>
+                <th>Caregiver</th>
+                <th>Date</th>
+                <th>Notes</th>
+                <th width="180">Actions</th>
+            </tr>
+        </thead>
 
-<table border="1" width="100%" cellpadding="10">
+        <tbody>
 
-<thead>
+        @forelse($careLogs as $log)
 
-<tr>
-<th>ID</th>
-<th>Client</th>
-<th>Caregiver</th>
-<th>Meal</th>
-<th>Shower</th>
-<th>BM</th>
-<th>Notes</th>
-<th>Date</th>
-</tr>
+            <tr>
+                <td>{{ $log->id }}</td>
+                <td>{{ $log->client_id }}</td>
+                <td>{{ $log->caregiver_id }}</td>
+                <td>{{ $log->created_at }}</td>
+                <td>{{ $log->notes ?? 'N/A' }}</td>
 
-</thead>
+                <td>
 
-<tbody>
+                    <a href="{{ route('care-logs.show', $log->id) }}" class="btn btn-sm btn-info">
+                        View
+                    </a>
 
-@foreach($carelogs as $log)
+                    <a href="{{ route('care-logs.edit', $log->id) }}" class="btn btn-sm btn-warning">
+                        Edit
+                    </a>
 
-<tr>
+                    <form action="{{ route('care-logs.destroy', $log->id) }}" method="POST" style="display:inline-block">
 
-<td>{{ $log->id }}</td>
+                        @csrf
+                        @method('DELETE')
 
-<td>{{ $log->client->name ?? 'N/A' }}</td>
+                        <button type="submit" class="btn btn-sm btn-danger">
+                            Delete
+                        </button>
 
-<td>{{ $log->caregiver->name ?? 'N/A' }}</td>
+                    </form>
 
-<td>{{ $log->meal }}</td>
+                </td>
+            </tr>
 
-<td>{{ $log->shower }}</td>
+        @empty
 
-<td>{{ $log->bm }}</td>
+            <tr>
+                <td colspan="6" class="text-center">
+                    No care logs found
+                </td>
+            </tr>
 
-<td>{{ $log->notes }}</td>
+        @endforelse
 
-<td>{{ $log->created_at }}</td>
+        </tbody>
 
-</tr>
-
-@endforeach
-
-</tbody>
-
-</table>
+    </table>
 
 </div>
 
