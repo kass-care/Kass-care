@@ -17,12 +17,12 @@ class CareLogController extends Controller
     }
 
     public function create()
-    {
-        $clients = Client::all();
-        $caregivers = Caregiver::all();
+{
+    $clients = \App\Models\Client::all();
+    $caregivers = \App\Models\Caregiver::all();
 
-        return view('carelogs.create', compact('clients','caregivers'));
-    }
+    return view('care-logs.create', compact('clients','caregivers'));
+}
 
     public function store(Request $request)
     {

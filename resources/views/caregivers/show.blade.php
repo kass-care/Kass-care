@@ -1,42 +1,14 @@
 @extends('layouts.app')
 
 @section('content')
-
 <div class="container">
+    <h1>Caregiver Details</h1>
 
-<h2>Caregiver Profile</h2>
+    <p><strong>Name:</strong> {{ $caregiver->name }}</p>
+    <p><strong>Email:</strong> {{ $caregiver->email }}</p>
+    <p><strong>Phone:</strong> {{ $caregiver->phone }}</p>
 
-<table class="table table-bordered">
-
-<tr>
-<th>ID</th>
-<td>{{ $caregiver->id }}</td>
-</tr>
-
-<tr>
-<th>Name</th>
-<td>{{ $caregiver->name }}</td>
-</tr>
-
-<tr>
-<th>Email</th>
-<td>{{ $caregiver->email }}</td>
-</tr>
-
-<tr>
-<th>Phone</th>
-<td>{{ $caregiver->phone }}</td>
-</tr>
-
-<tr>
-<th>Status</th>
-<td>{{ $caregiver->status }}</td>
-</tr>
-
-</table>
-
-<a href="/caregivers" class="btn btn-primary">Back</a>
-
+    <a href="{{ route('caregivers.index') }}" class="btn btn-secondary">Back</a>
+    <a href="{{ route('caregivers.edit', $caregiver) }}" class="btn btn-warning">Edit</a>
 </div>
-
 @endsection

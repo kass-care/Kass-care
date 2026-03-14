@@ -2,96 +2,33 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>KASS Care</title>
-
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
-
-    <style>
-        body{
-            background:#f4f6f9;
-        }
-
-        .navbar a{
-            text-decoration:none;
-            font-weight:500;
-        }
-
-        .navbar a:hover{
-            text-decoration:underline;
-        }
-
-        .container-main{
-            margin-top:30px;
-        }
-    </style>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KASS CARE SaaS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-
-<body>
-
-<nav class="navbar navbar-dark bg-dark navbar-expand-lg">
-    <div class="container-fluid">
-
-        <a class="navbar-brand" href="{{ route('dashboard.index') }}">
-            KASS Care
-        </a>
-
-        <div class="d-flex flex-wrap gap-3">
-
-            <a class="text-white" href="{{ route('dashboard.index') }}">
-                Dashboard
-            </a>
-
-            <a class="text-white" href="{{ route('clients.index') }}">
-                Clients
-            </a>
-
-            <a class="text-white" href="{{ route('caregivers.index') }}">
-                Caregivers
-            </a>
-
-            <a class="text-white" href="{{ route('visits.index') }}">
-                Visits
-            </a>
-
-            <a class="text-white" href="{{ route('care-logs.index') }}">
-                Care Logs
-            </a>
-
-            <a class="text-white" href="{{ route('schedules.index') }}">
-                Schedules
-            </a>
-
-            <a class="text-white" href="{{ route('facilities.index') }}">
-                Facilities
-            </a>
-
-            <a class="text-white" href="{{ route('users.index') }}">
-                Users
-            </a>
-
-            <a class="text-white" href="{{ route('provider-dashboard.index') }}">
-                Provider Dashboard
-            </a>
-
-            <a class="text-white" href="{{ route('alerts.index') }}">
-                🔔 Alerts
-            </a>
-
+<body class="bg-slate-50 font-sans">
+    <nav class="bg-slate-900 text-white shadow-2xl sticky top-0 z-50">
+        <div class="container mx-auto px-6 h-20 flex justify-between items-center">
+            <div class="flex items-center gap-8">
+                <a href="/dashboard" class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-indigo-500 rounded-xl flex items-center justify-center font-black">K</div>
+                    <span class="font-black tracking-tighter text-2xl uppercase">KASS<span class="text-indigo-400">CARE</span></span>
+                </a>
+                <div class="hidden lg:flex items-center gap-6 text-[10px] font-black uppercase tracking-widest">
+                    <a href="{{ route('facilities.index') }}" class="hover:text-indigo-400">Facilities</a>
+                    <a href="{{ route('caregivers.index') }}" class="hover:text-indigo-400">Caregivers</a>
+                    <a href="{{ route('calendar') }}" class="hover:text-indigo-400">Calendar</a>
+                </div>
+            </div>
+            <div class="flex items-center gap-6">
+                <span class="text-2xl">🚨</span>
+                <a href="{{ route('visits.create') }}" class="relative z-[100] bg-indigo-600 px-6 py-2.5 rounded-xl text-[10px] font-bold text-white uppercase tracking-widest shadow-lg hover:bg-indigo-700 transition-all">
+    + NEW VISIT
+</a>
+            </div>
         </div>
+    </nav>
 
-    </div>
-</nav>
-
-
-<div class="container container-main">
-
-    @yield('content')
-
-</div>
-
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
+    <main>@yield('content')</main>
 </body>
 </html>

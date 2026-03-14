@@ -1,28 +1,14 @@
 @extends('layouts.app')
 
 @section('content')
-
 <div class="container">
+    <h1>Client Details</h1>
 
-<h2 class="mb-4">Client Profile</h2>
+    <p><strong>Name:</strong> {{ $client->name }}</p>
+    <p><strong>Email:</strong> {{ $client->email }}</p>
+    <p><strong>Phone:</strong> {{ $client->phone }}</p>
 
-<div class="card">
-<div class="card-body">
-
-<p><strong>ID:</strong> {{ $client->id }}</p>
-<p><strong>Name:</strong> {{ $client->name }}</p>
-<p><strong>Email:</strong> {{ $client->email ?? 'N/A' }}</p>
-<p><strong>Phone:</strong> {{ $client->phone ?? 'N/A' }}</p>
-
-<br>
-
-<a href="{{ route('clients.index') }}" class="btn btn-secondary">
-Back to Clients
-</a>
-
+    <a href="{{ route('clients.index') }}" class="btn btn-secondary">Back</a>
+    <a href="{{ route('clients.edit', $client) }}" class="btn btn-warning">Edit</a>
 </div>
-</div>
-
-</div>
-
 @endsection

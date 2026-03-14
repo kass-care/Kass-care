@@ -18,12 +18,12 @@ class LabController extends Controller
     }
 
 
-    public function create()
-    {
-        $clients = Client::all();
+   public function create()
+{
+    $clients = \App\Models\Client::all();
 
-        return view('labs.create', compact('clients'));
-    }
+    return view('labs.create', compact('clients'));
+}
 
 
     public function store(Request $request)

@@ -1,203 +1,47 @@
+@extends('layouts.app')
 
-<!DOCTYPE html>
-<html>
+@section('content')
+<div class="min-h-screen pb-20 font-sans">
+    <div class="container mx-auto px-6 pt-10">
+        <div class="mb-10">
+            <h1 class="text-4xl font-black text-slate-900 tracking-tighter italic">SaaS <span class="text-indigo-600">Command Center</span></h1>
+            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-[0.3em] mt-2">Engine Status: Online</p>
+        </div>
 
-<head>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
+            <div class="bg-gradient-to-br from-indigo-600 to-indigo-800 p-8 rounded-[2.5rem] shadow-2xl text-white">
+                <p class="text-indigo-100 text-[10px] font-black uppercase tracking-widest">Clients</p>
+                <h3 class="text-6xl font-black mt-4 leading-none">{{ $clientCount ?? 0 }}</h3>
+            </div>
+            <div class="bg-gradient-to-br from-emerald-500 to-teal-600 p-8 rounded-[2.5rem] shadow-2xl text-white">
+                <p class="text-emerald-50 text-[10px] font-black uppercase tracking-widest">Staff</p>
+                <h3 class="text-6xl font-black mt-4 leading-none">{{ $caregiverCount ?? 0 }}</h3>
+            </div>
+            <div class="bg-gradient-to-br from-amber-400 to-orange-500 p-8 rounded-[2.5rem] shadow-2xl text-white">
+                <p class="text-orange-50 text-[10px] font-black uppercase tracking-widest">Visits</p>
+                <h3 class="text-6xl font-black mt-4 leading-none">{{ $visitCount ?? 0 }}</h3>
+            </div>
+            <div class="bg-gradient-to-br from-rose-500 to-red-600 p-8 rounded-[2.5rem] shadow-2xl text-white">
+                <p class="text-rose-50 text-[10px] font-black uppercase tracking-widest">Alerts</p>
+                <h3 class="text-6xl font-black mt-4 leading-none">{{ $alertCount ?? 0 }}</h3>
+            </div>
+        </div>
 
-<title>KASS-Care Dashboard</title>
-
-<style>
-
-body{
-margin:0;
-font-family:Arial;
-background:#f4f6f9;
-}
-
-/* TOP BAR */
-
-.topbar{
-height:70px;
-background:#0f172a;
-color:white;
-display:flex;
-align-items:center;
-padding-left:30px;
-font-size:22px;
-font-weight:bold;
-}
-
-/* LAYOUT */
-
-.layout{
-display:flex;
-}
-
-/* SIDEBAR */
-
-.sidebar{
-width:220px;
-background:#111827;
-min-height:100vh;
-color:white;
-}
-
-.sidebar h2{
-padding:20px;
-margin:0;
-font-size:18px;
-border-bottom:1px solid #1f2937;
-}
-
-.sidebar a{
-display:block;
-padding:14px 20px;
-text-decoration:none;
-color:#d1d5db;
-}
-
-.sidebar a:hover{
-background:#1f2937;
-}
-
-/* CONTENT */
-
-.content{
-flex:1;
-padding:30px;
-}
-
-/* CARDS */
-
-.cards{
-display:flex;
-gap:20px;
-flex-wrap:wrap;
-}
-
-.card{
-background:white;
-padding:25px;
-border-radius:10px;
-width:220px;
-box-shadow:0 4px 10px rgba(0,0,0,0.1);
-}
-
-.number{
-font-size:32px;
-font-weight:bold;
-}
-
-.title{
-color:#666;
-}
-
-/* SECTION */
-
-.section{
-margin-top:40px;
-}
-
-table{
-width:100%;
-background:white;
-border-collapse:collapse;
-box-shadow:0 4px 10px rgba(0,0,0,0.05);
-}
-
-th,td{
-padding:12px;
-border-bottom:1px solid #eee;
-text-align:left;
-}
-
-</style>
-
-</head>
-
-<body>
-
-<div class="topbar">
-KASS-Care Admin Dashboard
+        <h2 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mb-6">Quick Launch Command</h2>
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <a href="{{ route('clients.create') }}" class="flex flex-col items-center p-8 bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:border-indigo-300 transition-all group text-center">
+                <span class="text-3xl mb-3 group-hover:scale-125 transition-transform">👥</span>
+                <span class="text-[9px] font-black text-slate-500 uppercase">Add Client</span>
+            </a>
+            <a href="{{ route('caregivers.create') }}" class="flex flex-col items-center p-8 bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:border-emerald-300 transition-all group text-center">
+                <span class="text-3xl mb-3 group-hover:scale-125 transition-transform">👩‍⚕️</span>
+                <span class="text-[9px] font-black text-slate-500 uppercase">New Staff</span>
+            </a>
+            <a href="{{ route('calendar') }}" class="flex flex-col items-center p-8 bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:border-blue-300 transition-all group text-center">
+                <span class="text-3xl mb-3 group-hover:scale-125 transition-transform">📅</span>
+                <span class="text-[9px] font-black text-slate-500 uppercase">Calendar</span>
+            </a>
+        </div>
+    </div>
 </div>
-
-<div class="layout">
-
-<div class="sidebar">
-
-<h2>Navigation</h2>
-
-<a href="/dashboard">Dashboard</a>
-<a href="/clients">Clients</a>
-<a href="/caregivers">Caregivers</a>
-<a href="/visits">Visits</a>
-<a href="/carelogs">Care Logs</a>
-
-</div>
-
-<div class="content">
-
-<div class="cards">
-
-<div class="card">
-<div class="number">{{ $clients }}</div>
-<div class="title">Clients</div>
-</div>
-
-<div class="card">
-<div class="number">{{ $caregivers }}</div>
-<div class="title">Caregivers</div>
-</div>
-
-<div class="card">
-<div class="number">{{ $visitsToday }}</div>
-<div class="title">Visits Today</div>
-</div>
-
-<div class="card">
-<div class="number">{{ $careLogsToday }}</div>
-<div class="title">Care Logs Today</div>
-</div>
-
-</div>
-
-<div class="section">
-
-<h2>Recent Care Logs</h2>
-
-<table>
-
-<tr>
-<th>ID</th>
-<th>Client</th>
-<th>Meals %</th>
-<th>BM</th>
-<th>Shower</th>
-<th>Medication</th>
-</tr>
-
-@foreach(\App\Models\CareLog::latest()->take(5)->get() as $log)
-
-<tr>
-
-<td>{{ $log->id }}</td>
-<td>{{ $log->client_id }}</td>
-<td>{{ $log->meals_percent }}</td>
-<td>{{ $log->bm }}</td>
-<td>{{ $log->shower }}</td>
-<td>{{ $log->meds_given }}</td>
-
-</tr>
-
-@endforeach
-
-</table>
-
-</div>
-
-</div>
-
-</div>
-
-</body>
-</html>
+@endsection

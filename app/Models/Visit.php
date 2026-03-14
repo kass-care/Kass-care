@@ -2,17 +2,18 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Visit extends Model
 {
+    use HasFactory;
 
     protected $fillable = [
         'client_id',
         'caregiver_id',
-        'visit_date',
-        'start_time',
-        'end_time',
+        'visit_date', // Matches your Postgres column
+        'activity',
         'status'
     ];
 
@@ -25,5 +26,4 @@ class Visit extends Model
     {
         return $this->belongsTo(Caregiver::class);
     }
-
 }

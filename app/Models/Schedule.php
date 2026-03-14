@@ -6,25 +6,22 @@ use Illuminate\Database\Eloquent\Model;
 
 class Schedule extends Model
 {
+    protected $fillable = [
+        'client_id',
+        'caregiver_id',
+        'schedule_date',
+        'start_time',
+        'end_time',
+        'notes',
+    ];
 
-protected $fillable = [
+    public function client()
+    {
+        return $this->belongsTo(Client::class);
+    }
 
-'client_id',
-'caregiver_id',
-'schedule_date',
-'start_time',
-'end_time'
-
-];
-
-public function client()
-{
-return $this->belongsTo(Client::class);
-}
-
-public function caregiver()
-{
-return $this->belongsTo(Caregiver::class);
-}
-
+    public function caregiver()
+    {
+        return $this->belongsTo(Caregiver::class);
+    }
 }

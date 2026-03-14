@@ -17,6 +17,7 @@ class Facility extends Model
         'visit_frequency_days',
         'last_visit',
         'next_visit',
+        'organization_id',
     ];
 
     protected $casts = [
