@@ -1,50 +1,30 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        Schema::table('visits', function (Blueprint $table) {
+        // Convert start_time from TIME → TIMESTAMP safely
+        DB::statement("
+            ALTER TABLE visits
+            ALTER COLUMN start_time TYPE timestamp(0) without time zone
+            USING ('1970-01-01'::date + start_time)
+        ");
+        DB::statement('ALTER TABLE visits ALTER COLUMN start_time DROP NOT NULL');
 
-            // Allow these fields to be nullable
-            $table->timestamp('start_time')->nullable()->change();
-            $table->timestamp('end_time')->nullable()->change();
-            $table->timestamp('check_in_time')->nullable()->change();
-            $table->timestamp('check_out_time')->nullable()->change();
-
-            $table->string('check_in_latitude')->nullable()->change();
-            $table->string('check_in_longitude')->nullable()->change();
-            $table->string('check_out_latitude')->nullable()->change();
-            $table->string('check_out_longitude')->nullable()->change();
-
-        });
+        // Make other datetime fields nullable
+        DB::statement('ALTER TABLE visits ALTER COLUMN end_time DROP NOT NULL');
+        DB::statement('ALTER TABLE visits ALTER COLUMN visit_started DROP NOT NULL');
+        DB::statement('ALTER TABLE visits ALTER COLUMN visit_completed DROP NOT NULL');
+        DB::statement('ALTER TABLE visits ALTER COLUMN check_in_time DROP NOT NULL');
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::table('visits', function (Blueprint $table) {
-
-            // Revert fields back to NOT NULL
-            $table->timestamp('start_time')->nullable(false)->change();
-            $table->timestamp('end_time')->nullable(false)->change();
-            $table->timestamp('check_in_time')->nullable(false)->change();
-            $table->timestamp('check_out_time')->nullable(false)->change();
-
-            $table->string('check_in_latitude')->nullable(false)->change();
-            $table->string('check_in_longitude')->nullable(false)->change();
-            $table->string('check_out_latitude')->nullable(false)->change();
-            $table->string('check_out_longitude')->nullable(false)->change();
-
-        });
+        // Revert back (adjust types as needed)
+        // Note: reversing TIME → TIMESTAMP conversion may lose date info
     }
 };

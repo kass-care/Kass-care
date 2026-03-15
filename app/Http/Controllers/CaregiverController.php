@@ -9,8 +9,11 @@ class CaregiverController extends Controller
 {
     public function index()
     {
-        $caregivers = Caregiver::all();
-        return view('caregivers.index', compact('caregivers'));
+        $caregivers = Caregiver::latest()->get();
+
+        return view('caregivers.index', [
+            'caregivers' => $caregivers
+        ]);
     }
 
     public function create()
@@ -22,11 +25,16 @@ class CaregiverController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
+            'email' => 'nullable|email|max:255',
+            'phone' => 'nullable|string|max:255',
         ]);
 
         Caregiver::create([
             'name' => $request->name,
-            'organization_id' => auth()->user()->organization_id ?? 1,
+            'email' => $request->email,
+            'phone' => $request->phone,
+            'status' => 'active',
+            'organization_id' => 1,
         ]);
 
         return redirect()

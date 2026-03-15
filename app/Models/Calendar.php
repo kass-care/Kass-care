@@ -5,13 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Facility extends Model
+class Calendar extends Model
 {
     use HasFactory;
 
-    // Allow mass assignment for these fields
     protected $fillable = [
-        'name',
-        'address',
+        'title',
+        'start_time',
+        'end_time',
+        'description',
+        'caregiver_id',
+        'client_id',
     ];
 }

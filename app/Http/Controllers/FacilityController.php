@@ -2,91 +2,76 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Facility; // STEP 1: Import the Model (The filing cabinet)
+use App\Models\Facility;
 use Illuminate\Http\Request;
 
 class FacilityController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    // Display all facilities
     public function index()
     {
-        // STEP 2: Fetch all facilities from the database
-        $facilities = Facility::all();
-        
-        // Pass them to the view
+        $facilities = Facility::latest()->get();
         return view('facilities.index', compact('facilities'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
+    // Show form to create a new facility (not needed since modal is on index)
     public function create()
     {
-        return view('facilities.create');
+        return view('facilities.create'); // Optional if you have separate page
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    // Store a new facility
     public function store(Request $request)
     {
-        // STEP 3: Validate the input
         $request->validate([
             'name' => 'required|string|max:255',
+            'address' => 'nullable|string|max:255',
         ]);
 
-        // STEP 4: Actually SAVE to the database
-        // We use our "Safety Net" for organization_id
         Facility::create([
             'name' => $request->name,
-            'organization_id' => auth()->user()->organization_id ?? 1,
+            'address' => $request->address,
         ]);
 
         return redirect()->route('facilities.index')
-            ->with('success', 'Facility created successfully.');
+                         ->with('success', 'Facility created successfully.');
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit($id)
+    // Show a single facility (optional)
+    public function show(Facility $facility)
     {
-        // STEP 5: Find the specific facility to edit
-        $facility = Facility::findOrFail($id);
-        
+        return view('facilities.show', compact('facility'));
+    }
+
+    // Show form to edit facility (optional if you do inline edits)
+    public function edit(Facility $facility)
+    {
         return view('facilities.edit', compact('facility'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id)
+    // Update a facility
+    public function update(Request $request, Facility $facility)
     {
         $request->validate([
             'name' => 'required|string|max:255',
+            'address' => 'nullable|string|max:255',
         ]);
 
-        $facility = Facility::findOrFail($id);
         $facility->update([
             'name' => $request->name,
+            'address' => $request->address,
         ]);
 
         return redirect()->route('facilities.index')
-            ->with('success', 'Facility updated successfully.');
+                         ->with('success', 'Facility updated successfully.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id)
+    // Delete a facility
+    public function destroy(Facility $facility)
     {
-        // STEP 6: Find it and Kill it (Delete)
-        $facility = Facility::findOrFail($id);
         $facility->delete();
 
         return redirect()->route('facilities.index')
-            ->with('success', 'Facility deleted successfully.');
+                         ->with('success', 'Facility deleted successfully.');
     }
 }

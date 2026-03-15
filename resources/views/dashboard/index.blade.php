@@ -4,7 +4,7 @@
 <div class="min-h-screen pb-20 font-sans">
     <div class="container mx-auto px-6 pt-10">
         <div class="mb-10">
-            <h1 class="text-4xl font-black text-slate-900 tracking-tighter italic">SaaS <span class="text-indigo-600">Command Center</span></h1>
+            <h1 class="text-4xl font-black text-slate-900 tracking-tighter italic">SaaS <span class="text-indigo-600">Core</span></h1>
             <p class="text-[10px] text-slate-400 font-bold uppercase tracking-[0.3em] mt-2">Engine Status: Online</p>
         </div>
 
@@ -29,18 +29,22 @@
 
         <h2 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mb-6">Quick Launch Command</h2>
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            <a href="{{ route('clients.create') }}" class="flex flex-col items-center p-8 bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:border-indigo-300 transition-all group text-center">
+            
+            <a href="{{ route('clients.create') }}" class="flex flex-col items-center p-8 bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all group">
                 <span class="text-3xl mb-3 group-hover:scale-125 transition-transform">👥</span>
                 <span class="text-[9px] font-black text-slate-500 uppercase">Add Client</span>
             </a>
-            <a href="{{ route('caregivers.create') }}" class="flex flex-col items-center p-8 bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:border-emerald-300 transition-all group text-center">
+
+            <a href="{{ route('caregivers.create') }}" class="flex flex-col items-center p-8 bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all group">
                 <span class="text-3xl mb-3 group-hover:scale-125 transition-transform">👩‍⚕️</span>
                 <span class="text-[9px] font-black text-slate-500 uppercase">New Staff</span>
             </a>
-            <a href="{{ route('calendar') }}" class="flex flex-col items-center p-8 bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:border-blue-300 transition-all group text-center">
+
+            <a href="{{ route('calendar') }}" class="flex flex-col items-center p-8 bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all group">
                 <span class="text-3xl mb-3 group-hover:scale-125 transition-transform">📅</span>
                 <span class="text-[9px] font-black text-slate-500 uppercase">Calendar</span>
             </a>
+
         </div>
     </div>
 </div>

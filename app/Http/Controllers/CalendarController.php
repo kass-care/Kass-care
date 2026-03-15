@@ -2,27 +2,36 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Calendar;
 use Illuminate\Http\Request;
-use App\Models\Visit;
 
 class CalendarController extends Controller
 {
+    // Show calendar page with all schedules
     public function index()
     {
-        // Fetch all visits with their clients
-        $visits = Visit::with('client')->get();
+        $calendars = Calendar::orderBy('start_time', 'asc')->get();
+        return view('calendar.index', compact('calendars'));
+    }
 
-        // Format visits for the calendar
-        $events = $visits->map(function ($visit) {
-            return [
-                'title' => ($visit->client->name ?? 'Unknown Client') . ' - ' . $visit->activity,
-                'start' => $visit->scheduled_at,
-            ];
-        });
+    // Store a new schedule
+    public function store(Request $request)
+    {
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'start_time' => 'required|date',
+            'end_time' => 'required|date|after_or_equal:start_time',
+        ]);
 
-        // Convert events to JSON for the calendar
-        $events = $events->toJson();
+        Calendar::create([
+            'title' => $request->title,
+            'start_time' => $request->start_time,
+            'end_time' => $request->end_time,
+            'description' => $request->description,
+            'caregiver_id' => $request->caregiver_id,
+            'client_id' => $request->client_id,
+        ]);
 
-        return view('calendar.index', compact('events'));
+        return redirect()->route('calendar.index')->with('success', 'Schedule added successfully!');
     }
 }
