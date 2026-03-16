@@ -1,106 +1,171 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Illuminate\Http\Request;
-use App\Models\Visit;
-use App\Models\Client;
+use App\Http\Controllers\ProfileController;
+
+Route::middleware('auth')->group(function () {
+
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+});
+use Illuminate\Support\Facades\Auth;
+
+use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\ProviderDashboardController;
+use App\Http\Controllers\CaregiverDashboardController;
+
+use App\Http\Controllers\ClientController;
 use App\Http\Controllers\CaregiverController;
+use App\Http\Controllers\FacilityController;
+use App\Http\Controllers\VisitController;
+use App\Http\Controllers\CareLogController;
+use App\Http\Controllers\CalendarController;
+
+/*
+|--------------------------------------------------------------------------
+| Public Routes
+|--------------------------------------------------------------------------
+*/
 
 Route::get('/', function () {
-    return redirect('/calendar');
+    return view('welcome');
 });
 
+/*
+|--------------------------------------------------------------------------
+| Authenticated Dashboard
+|--------------------------------------------------------------------------
+*/
+
 Route::get('/dashboard', function () {
-    return view('dashboard.index');
-})->name('dashboard');
+    return view('dashboard');
+})->middleware(['auth'])->name('dashboard');
 
-Route::get('/calendar', function () {
-    return view('calendar.index');
-})->name('calendar');
+/*
+|--------------------------------------------------------------------------
+| Role Redirect
+|--------------------------------------------------------------------------
+*/
 
-Route::get('/calendar/events', function () {
-    $visits = Visit::with('client')->get();
+Route::get('/redirect-by-role', function () {
 
-    $events = [];
+    $user = Auth::user();
 
-    foreach ($visits as $visit) {
-        $color = '#3b82f6';
-
-        if ($visit->status === 'completed') {
-            $color = '#16a34a';
-        }
-
-        if ($visit->status === 'missed') {
-            $color = '#dc2626';
-        }
-
-        $events[] = [
-            'id' => $visit->id,
-            'title' => $visit->client->name ?? 'Visit',
-            'start' => $visit->visit_date,
-            'color' => $color,
-        ];
+    if ($user->role === 'admin') {
+        return redirect('/admin/dashboard');
     }
 
-    return response()->json($events);
-})->name('calendar.events');
+    if ($user->role === 'provider') {
+        return redirect('/provider/dashboard');
+    }
 
-Route::get('/visits/create', function () {
-    $clients = Client::all();
+    if ($user->role === 'caregiver') {
+        return redirect('/caregiver/dashboard');
+    }
 
-    return view('visits.create', compact('clients'));
-})->name('visits.create');
+    return redirect('/dashboard');
 
-Route::post('/visits', function (Request $request) {
-    $request->validate([
-        'client_id' => 'required|exists:clients,id',
-        'visit_date' => 'required|date',
-    ]);
+})->middleware('auth');
 
-    Visit::create([
-        'client_id' => $request->client_id,
-        'visit_date' => $request->visit_date,
-        'status' => 'scheduled',
-    ]);
+/*
+|--------------------------------------------------------------------------
+| Role Dashboards
+|--------------------------------------------------------------------------
+*/
 
-    return redirect()->route('calendar');
-})->name('visits.store');
+Route::middleware(['auth'])->group(function () {
 
-Route::get('/clients/create', function () {
-    return view('clients.create');
-})->name('clients.create');
+    Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
 
-Route::post('/clients', function () {
-    return redirect()->route('dashboard');
-})->name('clients.store');
-Route::get('/facilities', function () {
-    $facilities = \App\Models\Facility::latest()->get();
+    Route::get('/provider/dashboard', [ProviderDashboardController::class, 'index'])->name('provider.dashboard');
 
-    return view('facilities.index', [
-        'facilities' => $facilities,
-    ]);
-})->name('facilities.index');
+    Route::get('/caregiver/dashboard', [CaregiverDashboardController::class, 'index'])->name('caregiver.dashboard');
 
-Route::get('/facilities/create', function () {
-    return view('facilities.create');
-})->name('facilities.create');
+});
 
-Route::post('/facilities', function (\Illuminate\Http\Request $request) {
-    $request->validate([
-        'name' => 'required|string|max:255',
-    ]);
+/*
+|--------------------------------------------------------------------------
+| Core Modules
+|--------------------------------------------------------------------------
+*/
 
-    \App\Models\Facility::create([
-        'name' => $request->name,
-    ]);
+Route::middleware(['auth'])->group(function () {
 
-    return redirect()
-        ->route('facilities.index')
-        ->with('success', 'Facility added successfully.');
-})->name('facilities.store');
-Route::resource('caregivers', CaregiverController::class)->only([
-    'index',
-    'create',
-    'store',
-    'destroy',
-]);
+    Route::resource('clients', ClientController::class);
+
+    Route::resource('caregivers', CaregiverController::class);
+
+    Route::resource('facilities', FacilityController::class);
+
+    Route::resource('visits', VisitController::class);
+
+    Route::resource('care-logs', CareLogController::class);
+
+});
+
+/*
+|--------------------------------------------------------------------------
+| Calendar
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware(['auth'])->group(function () {
+
+    Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar');
+
+});
+Route::middleware(['auth', 'role:admin'])->group(function () {
+    Route::get('/admin/dashboard', function () {
+        return view('admin.dashboard');
+    })->name('admin.dashboard');
+});
+
+Route::middleware(['auth', 'role:provider'])->group(function () {
+    Route::get('/provider/dashboard', function () {
+        return view('provider.dashboard');
+    })->name('provider.dashboard');
+});
+
+Route::middleware(['auth', 'role:caregiver'])->group(function () {
+    Route::get('/caregiver/dashboard', function () {
+        return view('caregiver.dashboard');
+    })->name('caregiver.dashboard');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Authentication Routes
+|--------------------------------------------------------------------------
+*/
+
+require __DIR__.'/auth.php';
+
+
+Route::middleware(['auth', 'role:admin'])->group(function () {
+    Route::get('/admin/dashboard', function () {
+        return view('admin.dashboard');
+    })->name('admin.dashboard');
+});
+
+Route::middleware(['auth', 'role:provider'])->group(function () {
+
+    Route::get('/provider/dashboard', function () {
+        return view('provider.dashboard');
+    })->name('provider.dashboard');
+
+    Route::get('/provider/calendar', [\App\Http\Controllers\ProviderCalendarController::class, 'index'])
+        ->name('provider.calendar');
+
+});
+
+Route::middleware(['auth', 'role:caregiver'])->group(function () {
+
+    Route::get('/caregiver/dashboard', function () {
+        return view('caregiver.dashboard');
+    })->name('caregiver.dashboard');
+
+});

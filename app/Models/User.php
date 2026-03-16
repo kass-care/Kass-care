@@ -2,46 +2,36 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-
-    use Notifiable;
+    use HasFactory, Notifiable;
 
     protected $fillable = [
         'name',
         'email',
         'password',
-        'role',
-        'phone',
-        'pin'
+        'role_id',
     ];
-
 
     protected $hidden = [
         'password',
         'remember_token',
-        'pin'
     ];
 
-
-    public function isAdmin()
+    protected function casts(): array
     {
-        return $this->role === 'admin';
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+        ];
     }
 
-
-    public function isProvider()
+    public function role()
     {
-        return $this->role === 'provider';
+        return $this->belongsTo(\App\Models\Role::class);
     }
-
-
-    public function isCaregiver()
-    {
-        return $this->role === 'caregiver';
-    }
-
 }

@@ -2,36 +2,157 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Calendar;
 use Illuminate\Http\Request;
+use App\Models\Visit;
+use App\Models\Client;
+use App\Models\Caregiver;
 
 class CalendarController extends Controller
 {
-    // Show calendar page with all schedules
     public function index()
     {
-        $calendars = Calendar::orderBy('start_time', 'asc')->get();
-        return view('calendar.index', compact('calendars'));
+        $todayVisits = Visit::whereDate('visit_date', today())->count();
+
+        $completedToday = Visit::whereDate('visit_date', today())
+            ->where('status', 'completed')
+            ->count();
+
+        $missingCareLogs = Visit::where('status', 'completed')
+            ->whereDoesntHave('careLogs')
+            ->count();
+
+        $missedToday = Visit::where('status', 'missed')->count();
+
+        $clients = Client::all();
+        $caregivers = Caregiver::all();
+
+        return view('calendar.index', compact(
+            'todayVisits',
+            'completedToday',
+            'missingCareLogs',
+            'missedToday',
+            'clients',
+            'caregivers'
+        ));
     }
 
-    // Store a new schedule
-    public function store(Request $request)
+    public function events()
+    {
+        $visits = Visit::with(['client', 'caregiver'])->get();
+
+        $events = [];
+
+        foreach ($visits as $visit) {
+            $color = '#3b82f6';
+
+            if ($visit->status === 'completed') {
+                $color = '#16a34a';
+            } elseif ($visit->status === 'missed') {
+                $color = '#dc2626';
+            } elseif ($visit->status === 'assigned') {
+                $color = '#7c3aed';
+            }
+
+            $events[] = [
+                'id' => $visit->id,
+                'title' => ($visit->client->name ?? 'Client') . ' - ' . ($visit->caregiver->name ?? 'Unassigned'),
+                'start' => $visit->visit_date,
+                'color' => $color,
+                'status' => $visit->status ?? 'scheduled',
+                'caregiver_id' => $visit->caregiver_id,
+                'check_in_time' => $visit->check_in_time,
+                'check_out_time' => $visit->check_out_time,
+                'check_in_latitude' => $visit->check_in_latitude,
+                'check_in_longitude' => $visit->check_in_longitude,
+                'check_out_latitude' => $visit->check_out_latitude,
+                'check_out_longitude' => $visit->check_out_longitude,
+            ];
+        }
+
+        return response()->json($events);
+    }
+
+    public function assignCaregiver(Request $request)
     {
         $request->validate([
-            'title' => 'required|string|max:255',
-            'start_time' => 'required|date',
-            'end_time' => 'required|date|after_or_equal:start_time',
+            'visit_id' => 'required|exists:visits,id',
+            'caregiver_id' => 'required|exists:caregivers,id',
         ]);
 
-        Calendar::create([
-            'title' => $request->title,
-            'start_time' => $request->start_time,
-            'end_time' => $request->end_time,
-            'description' => $request->description,
-            'caregiver_id' => $request->caregiver_id,
-            'client_id' => $request->client_id,
+        $visit = Visit::findOrFail($request->visit_id);
+        $visit->caregiver_id = $request->caregiver_id;
+        $visit->status = 'assigned';
+        $visit->save();
+
+        return response()->json(['success' => true]);
+    }
+
+    public function updateVisitStatus(Request $request)
+    {
+        $request->validate([
+            'visit_id' => 'required|exists:visits,id',
+            'status' => 'required|string',
         ]);
 
-        return redirect()->route('calendar.index')->with('success', 'Schedule added successfully!');
+        $visit = Visit::findOrFail($request->visit_id);
+        $visit->status = $request->status;
+
+        if ($request->status === 'completed') {
+            $visit->visit_completed = true;
+        }
+
+        $visit->save();
+
+        return response()->json(['success' => true]);
+    }
+
+    public function checkIn(Request $request)
+    {
+        $request->validate([
+            'visit_id' => 'required|exists:visits,id',
+            'latitude' => 'nullable',
+            'longitude' => 'nullable',
+        ]);
+
+        $visit = Visit::findOrFail($request->visit_id);
+
+        $visit->check_in_time = now();
+        $visit->visit_started = true;
+        $visit->status = 'assigned';
+        $visit->check_in_latitude = $request->latitude;
+        $visit->check_in_longitude = $request->longitude;
+        $visit->save();
+
+        return response()->json([
+            'success' => true,
+            'check_in_time' => $visit->check_in_time,
+            'check_in_latitude' => $visit->check_in_latitude,
+            'check_in_longitude' => $visit->check_in_longitude,
+        ]);
+    }
+
+    public function checkOut(Request $request)
+    {
+        $request->validate([
+            'visit_id' => 'required|exists:visits,id',
+            'latitude' => 'nullable',
+            'longitude' => 'nullable',
+        ]);
+
+        $visit = Visit::findOrFail($request->visit_id);
+
+        $visit->check_out_time = now();
+        $visit->visit_completed = true;
+        $visit->status = 'completed';
+        $visit->check_out_latitude = $request->latitude;
+        $visit->check_out_longitude = $request->longitude;
+        $visit->save();
+
+        return response()->json([
+            'success' => true,
+            'check_out_time' => $visit->check_out_time,
+            'check_out_latitude' => $visit->check_out_latitude,
+            'check_out_longitude' => $visit->check_out_longitude,
+        ]);
     }
 }

@@ -6,20 +6,23 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
         Schema::table('care_logs', function (Blueprint $table) {
-            $table->foreignId('visit_id')
-                ->nullable()
-                ->constrained()
-                ->nullOnDelete();
+            //
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
         Schema::table('care_logs', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('visit_id');
+            //
         });
     }
 };

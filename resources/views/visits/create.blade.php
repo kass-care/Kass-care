@@ -47,6 +47,16 @@
                             value="{{ request('date') ? request('date') . 'T09:00' : '' }}"
                             class="w-full p-5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-indigo-600"
                             required
+                          <div class="mb-4">
+                          <label class="block text-sm font-medium text-gray-700 mb-1">
+                          Visit Time
+                           </label>
+
+                          <input 
+                          type="time" 
+                          name="visit_time"
+                           class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+</div>
                         >
                     </div>
 

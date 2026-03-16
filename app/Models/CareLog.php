@@ -2,28 +2,27 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class CareLog extends Model
 {
-    use HasFactory;
-
-    protected $table = 'care_logs';
-
     protected $fillable = [
         'client_id',
         'caregiver_id',
         'visit_id',
-        'notes'
+        'notes',
+        'adl_status',
+        'meal_notes',
+        'medication_notes',
+        'organization_id',
+        'bathroom_assistance',
+        'mobility_support',
+        'charting_notes',
+        'check_in_time',
+        'check_out_time',
+        'latitude',
+        'longitude',
     ];
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Relationships
-    |--------------------------------------------------------------------------
-    */
 
     public function client()
     {

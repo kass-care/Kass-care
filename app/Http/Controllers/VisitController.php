@@ -41,7 +41,8 @@ public function store(Request $request)
         'client_id'       => $request->client_id,
         'caregiver_id'    => $request->caregiver_id,
         'activity'        => $request->activity,
-        'visit_date'      => $request->visit_date, 
+        'visit_date'      => $request->visit_date,
+        'visit_time' => $request->visit_time,
         'status'          => $request->status ?? 'Scheduled',
         'organization_id' => 1, 
     ]);
