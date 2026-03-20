@@ -7,37 +7,25 @@ use Illuminate\Database\Eloquent\Model;
 class Visit extends Model
 {
     protected $fillable = [
-        'organization_id',
         'client_id',
         'caregiver_id',
+        'activity',
         'visit_date',
-        'start_time',
-        'end_time',
+        'visit_time',
+        'scheduled_at',
+        'status',
+        'notes',
         'check_in_time',
         'check_out_time',
-        'check_in_latitude',
-        'check_in_longitude',
-        'check_out_latitude',
-        'check_out_longitude',
-        'status',
-        'started_at',
-        'ended_at',
-        'visit_started',
-        'visit_completed',
-        'activity',
-        'notes',
-        'visit_started_at',
-        'visit_completed_at',
+        'facility_id',
+        'duration_minutes',
     ];
 
     protected $casts = [
         'visit_date' => 'datetime',
-        'started_at' => 'datetime',
-        'ended_at' => 'datetime',
-        'visit_started_at' => 'datetime',
-        'visit_completed_at' => 'datetime',
-        'visit_started' => 'boolean',
-        'visit_completed' => 'boolean',
+        'scheduled_at' => 'datetime',
+        'check_in_time' => 'datetime',
+        'check_out_time' => 'datetime',
     ];
 
     public function client()
@@ -52,6 +40,6 @@ class Visit extends Model
 
     public function careLogs()
     {
-        return $this->hasMany(CareLog::class);
+        return $this->hasMany(CareLog::class, 'visit_id');
     }
 }

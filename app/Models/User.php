@@ -14,7 +14,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role_id',
+        'role',
     ];
 
     protected $hidden = [
@@ -30,8 +30,18 @@ class User extends Authenticatable
         ];
     }
 
-    public function role()
+    public function isAdmin(): bool
     {
-        return $this->belongsTo(\App\Models\Role::class);
+        return $this->role === 'admin';
+    }
+
+    public function isProvider(): bool
+    {
+        return $this->role === 'provider';
+    }
+
+    public function isCaregiver(): bool
+    {
+        return $this->role === 'caregiver';
     }
 }

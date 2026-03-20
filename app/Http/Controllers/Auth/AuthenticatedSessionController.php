@@ -27,21 +27,22 @@ class AuthenticatedSessionController extends Controller
         $request->authenticate();
 
         $request->session()->regenerate();
-     $user = auth()->user();
 
-if ($user->role === 'admin') {
-    return redirect()->route('admin.dashboard');
-}
+        $user = Auth::user();
 
-if ($user->role === 'provider') {
-    return redirect()->route('provider.dashboard');
-}
+        if (in_array($user->role, ['admin', 'super_admin'])) {
+            return redirect()->route('admin.dashboard');
+        }
 
-if ($user->role === 'caregiver') {
-    return redirect()->route('caregiver.dashboard');
-}
+        if ($user->role === 'provider') {
+            return redirect()->route('provider.dashboard');
+        }
 
-return redirect('/login');
+        if ($user->role === 'caregiver') {
+            return redirect()->route('caregiver.dashboard');
+        }
+
+        return redirect()->route('dashboard');
     }
 
     /**

@@ -8,13 +8,20 @@ use App\Models\User;
 class UserController extends Controller
 {
 
-    public function index()
-    {
-        $users = User::latest()->get();
+public function index()
+{
+    $facilityId = session('facility_id');
 
-        return view('users.index', compact('users'));
+    $query = \App\Models\User::query();
+
+    if ($facilityId) {
+        $query->where('facility_id', $facilityId);
     }
 
+    $users = $query->latest()->get();
+
+    return view('users.index', compact('users'));
+}
 
     public function create()
     {

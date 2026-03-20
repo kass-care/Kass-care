@@ -7,15 +7,24 @@ use Illuminate\Http\Request;
 
 class CaregiverController extends Controller
 {
-    public function index()
-    {
-        $caregivers = Caregiver::latest()->get();
+public function index()
+{
+    $user = auth()->user();
 
-        return view('caregivers.index', [
-            'caregivers' => $caregivers
-        ]);
+    // Find caregiver linked to this user
+    $caregiver = \App\Models\Caregiver::where('user_id', $user->id)->first();
+
+    if (!$caregiver) {
+        $visits = collect(); // empty
+    } else {
+        $visits = \App\Models\Visit::with('client')
+            ->where('caregiver_id', $caregiver->id)
+            ->latest()
+            ->get();
     }
 
+    return view('caregiver.dashboard', compact('visits'));
+}
     public function create()
     {
         return view('caregivers.create');

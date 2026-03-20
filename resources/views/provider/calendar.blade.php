@@ -1,113 +1,93 @@
 @extends('layouts.app')
 
 @section('content')
-
-@if(session('success'))
-    <div class="max-w-7xl mx-auto mb-4">
-        <div class="bg-green-100 text-green-800 px-4 py-3 rounded-lg">
-            {{ session('success') }}
-        </div>
-    </div>
-@endif
-
-<div class="min-h-screen bg-slate-50 p-8">
+<div class="min-h-screen bg-slate-50 p-6">
     <div class="max-w-7xl mx-auto">
-
-        <div class="flex justify-between items-center mb-8">
+        <div class="flex items-center justify-between mb-6">
             <div>
                 <h1 class="text-3xl font-bold text-slate-900">Provider Calendar</h1>
-                <p class="text-slate-600 mt-1">Scheduled visits overview</p>
+                <p class="text-slate-600 mt-1">Schedule view of all visits.</p>
             </div>
 
             <a href="{{ route('provider.dashboard') }}"
-               class="bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700">
+               class="inline-flex items-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">
                 Back to Dashboard
             </a>
         </div>
 
         <div class="bg-white rounded-2xl shadow overflow-hidden">
-            <table class="w-full text-left">
-                <thead class="bg-slate-100">
-                    <tr>
-                        <th class="px-6 py-4 text-sm font-semibold text-slate-700">Date</th>
-                        <th class="px-6 py-4 text-sm font-semibold text-slate-700">Time</th>
-                        <th class="px-6 py-4 text-sm font-semibold text-slate-700">Facility</th>
-                        <th class="px-6 py-4 text-sm font-semibold text-slate-700">Client</th>
-                        <th class="px-6 py-4 text-sm font-semibold text-slate-700">Caregiver</th>
-                        <th class="px-6 py-4 text-sm font-semibold text-slate-700">Activity</th>
-                        <th class="px-6 py-4 text-sm font-semibold text-slate-700">Status</th>
-                        <th class="px-6 py-4 text-sm font-semibold text-slate-700">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($visits as $visit)
-                        @php
-                            $status = strtolower($visit->status ?? 'scheduled');
-                            $dateValue = $visit->visit_date ?? $visit->scheduled_at ?? null;
+            <div class="p-6 border-b">
+                <h2 class="text-2xl font-semibold text-slate-900">Scheduled Visits</h2>
+                <p class="text-slate-500 mt-1">Operational scheduling view for providers.</p>
+            </div>
 
-                            $formattedDate = $dateValue
-                                ? \Carbon\Carbon::parse($dateValue)->format('M d, Y')
-                                : 'N/A';
+            @if($visits->count())
+                <div class="overflow-x-auto">
+                    <table class="w-full border-collapse">
+                        <thead class="bg-slate-50">
+                            <tr>
+                                <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Visit #</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Client</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Caregiver</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Date</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Status</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Care Log</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($visits as $visit)
+                                <tr class="border-t border-slate-200">
+                                    <td class="px-6 py-4 text-sm text-slate-700">#{{ $visit->id }}</td>
+                                    <td class="px-6 py-4 text-sm text-slate-700">{{ $visit->client->name ?? 'N/A' }}</td>
+                                    <td class="px-6 py-4 text-sm text-slate-700">{{ $visit->caregiver->name ?? 'Unassigned' }}</td>
+                                    <td class="px-6 py-4 text-sm text-slate-700">
+                                        {{ $visit->scheduled_at ? \Carbon\Carbon::parse($visit->scheduled_at)->format('M d, Y') : 'N/A' }}
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-slate-700">
+                                        @php
+                                            $status = $visit->status ?? 'scheduled';
+                                            $statusLabel = ucwords(str_replace('_', ' ', $status));
+                                        @endphp
 
-                            $formattedTime = $visit->visit_time
-                                ? \Carbon\Carbon::parse($visit->visit_time)->format('h:i A')
-                                : 'N/A';
-
-                            $facilityName = 'No Facility';
-
-                            if (isset($visit->facility) && $visit->facility) {
-                                $facilityName = $visit->facility->name;
-                            } elseif (isset($visit->client) && isset($visit->client->facility) && $visit->client->facility) {
-                                $facilityName = $visit->client->facility->name;
-                            }
-                        @endphp
-
-                        <tr class="border-t align-top">
-                            <td class="px-6 py-4">{{ $formattedDate }}</td>
-                            <td class="px-6 py-4">{{ $formattedTime }}</td>
-                            <td class="px-6 py-4">{{ $facilityName }}</td>
-                            <td class="px-6 py-4">{{ $visit->client->name ?? 'No Client' }}</td>
-                            <td class="px-6 py-4">{{ $visit->caregiver->name ?? 'No Caregiver' }}</td>
-                            <td class="px-6 py-4">{{ $visit->activity ?? 'N/A' }}</td>
-
-                            <td class="px-6 py-4">
-                                @if($status === 'completed')
-                                    <span class="px-3 py-1 rounded-full text-sm bg-green-100 text-green-700">Completed</span>
-                                @elseif($status === 'missed')
-                                    <span class="px-3 py-1 rounded-full text-sm bg-red-100 text-red-700">Missed</span>
-                                @elseif($status === 'in_progress')
-                                    <span class="px-3 py-1 rounded-full text-sm bg-yellow-100 text-yellow-700">In Progress</span>
-                                @else
-                                    <span class="px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-700">Scheduled</span>
-                                @endif
-                            </td>
-
-                            <td class="px-6 py-4">
-                                <div class="flex flex-col gap-2">
-                                    <a href="{{ route('care-logs.index') }}"
-                                       class="inline-block text-center bg-indigo-600 text-white text-sm px-3 py-2 rounded-lg hover:bg-indigo-700">
-                                        Care Log
-                                    </a>
-
-                                    <a href="{{ route('visits.index') }}"
-                                       class="inline-block text-center bg-slate-600 text-white text-sm px-3 py-2 rounded-lg hover:bg-slate-700">
-                                        Visit Details
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="8" class="px-6 py-8 text-center text-slate-500">
-                                No visits found.
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
+                                        @if($status === 'completed')
+                                            <span class="inline-flex rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+                                                {{ $statusLabel }}
+                                            </span>
+                                        @elseif($status === 'in_progress')
+                                            <span class="inline-flex rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
+                                                {{ $statusLabel }}
+                                            </span>
+                                        @elseif($status === 'missed')
+                                            <span class="inline-flex rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">
+                                                {{ $statusLabel }}
+                                            </span>
+                                        @else
+                                            <span class="inline-flex rounded-full bg-yellow-100 px-3 py-1 text-xs font-semibold text-yellow-700">
+                                                {{ $statusLabel }}
+                                            </span>
+                                        @endif
+                                    </td>
+                                    <td class="px-6 py-4 text-sm">
+                                        @if($visit->careLog)
+                                            <a href="{{ route('provider.notes.show', $visit->id) }}"
+                                               class="inline-flex items-center rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-700">
+                                                Open Care Log
+                                            </a>
+                                        @else
+                                            <span class="text-slate-400 text-xs font-medium">No care log yet</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <div class="p-6 text-slate-600">
+                    No visits found.
+                </div>
+            @endif
         </div>
-
     </div>
 </div>
-
 @endsection

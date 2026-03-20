@@ -6,10 +6,21 @@ use Illuminate\Database\Eloquent\Model;
 
 class ProviderNote extends Model
 {
-
     protected $fillable = [
-        'client_id',
-        'note'
+        'visit_id',
+        'provider_id',
+        'note',
+        'status',
     ];
 
+    public function visit()
+    {
+        return $this->belongsTo(Visit::class);
+    }
+
+    public function provider()
+    {
+        return $this->belongsTo(User::class, 'provider_id');
+    }
 }
+

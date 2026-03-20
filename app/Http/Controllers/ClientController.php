@@ -7,11 +7,20 @@ use Illuminate\Http\Request;
 
 class ClientController extends Controller
 {
-    public function index() {
-        $clients = Client::all();
-        return view('clients.index', compact('clients'));
+public function index()
+{
+    $facilityId = session('facility_id');
+
+    $query = \App\Models\Client::query();
+
+    if ($facilityId) {
+        $query->where('facility_id', $facilityId);
     }
 
+    $clients = $query->latest()->get();
+
+    return view('clients.index', compact('clients'));
+}
     public function create() {
         return view('clients.create');
     }

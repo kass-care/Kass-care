@@ -1,83 +1,108 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="min-h-screen pb-20 font-sans bg-slate-50">
-    <div class="container mx-auto px-6 pt-10">
-        <div class="mb-10 text-center">
-            <h1 class="text-4xl font-black text-slate-900 tracking-tighter italic">
-                Schedule <span class="text-indigo-600">Visit</span>
-            </h1>
-            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-[0.3em] mt-2">
-                Create a new care record
-            </p>
+<div style="max-width: 900px; margin: 40px auto; padding: 0 20px;">
+    <h1 style="font-size: 42px; font-weight: 800; color: #111827; margin-bottom: 24px;">
+        Create Visit
+    </h1>
+
+    @if ($errors->any())
+        <div style="background: #fee2e2; color: #991b1b; padding: 16px; border-radius: 12px; margin-bottom: 20px;">
+            <strong>Please fix these errors:</strong>
+            <ul style="margin-top: 10px; padding-left: 20px;">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    <form method="POST" action="{{ route('visits.store') }}"
+          style="background: #ffffff; border-radius: 18px; padding: 32px; box-shadow: 0 10px 25px rgba(0,0,0,0.08);">
+        @csrf
+
+        <div style="margin-bottom: 22px;">
+            <label style="display:block; font-size:16px; font-weight:600; margin-bottom:10px;">
+                Client
+            </label>
+            <select name="client_id" required
+                    style="width:100%; padding:16px; font-size:18px; border:1px solid #d1d5db; border-radius:12px; background:#fff;">
+                <option value="">Select client</option>
+                @foreach($clients as $client)
+                    <option value="{{ $client->id }}" {{ old('client_id') == $client->id ? 'selected' : '' }}>
+                        {{ $client->name }}
+                    </option>
+                @endforeach
+            </select>
         </div>
 
-        <div class="max-w-2xl mx-auto bg-white p-10 rounded-[3rem] shadow-xl border border-slate-100">
-            <form method="POST" action="{{ route('visits.store') }}">
-                @csrf
-
-                <div class="space-y-6">
-                    <div>
-                        <label for="client_id" class="block text-[10px] font-black uppercase text-slate-400 mb-2 tracking-widest pl-2">
-                            Client
-                        </label>
-                        <select
-                            id="client_id"
-                            name="client_id"
-                            class="w-full p-5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-indigo-600"
-                            required
-                        >
-                            <option value="">Select Client</option>
-                            @foreach($clients as $client)
-                                <option value="{{ $client->id }}">
-                                    {{ $client->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div>
-                        <label for="visit_date" class="block text-[10px] font-black uppercase text-slate-400 mb-2 tracking-widest pl-2">
-                            Visit Date & Time
-                        </label>
-                        <input
-                            id="visit_date"
-                            type="datetime-local"
-                            name="visit_date"
-                            value="{{ request('date') ? request('date') . 'T09:00' : '' }}"
-                            class="w-full p-5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-indigo-600"
-                            required
-                          <div class="mb-4">
-                          <label class="block text-sm font-medium text-gray-700 mb-1">
-                          Visit Time
-                           </label>
-
-                          <input 
-                          type="time" 
-                          name="visit_time"
-                           class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-</div>
-                        >
-                    </div>
-
-                    <div class="pt-4 flex flex-col space-y-3">
-                        <button
-                            type="submit"
-                            class="w-full bg-indigo-600 text-white font-black py-5 rounded-2xl hover:bg-indigo-700 transition"
-                        >
-                            Save Visit
-                        </button>
-
-                        <a
-                            href="{{ route('calendar') }}"
-                            class="w-full text-center text-slate-500 font-bold py-2 hover:text-slate-700"
-                        >
-                            Cancel
-                        </a>
-                    </div>
-                </div>
-            </form>
+        <div style="margin-bottom: 22px;">
+            <label style="display:block; font-size:16px; font-weight:600; margin-bottom:10px;">
+                Caregiver
+            </label>
+            <select name="caregiver_id" required
+                    style="width:100%; padding:16px; font-size:18px; border:1px solid #d1d5db; border-radius:12px; background:#fff;">
+                <option value="">Select caregiver</option>
+                @foreach($caregivers as $caregiver)
+                    <option value="{{ $caregiver->id }}" {{ old('caregiver_id') == $caregiver->id ? 'selected' : '' }}>
+                        {{ $caregiver->name }}
+                    </option>
+                @endforeach
+            </select>
         </div>
-    </div>
+
+        <div style="margin-bottom: 22px;">
+            <label style="display:block; font-size:16px; font-weight:600; margin-bottom:10px;">
+                Activity
+            </label>
+            <input
+                type="text"
+                name="activity"
+                value="{{ old('activity') }}"
+                placeholder="Enter visit activity"
+                required
+                style="width:100%; padding:16px; font-size:18px; border:1px solid #d1d5db; border-radius:12px; box-sizing:border-box;"
+            >
+        </div>
+
+        <div style="margin-bottom: 22px;">
+            <label style="display:block; font-size:16px; font-weight:600; margin-bottom:10px;">
+                Visit Date
+            </label>
+            <input
+                type="datetime-local"
+                name="visit_date"
+                value="{{ old('visit_date') }}"
+                required
+                style="width:100%; padding:16px; font-size:18px; border:1px solid #d1d5db; border-radius:12px; box-sizing:border-box;"
+            >
+        </div>
+
+        <div style="margin-bottom: 30px;">
+            <label style="display:block; font-size:16px; font-weight:600; margin-bottom:10px;">
+                Status
+            </label>
+            <select name="status" required
+                    style="width:100%; padding:16px; font-size:18px; border:1px solid #d1d5db; border-radius:12px; background:#fff;">
+                <option value="pending" {{ old('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                <option value="in_progress" {{ old('status') == 'in_progress' ? 'selected' : '' }}>In Progress</option>
+                <option value="completed" {{ old('status') == 'completed' ? 'selected' : '' }}>Completed</option>
+                <option value="missed" {{ old('status') == 'missed' ? 'selected' : '' }}>Missed</option>
+            </select>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:16px;">
+            <button
+                type="submit"
+                style="background:#2563eb; color:#fff; border:none; border-radius:12px; padding:14px 28px; font-size:18px; font-weight:700; cursor:pointer;">
+                Save Visit
+            </button>
+
+            <a href="{{ route('caregiver.dashboard') }}"
+               style="color:#374151; font-size:18px; font-weight:600; text-decoration:none;">
+                Cancel
+            </a>
+        </div>
+    </form>
 </div>
 @endsection
