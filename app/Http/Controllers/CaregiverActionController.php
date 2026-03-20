@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Visit;
+use App\Models\Caregiver;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -12,11 +13,15 @@ class CaregiverActionController extends Controller
     {
         $user = auth()->user();
 
-        abort_if(!$user || !$user->facility_id, 403, 'No facility assigned.');
+        abort_if(!$user, 403, 'Unauthorized.');
+
+        $caregiver = Caregiver::where('user_id', $user->id)->first();
+
+        abort_if(!$caregiver, 403, 'No caregiver profile linked to this account.');
 
         $visit = Visit::with(['client', 'caregiver'])->findOrFail($id);
 
-        abort_if($visit->facility_id != $user->facility_id, 403, 'Unauthorized facility access.');
+        abort_if((int) $visit->caregiver_id !== (int) $caregiver->id, 403, 'Unauthorized caregiver access.');
 
         return $visit;
     }
