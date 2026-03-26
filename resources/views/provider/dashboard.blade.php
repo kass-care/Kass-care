@@ -1,28 +1,84 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="max-w-6xl mx-auto px-6">
-    <div class="bg-white shadow rounded-xl p-8">
-        <h1 class="text-3xl font-bold text-gray-900 mb-2">Provider Dashboard</h1>
-        <p class="text-gray-600 mb-8">
-            Welcome to the provider workspace.
-        </p>
+<div class="min-h-screen bg-gray-100 py-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="bg-blue-50 border border-blue-100 rounded-xl p-6">
-                <h2 class="text-lg font-semibold text-blue-800 mb-2">Clinical Notes</h2>
-                <p class="text-sm text-gray-600">Review and manage provider notes.</p>
+        <div class="mb-8 flex items-center justify-between">
+            <div>
+                <h1 class="text-4xl font-extrabold text-gray-900">Provider Dashboard</h1>
+                <p class="mt-2 text-gray-600">
+                    Review scheduled visits, caregiver documentation, vitals, provider notes, and pharmacy orders.
+                </p>
             </div>
 
-            <div class="bg-purple-50 border border-purple-100 rounded-xl p-6">
-                <h2 class="text-lg font-semibold text-purple-800 mb-2">Schedule</h2>
-                <p class="text-sm text-gray-600">Access visits and calendar workflow.</p>
+            <a href="{{ route('billing.index') }}"
+               class="inline-flex items-center rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white shadow hover:bg-indigo-700 transition">
+                Billing
+            </a>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 mb-8">
+            <h2 class="text-2xl font-bold text-gray-900">Welcome to your clinical workspace</h2>
+            <p class="mt-2 text-gray-600">
+                Manage your schedule, provider notes, compliance, care logs, and pharmacy workflows from one place.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+            <!-- Schedule -->
+            <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+                <h3 class="text-2xl font-bold text-gray-900 mb-3">Schedule</h3>
+                <p class="text-gray-600 mb-6">
+                    Manage provider appointments and visit planning.
+                </p>
+
+                <a href="{{ route('provider.calendar') }}"
+                   class="inline-flex items-center rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white shadow hover:bg-indigo-700 transition">
+                    Open Schedule
+                </a>
             </div>
 
-            <div class="bg-rose-50 border border-rose-100 rounded-xl p-6">
-                <h2 class="text-lg font-semibold text-rose-800 mb-2">Compliance</h2>
-                <p class="text-sm text-gray-600">Track documentation and compliance tasks.</p>
+            <!-- Provider Notes -->
+            <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+                <h3 class="text-2xl font-bold text-gray-900 mb-3">Provider Notes</h3>
+                <p class="text-gray-600 mb-6">
+                    Review and manage provider clinical notes linked to visits.
+                </p>
+
+                <a href="{{ route('provider.notes.index') }}"
+                   class="inline-flex items-center rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white shadow hover:bg-indigo-700 transition">
+                    Open Notes
+                </a>
             </div>
+
+            <!-- Compliance -->
+            <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+                <h3 class="text-2xl font-bold text-gray-900 mb-3">Compliance</h3>
+                <p class="text-gray-600 mb-6">
+                    Track documentation gaps and compliance risks.
+                </p>
+
+                <a href="{{ route('provider.compliance') }}"
+                   class="inline-flex items-center rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white shadow hover:bg-indigo-700 transition">
+                    View Compliance
+                </a>
+            </div>
+
+            <!-- Pharmacy Orders -->
+            <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+                <h3 class="text-2xl font-bold text-gray-900 mb-3">Pharmacy Orders</h3>
+                <p class="text-gray-600 mb-6">
+                    Create, review, email, fax, and download prescription orders.
+                </p>
+
+                <a href="{{ route('provider.pharmacy.index') }}"
+                   class="inline-flex items-center rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white shadow hover:bg-indigo-700 transition">
+                    Open Pharmacy
+                </a>
+            </div>
+
         </div>
     </div>
 </div>

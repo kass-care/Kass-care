@@ -49,7 +49,7 @@ class CalendarController extends Controller
                 $color = '#16a34a';
             } elseif ($visit->status === 'missed') {
                 $color = '#dc2626';
-            } elseif ($visit->status === 'assigned') {
+            } elseif (in_array($visit->status, ['assigned', 'scheduled', 'pending', 'in_progress'])) {
                 $color = '#7c3aed';
             }
 
@@ -118,7 +118,7 @@ class CalendarController extends Controller
 
         $visit->check_in_time = now();
         $visit->visit_started = true;
-        $visit->status = 'assigned';
+        $visit->status = 'in_progress';
         $visit->check_in_latitude = $request->latitude;
         $visit->check_in_longitude = $request->longitude;
         $visit->save();

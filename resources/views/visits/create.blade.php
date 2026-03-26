@@ -26,7 +26,7 @@
                 Client
             </label>
             <select name="client_id" required
-                    style="width:100%; padding:16px; font-size:18px; border:1px solid #d1d5db; border-radius:12px; background:#fff;">
+                    style="width:100%; padding:16px; font-size:18px; border:1px solid #d1d5db; border-radius:12px; background:#fff; box-sizing:border-box;">
                 <option value="">Select client</option>
                 @foreach($clients as $client)
                     <option value="{{ $client->id }}" {{ old('client_id') == $client->id ? 'selected' : '' }}>
@@ -41,7 +41,7 @@
                 Caregiver
             </label>
             <select name="caregiver_id" required
-                    style="width:100%; padding:16px; font-size:18px; border:1px solid #d1d5db; border-radius:12px; background:#fff;">
+                    style="width:100%; padding:16px; font-size:18px; border:1px solid #d1d5db; border-radius:12px; background:#fff; box-sizing:border-box;">
                 <option value="">Select caregiver</option>
                 @foreach($caregivers as $caregiver)
                     <option value="{{ $caregiver->id }}" {{ old('caregiver_id') == $caregiver->id ? 'selected' : '' }}>
@@ -70,7 +70,7 @@
                 Visit Date
             </label>
             <input
-                type="datetime-local"
+                type="date"
                 name="visit_date"
                 value="{{ old('visit_date') }}"
                 required
@@ -83,8 +83,9 @@
                 Status
             </label>
             <select name="status" required
-                    style="width:100%; padding:16px; font-size:18px; border:1px solid #d1d5db; border-radius:12px; background:#fff;">
+                    style="width:100%; padding:16px; font-size:18px; border:1px solid #d1d5db; border-radius:12px; background:#fff; box-sizing:border-box;">
                 <option value="pending" {{ old('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                <option value="scheduled" {{ old('status') == 'scheduled' ? 'selected' : '' }}>Scheduled</option>
                 <option value="in_progress" {{ old('status') == 'in_progress' ? 'selected' : '' }}>In Progress</option>
                 <option value="completed" {{ old('status') == 'completed' ? 'selected' : '' }}>Completed</option>
                 <option value="missed" {{ old('status') == 'missed' ? 'selected' : '' }}>Missed</option>
@@ -98,7 +99,7 @@
                 Save Visit
             </button>
 
-            <a href="{{ route('caregiver.dashboard') }}"
+            <a href="{{ route('visits.index') }}"
                style="color:#374151; font-size:18px; font-weight:600; text-decoration:none;">
                 Cancel
             </a>

@@ -1,307 +1,257 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="max-w-7xl mx-auto px-6 py-10">
+<div class="min-h-screen bg-gray-100 py-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-    <div class="mb-8">
-        <div class="bg-gradient-to-r from-indigo-700 via-indigo-600 to-indigo-500 rounded-2xl shadow-lg p-8 text-white">
+        @if(session('success'))
+            <div class="mb-6 rounded-xl border border-green-300 bg-green-100 px-4 py-3 text-green-900 font-medium shadow-sm">
+                {{ session('success') }}
+            </div>
+        @endif
+
+        <!-- HERO -->
+        <div class="bg-indigo-800 rounded-3xl shadow-2xl p-8 mb-8 border border-indigo-900">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
                 <div>
-                    <h1 class="text-3xl md:text-4xl font-bold mb-2">Caregiver Dashboard</h1>
-                    <p class="text-indigo-100 text-sm md:text-base">
-                        Welcome back, {{ Auth::user()->name ?? 'Caregiver' }}. Manage your visits, check-ins, care logs, and vitals from one place.
+                    <p class="text-xs uppercase tracking-widest text-indigo-200 font-bold mb-2">
+                        KASS CARE
+                    </p>
+
+                    <h1 class="text-4xl font-extrabold text-white">
+                        Caregiver Dashboard
+                    </h1>
+
+                    <p class="text-indigo-100 mt-2 text-base">
+                        Welcome back, {{ auth()->user()->name ?? 'Caregiver User' }}
+                    </p>
+
+                    <p class="text-indigo-200 mt-1 text-sm">
+                        {{ now()->format('l, F j, Y') }}
                     </p>
                 </div>
 
-                <div class="grid grid-cols-2 gap-3 w-full md:w-auto">
-                    <div class="bg-white/10 rounded-xl px-4 py-3 backdrop-blur-sm border border-white/10">
-                        <p class="text-xs uppercase tracking-wide text-indigo-100">Role</p>
-                        <p class="text-lg font-semibold">Caregiver</p>
-                    </div>
-                    <div class="bg-white/10 rounded-xl px-4 py-3 backdrop-blur-sm border border-white/10">
-                        <p class="text-xs uppercase tracking-wide text-indigo-100">Visits Today</p>
-                        <p class="text-lg font-semibold">{{ $todayVisits->count() }}</p>
-                    </div>
+                <div class="flex flex-wrap gap-3">
+                    <a href="{{ route('dashboard') }}"
+                       class="inline-flex items-center rounded-xl bg-white px-5 py-3 text-sm font-bold text-indigo-800 shadow hover:bg-gray-100">
+                        ← Back
+                    </a>
+
+                    <a href="{{ route('caregiver.care-logs.index') }}"
+                       class="inline-flex items-center rounded-xl bg-yellow-400 px-5 py-3 text-sm font-bold text-slate-900 shadow hover:bg-yellow-300">
+                        Open Care Logs
+                    </a>
                 </div>
             </div>
         </div>
-    </div>
 
-    @if($activeVisit)
-        <div class="mb-8">
-            <div class="bg-white rounded-2xl shadow-sm border border-indigo-100 p-6">
-                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-                    <div>
-                        <p class="text-xs uppercase tracking-wide text-indigo-600 font-semibold mb-2">Current Visit</p>
-                        <h2 class="text-2xl font-bold text-gray-900">
-                            {{ $activeVisit->client->name ?? 'Client' }}
-                        </h2>
-                        <p class="text-gray-600 mt-2">
-                            Activity: {{ $activeVisit->activity ?? 'No activity set' }}
-                        </p>
-                        <p class="text-gray-500 text-sm mt-1">
-                            Status: {{ $activeVisit->status ?? 'Pending' }}
-                        </p>
-                    </div>
+        <!-- STATS -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white border-2 border-indigo-200 rounded-2xl shadow p-6">
+                <p class="text-xs uppercase tracking-wide text-gray-500 font-bold">Today's Visits</p>
+                <h2 class="text-4xl font-extrabold text-indigo-800 mt-3">
+                    {{ $todayVisitsCount ?? 0 }}
+                </h2>
+                <p class="text-sm text-gray-600 mt-2">Visits scheduled for today</p>
+            </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <a href="{{ route('caregiver.checkin', $activeVisit->id) }}"
-                           class="inline-flex items-center justify-center rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 font-semibold transition">
-                            Check In
-                        </a>
+            <div class="bg-white border-2 border-indigo-200 rounded-2xl shadow p-6">
+                <p class="text-xs uppercase tracking-wide text-gray-500 font-bold">Assigned Clients</p>
+                <h2 class="text-4xl font-extrabold text-indigo-800 mt-3">
+                    {{ $assignedClients->count() ?? 0 }}
+                </h2>
+                <p class="text-sm text-gray-600 mt-2">Clients linked to your visits</p>
+            </div>
 
-                        <a href="{{ route('caregiver.checkout', $activeVisit->id) }}"
-                           class="inline-flex items-center justify-center rounded-xl bg-indigo-100 hover:bg-indigo-200 text-indigo-800 px-5 py-3 font-semibold transition">
-                            Check Out
-                        </a>
-
-                        <a href="{{ route('caregiver.carelog', $activeVisit->id) }}"
-                           class="inline-flex items-center justify-center rounded-xl border border-indigo-200 hover:bg-indigo-50 text-indigo-700 px-5 py-3 font-semibold transition">
-                            Care Log
-                        </a>
-                    </div>
-                </div>
+            <div class="bg-white border-2 border-indigo-200 rounded-2xl shadow p-6">
+                <p class="text-xs uppercase tracking-wide text-gray-500 font-bold">Completed Visits</p>
+                <h2 class="text-4xl font-extrabold text-indigo-800 mt-3">
+                    {{ $completedVisitsCount ?? 0 }}
+                </h2>
+                <p class="text-sm text-gray-600 mt-2">Successfully completed visit records</p>
             </div>
         </div>
-    @endif
 
-    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
-
-        <a href="#assigned-visits"
-           class="group bg-white rounded-2xl shadow-sm hover:shadow-xl border border-indigo-100 transition duration-300 overflow-hidden">
-            <div class="h-2 bg-indigo-600"></div>
-            <div class="p-6">
-                <div class="w-14 h-14 rounded-2xl bg-indigo-100 flex items-center justify-center mb-5 group-hover:scale-110 transition">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-indigo-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10m-12 9h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                </div>
-
-                <h2 class="text-xl font-bold text-gray-900 mb-2">Assigned Visits</h2>
-                <p class="text-gray-600 text-sm leading-6 mb-4">
-                    View your daily assignments and stay on top of scheduled client visits.
+        <!-- ACTIVE VISIT -->
+        @if($activeVisit)
+            <div class="bg-green-700 rounded-2xl shadow-xl p-6 mb-8 text-white border border-green-800">
+                <p class="text-xs uppercase tracking-widest text-green-200 font-bold mb-2">
+                    Active Visit
                 </p>
 
-                <div class="inline-flex items-center text-indigo-700 font-semibold text-sm">
-                    View visits
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-2 group-hover:translate-x-1 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                    </svg>
-                </div>
-            </div>
-        </a>
+                <h2 class="text-2xl font-extrabold">
+                    {{ $activeVisit->client->name ?? 'N/A' }}
+                </h2>
 
-        <a href="{{ $activeVisit ? route('caregiver.checkin', $activeVisit->id) : route('calendar') }}"
-           class="group bg-white rounded-2xl shadow-sm hover:shadow-xl border border-indigo-100 transition duration-300 overflow-hidden">
-            <div class="h-2 bg-indigo-500"></div>
-            <div class="p-6">
-                <div class="w-14 h-14 rounded-2xl bg-indigo-100 flex items-center justify-center mb-5 group-hover:scale-110 transition">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-indigo-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                </div>
-
-                <h2 class="text-xl font-bold text-gray-900 mb-2">Check-In / Out</h2>
-                <p class="text-gray-600 text-sm leading-6 mb-4">
-                    Record arrival and departure times for visits and keep attendance accurate.
+                <p class="mt-2 text-green-100">
+                    Status: {{ ucfirst(str_replace('_', ' ', $activeVisit->status ?? 'in progress')) }}
                 </p>
 
-                <div class="inline-flex items-center text-indigo-700 font-semibold text-sm">
-                    {{ $activeVisit ? 'Open visit actions' : 'Open calendar' }}
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-2 group-hover:translate-x-1 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                    </svg>
-                </div>
-            </div>
-        </a>
-
-        <a href="{{ $activeVisit ? route('caregiver.carelog', $activeVisit->id) : route('calendar') }}"
-           class="group bg-white rounded-2xl shadow-sm hover:shadow-xl border border-indigo-100 transition duration-300 overflow-hidden">
-            <div class="h-2 bg-indigo-400"></div>
-            <div class="p-6">
-                <div class="w-14 h-14 rounded-2xl bg-indigo-100 flex items-center justify-center mb-5 group-hover:scale-110 transition">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-indigo-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6M8 4h8a2 2 0 012 2v12a2 2 0 01-2 2H8a2 2 0 01-2-2V6a2 2 0 012-2z" />
-                    </svg>
-                </div>
-
-                <h2 class="text-xl font-bold text-gray-900 mb-2">Care Logs</h2>
-                <p class="text-gray-600 text-sm leading-6 mb-4">
-                    Document ADLs, care activities, notes, and observations for every visit.
+                <p class="text-sm text-green-200 mt-1">
+                    Checked in: {{ $activeVisit->check_in_time ?? 'N/A' }}
                 </p>
 
-                <div class="inline-flex items-center text-indigo-700 font-semibold text-sm">
-                    {{ $activeVisit ? 'Open care log' : 'Open calendar' }}
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-2 group-hover:translate-x-1 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                    </svg>
+                <div class="flex flex-wrap gap-3 mt-5">
+                    <a href="{{ route('caregiver.care-logs.create', ['visit_id' => $activeVisit->id]) }}"
+                       class="rounded-xl bg-white px-5 py-3 text-sm font-bold text-green-800 shadow hover:bg-green-50">
+                        Open Care Log
+                    </a>
+
+                    <a href="{{ route('caregiver.checkout', $activeVisit->id) }}"
+                       class="rounded-xl bg-red-600 px-5 py-3 text-sm font-bold text-white shadow hover:bg-red-700">
+                        Check Out
+                    </a>
                 </div>
             </div>
-        </a>
+        @endif
 
-        <a href="{{ $activeVisit ? route('caregiver.carelog', $activeVisit->id) : route('calendar') }}"
-           class="group bg-white rounded-2xl shadow-sm hover:shadow-xl border border-indigo-100 transition duration-300 overflow-hidden">
-            <div class="h-2 bg-indigo-300"></div>
-            <div class="p-6">
-                <div class="w-14 h-14 rounded-2xl bg-indigo-100 flex items-center justify-center mb-5 group-hover:scale-110 transition">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-indigo-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 13h4l2 5 4-10 2 5h4" />
-                    </svg>
+        <!-- TODAY'S SCHEDULE -->
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-200 mb-8 overflow-hidden">
+            <div class="bg-gray-50 border-b border-gray-200 px-6 py-5 flex items-center justify-between">
+                <div>
+                    <h3 class="text-xl font-bold text-gray-900">Today's Schedule</h3>
+                    <p class="text-sm text-gray-600">Your visits for today</p>
                 </div>
 
-                <h2 class="text-xl font-bold text-gray-900 mb-2">Vitals</h2>
-                <p class="text-gray-600 text-sm leading-6 mb-4">
-                    Record vitals and health observations as part of your visit documentation.
-                </p>
-
-                <div class="inline-flex items-center text-indigo-700 font-semibold text-sm">
-                    {{ $activeVisit ? 'Open vitals form' : 'Open calendar' }}
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-2 group-hover:translate-x-1 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                    </svg>
-                </div>
-            </div>
-        </a>
-
-    </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
-
-        <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-indigo-100 p-6">
-            <div class="flex items-center justify-between mb-5">
-                <h3 class="text-xl font-bold text-gray-900">Quick Actions</h3>
-                <span class="text-xs font-semibold text-indigo-700 bg-indigo-100 px-3 py-1 rounded-full">
-                    Caregiver Tools
+                <span class="text-sm font-bold text-indigo-700">
+                    {{ $todayVisits->count() }} visit(s)
                 </span>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <a href="{{ $activeVisit ? route('caregiver.checkin', $activeVisit->id) : route('calendar') }}"
-                   class="rounded-xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 transition p-5">
-                    <h4 class="font-bold text-indigo-900 mb-1">Start Visit Check-In</h4>
-                    <p class="text-sm text-indigo-800">
-                        {{ $activeVisit ? 'Open the current visit check-in page.' : 'No active visit found. Open calendar instead.' }}
-                    </p>
-                </a>
+            <div class="p-6 space-y-4">
+                @forelse($todayVisits as $visit)
+                    <div class="rounded-2xl border-2 border-gray-200 p-5 bg-white shadow-sm">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                            <div>
+                                <h4 class="text-lg font-bold text-gray-900">
+                                    {{ $visit->client->name ?? 'N/A' }}
+                                </h4>
 
-                <a href="{{ $activeVisit ? route('caregiver.checkout', $activeVisit->id) : route('calendar') }}"
-                   class="rounded-xl border border-indigo-200 bg-white hover:bg-indigo-50 transition p-5">
-                    <h4 class="font-bold text-indigo-900 mb-1">Complete Check-Out</h4>
-                    <p class="text-sm text-gray-700">
-                        {{ $activeVisit ? 'Finish the visit and record departure time.' : 'No active visit found. Open calendar instead.' }}
-                    </p>
-                </a>
+                                <p class="text-sm text-gray-600 mt-1">
+                                    Status: {{ ucfirst(str_replace('_', ' ', $visit->status ?? 'N/A')) }}
+                                </p>
+                            </div>
 
-                <a href="{{ $activeVisit ? route('caregiver.carelog', $activeVisit->id) : route('calendar') }}"
-                   class="rounded-xl border border-indigo-200 bg-white hover:bg-indigo-50 transition p-5">
-                    <h4 class="font-bold text-indigo-900 mb-1">Write Care Log</h4>
-                    <p class="text-sm text-gray-700">
-                        {{ $activeVisit ? 'Document care delivered during the visit.' : 'No active visit found. Open calendar instead.' }}
-                    </p>
-                </a>
+                            <div class="flex flex-wrap gap-2">
+                                @if(($visit->status ?? '') === 'scheduled')
+                                    <a href="{{ route('caregiver.checkin', $visit->id) }}"
+                                       class="rounded-lg bg-green-600 text-white px-4 py-2 text-sm font-bold hover:bg-green-700">
+                                        Check In
+                                    </a>
+                                @elseif(($visit->status ?? '') === 'in_progress')
+                                    <a href="{{ route('caregiver.care-logs.create', ['visit_id' => $visit->id]) }}"
+                                       class="rounded-lg bg-indigo-600 text-white px-4 py-2 text-sm font-bold hover:bg-indigo-700">
+                                        Care Log
+                                    </a>
 
-                <a href="{{ route('calendar') }}"
-                   class="rounded-xl border border-indigo-200 bg-white hover:bg-indigo-50 transition p-5">
-                    <h4 class="font-bold text-indigo-900 mb-1">Open Calendar</h4>
-                    <p class="text-sm text-gray-700">View all scheduled items on the main calendar.</p>
-                </a>
-            </div>
-        </div>
-
-        <div class="bg-white rounded-2xl shadow-sm border border-indigo-100 p-6">
-            <h3 class="text-xl font-bold text-gray-900 mb-5">Today Overview</h3>
-
-            <div class="space-y-4">
-                <div class="rounded-xl bg-indigo-50 border border-indigo-100 p-4">
-                    <p class="text-xs uppercase tracking-wide text-indigo-700 font-semibold mb-1">Visits</p>
-                    <p class="text-2xl font-bold text-indigo-900">{{ $todayVisits->count() }}</p>
-                    <p class="text-sm text-gray-600 mt-1">Assigned visits scheduled for today.</p>
-                </div>
-
-                <div class="rounded-xl bg-white border border-gray-200 p-4">
-                    <p class="text-xs uppercase tracking-wide text-gray-500 font-semibold mb-1">Documentation</p>
-                    <p class="text-lg font-bold text-gray-900">Care Logs + Vitals</p>
-                    <p class="text-sm text-gray-600 mt-1">Keep every visit fully documented.</p>
-                </div>
-
-                <div class="rounded-xl bg-white border border-gray-200 p-4">
-                    <p class="text-xs uppercase tracking-wide text-gray-500 font-semibold mb-1">Workflow</p>
-                    <p class="text-lg font-bold text-gray-900">Check-In to Check-Out</p>
-                    <p class="text-sm text-gray-600 mt-1">Simple flow for daily caregiving activities.</p>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-    <div id="assigned-visits" class="bg-white rounded-2xl shadow-sm border border-indigo-100 p-6">
-        <div class="flex items-center justify-between mb-6">
-            <div>
-                <h3 class="text-2xl font-bold text-gray-900">Assigned Visits</h3>
-                <p class="text-gray-600 text-sm mt-1">Real visit records connected to this caregiver dashboard.</p>
-            </div>
-            <span class="text-xs font-semibold text-indigo-700 bg-indigo-100 px-3 py-1 rounded-full">
-                {{ $visits->count() }} Total
-            </span>
-        </div>
-
-        @if($visits->count())
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="border-b border-indigo-100">
-                            <th class="py-3 px-4 text-sm font-semibold text-gray-700">Client</th>
-                            <th class="py-3 px-4 text-sm font-semibold text-gray-700">Activity</th>
-                            <th class="py-3 px-4 text-sm font-semibold text-gray-700">Status</th>
-                            <th class="py-3 px-4 text-sm font-semibold text-gray-700">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($visits as $visit)
-                            <tr class="border-b border-gray-100 hover:bg-indigo-50 transition">
-                                <td class="py-4 px-4 font-medium text-gray-900">
-                                    {{ $visit->client->name ?? 'Client' }}
-                                </td>
-                                <td class="py-4 px-4 text-gray-700">
-                                    {{ $visit->activity ?? 'No activity set' }}
-                                </td>
-                                <td class="py-4 px-4">
-                                    <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800">
-                                        {{ $visit->status ?? 'Pending' }}
+                                    <a href="{{ route('caregiver.checkout', $visit->id) }}"
+                                       class="rounded-lg bg-red-600 text-white px-4 py-2 text-sm font-bold hover:bg-red-700">
+                                        Check Out
+                                    </a>
+                                @elseif(($visit->status ?? '') === 'completed')
+                                    <span class="rounded-lg bg-green-100 text-green-800 px-4 py-2 text-sm font-bold border border-green-200">
+                                        Done
                                     </span>
-                                </td>
-                                <td class="py-4 px-4">
-                                    <div class="flex flex-wrap gap-2">
-                                        <a href="{{ route('caregiver.checkin', $visit->id) }}"
-                                           class="px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition">
-                                            Check In
-                                        </a>
-
-                                        <a href="{{ route('caregiver.checkout', $visit->id) }}"
-                                           class="px-3 py-2 rounded-lg bg-indigo-100 text-indigo-800 text-sm font-semibold hover:bg-indigo-200 transition">
-                                            Check Out
-                                        </a>
-
-                                        <a href="{{ route('caregiver.carelog', $visit->id) }}"
-                                           class="px-3 py-2 rounded-lg border border-indigo-200 text-indigo-700 text-sm font-semibold hover:bg-indigo-50 transition">
-                                            Care Log
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+                                @else
+                                    <span class="rounded-lg bg-gray-100 text-gray-800 px-4 py-2 text-sm font-bold border border-gray-200">
+                                        {{ ucfirst(str_replace('_', ' ', $visit->status ?? 'N/A')) }}
+                                    </span>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                @empty
+                    <div class="rounded-2xl border-2 border-dashed border-gray-300 p-10 text-center text-gray-600 bg-gray-50">
+                        No visits today.
+                    </div>
+                @endforelse
             </div>
-        @else
-            <div class="rounded-xl border border-dashed border-indigo-200 bg-indigo-50 p-8 text-center">
-                <h4 class="text-lg font-bold text-indigo-900 mb-2">No visits found</h4>
-                <p class="text-sm text-indigo-700">
-                    No caregiver visits are available yet for your assigned facility.
-                </p>
+        </div>
+
+        <!-- ASSIGNED CLIENTS -->
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-200 mb-8 overflow-hidden">
+            <div class="bg-gray-50 border-b border-gray-200 px-6 py-5">
+                <h3 class="text-xl font-bold text-gray-900">Assigned Clients</h3>
+                <p class="text-sm text-gray-600">Clients connected to your visit history</p>
             </div>
-        @endif
+
+            <div class="p-6 space-y-4">
+                @forelse($assignedClients as $client)
+                    <div class="rounded-2xl border-2 border-gray-200 p-5 bg-white shadow-sm">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                            <div>
+                                <h4 class="text-lg font-bold text-gray-900">{{ $client->name }}</h4>
+
+                                <p class="text-sm text-gray-700 mt-1">
+                                    Latest status:
+                                    <span class="font-semibold">
+                                        {{ ucfirst(str_replace('_', ' ', $client->latest_status ?? 'N/A')) }}
+                                    </span>
+                                </p>
+
+                                <p class="text-xs text-gray-500 mt-1">
+                                    Last activity:
+                                    {{ !empty($client->latest_visit_date) ? \Carbon\Carbon::parse($client->latest_visit_date)->format('M d, Y h:i A') : 'N/A' }}
+                                </p>
+                            </div>
+
+                            @if(!empty($client->visit_id))
+                                <a href="{{ route('caregiver.care-logs.create', ['visit_id' => $client->visit_id]) }}"
+                                   class="rounded-lg bg-indigo-100 text-indigo-800 px-4 py-2 text-sm font-bold border border-indigo-200 hover:bg-indigo-200">
+                                    Open Visit
+                                </a>
+                            @endif
+                        </div>
+                    </div>
+                @empty
+                    <div class="rounded-2xl border-2 border-dashed border-gray-300 p-10 text-center text-gray-600 bg-gray-50">
+                        No assigned clients found yet.
+                    </div>
+                @endforelse
+            </div>
+        </div>
+
+        <!-- RECENT HISTORY -->
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+            <div class="bg-gray-50 border-b border-gray-200 px-6 py-5 flex items-center justify-between">
+                <div>
+                    <h3 class="text-xl font-bold text-gray-900">Recent Visit History</h3>
+                    <p class="text-sm text-gray-600">Latest activity from your visit records</p>
+                </div>
+
+                <a href="{{ route('caregiver.care-logs.index') }}"
+                   class="text-sm font-bold text-indigo-700 hover:text-indigo-900">
+                    View Care Logs →
+                </a>
+            </div>
+
+            <div class="p-6 space-y-4">
+                @forelse($visits->take(8) as $visit)
+                    <div class="rounded-2xl border-2 border-gray-200 p-5 bg-white shadow-sm">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                            <div>
+                                <h4 class="text-lg font-bold text-gray-900">
+                                    {{ $visit->client->name ?? 'N/A' }}
+                                </h4>
+
+                                <p class="text-sm text-gray-700 mt-1">
+                                    Status: {{ ucfirst(str_replace('_', ' ', $visit->status ?? 'N/A')) }}
+                                </p>
+                            </div>
+
+                            <div class="text-sm font-medium text-gray-500">
+                                {{ \Carbon\Carbon::parse($visit->updated_at)->diffForHumans() }}
+                            </div>
+                        </div>
+                    </div>
+                @empty
+                    <div class="rounded-2xl border-2 border-dashed border-gray-300 p-10 text-center text-gray-600 bg-gray-50">
+                        No visit history yet.
+                    </div>
+                @endforelse
+            </div>
+        </div>
+
     </div>
-
 </div>
 @endsection

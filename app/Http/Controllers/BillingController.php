@@ -3,43 +3,47 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Visit;
-use App\Models\Client;
-use App\Models\Caregiver;
+use Illuminate\Support\Facades\Auth;
 
 class BillingController extends Controller
 {
-
+    /**
+     * Show billing page
+     */
     public function index()
     {
-        $visits = Visit::with(['client','caregiver'])
-            ->where('status','completed')
-            ->get();
-
-        $invoices = [];
-
-        foreach ($visits as $visit) {
-
-            $start = strtotime($visit->start_time);
-            $end = strtotime($visit->end_time);
-
-            $hours = round(($end - $start) / 3600,2);
-
-            $rate = 25; // hourly rate
-
-            $amount = $hours * $rate;
-
-            $invoices[] = [
-                'client' => $visit->client->name ?? 'Unknown',
-                'caregiver' => $visit->caregiver->name ?? 'Unknown',
-                'date' => $visit->visit_date,
-                'hours' => $hours,
-                'rate' => $rate,
-                'amount' => $amount
-            ];
-        }
-
-        return view('billing.index', compact('invoices'));
+        return view('billing.index');
     }
 
+    /**
+     * Start subscription checkout
+     */
+    public function subscribe(Request $request)
+    {
+        $user = Auth::user();
+
+        // Make sure user has Stripe customer
+        if (!$user->stripe_id) {
+            $user->createAsStripeCustomer();
+        }
+
+        // Plan price from form
+        $priceId = $request->price_id;
+
+        return $user->newSubscription('default', $priceId)
+            ->checkout([
+                'success_url' => route('billing.success'),
+                'cancel_url'  => route('billing.index'),
+            ]);
+    }
+
+    /**
+     * After successful payment
+     */
+    public function success()
+    {
+        return redirect()
+            ->route('dashboard')
+            ->with('success', 'Subscription successful 🎉');
+    }
 }

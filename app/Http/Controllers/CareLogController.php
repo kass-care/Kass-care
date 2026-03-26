@@ -19,7 +19,12 @@ class CareLogController extends Controller
 
     public function create(Request $request)
     {
+        $user = auth()->user();
+
         $visits = Visit::with(['client', 'caregiver'])
+            ->when(!empty($user->facility_id), function ($query) use ($user) {
+                $query->where('facility_id', $user->facility_id);
+            })
             ->orderBy('visit_date', 'asc')
             ->get();
 
@@ -30,22 +35,28 @@ class CareLogController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'visit_id' => 'required|exists:visits,id',
-            'notes' => 'nullable|string',
-            'adls' => 'nullable|array',
-            'vitals' => 'nullable|array',
+        $validated = $request->validate([
+            'visit_id' => ['required', 'exists:visits,id'],
+            'notes' => ['nullable', 'string'],
+            'adls' => ['nullable', 'array'],
+            'vitals' => ['nullable', 'array'],
         ]);
 
-        $visit = Visit::findOrFail($request->visit_id);
+        $visit = Visit::findOrFail($validated['visit_id']);
 
         CareLog::create([
             'visit_id' => $visit->id,
             'caregiver_id' => $visit->caregiver_id,
-            'notes' => $request->notes,
-            'adls' => $request->adls,
-            'vitals' => $request->vitals,
+            'notes' => $validated['notes'] ?? null,
+            'adls' => $validated['adls'] ?? null,
+            'vitals' => $validated['vitals'] ?? null,
         ]);
+
+        if (auth()->user()->role === 'provider') {
+            return redirect()
+                ->route('provider.compliance')
+                ->with('success', 'Care log saved successfully.');
+        }
 
         return redirect()
             ->route('caregiver.care-logs.index')

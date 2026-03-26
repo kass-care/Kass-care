@@ -9,20 +9,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('care_logs', function (Blueprint $table) {
-            $table->unsignedBigInteger('visit_id')->nullable()->after('id');
-
-            $table->foreign('visit_id')
-                ->references('id')
-                ->on('visits')
-                ->onDelete('cascade');
+            if (!Schema::hasColumn('care_logs', 'visit_id')) {
+                $table->unsignedBigInteger('visit_id')->nullable();
+            }
         });
     }
 
     public function down(): void
     {
         Schema::table('care_logs', function (Blueprint $table) {
-            $table->dropForeign(['visit_id']);
-            $table->dropColumn('visit_id');
+            if (Schema::hasColumn('care_logs', 'visit_id')) {
+                $table->dropColumn('visit_id');
+            }
         });
     }
 };

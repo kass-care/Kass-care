@@ -2,31 +2,23 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Visit extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'client_id',
         'caregiver_id',
+        'facility_id',
         'activity',
         'visit_date',
-        'visit_time',
-        'scheduled_at',
         'status',
-        'notes',
-        'check_in_time',
-        'check_out_time',
-        'facility_id',
-        'duration_minutes',
     ];
 
-    protected $casts = [
-        'visit_date' => 'datetime',
-        'scheduled_at' => 'datetime',
-        'check_in_time' => 'datetime',
-        'check_out_time' => 'datetime',
-    ];
+    // Relationships
 
     public function client()
     {
@@ -40,6 +32,11 @@ class Visit extends Model
 
     public function careLogs()
     {
-        return $this->hasMany(CareLog::class, 'visit_id');
+        return $this->hasMany(CareLog::class);
+    }
+
+    public function providerNote()
+    {
+        return $this->hasOne(ProviderNote::class);
     }
 }

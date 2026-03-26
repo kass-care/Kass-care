@@ -6,27 +6,19 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    public function up()
+    public function up(): void
     {
         Schema::create('care_logs', function (Blueprint $table) {
             $table->id();
-
-            $table->unsignedBigInteger('client_id');
-            $table->unsignedBigInteger('caregiver_id')->nullable();
-
-            $table->string('meal')->nullable();
-            $table->string('bm')->nullable();
-            $table->string('shower')->nullable();
-            $table->string('medication')->nullable();
-            $table->string('mood')->nullable();
-
+            $table->foreignId('visit_id')->constrained()->onDelete('cascade');
             $table->text('notes')->nullable();
-
+            $table->json('adls')->nullable();
+            $table->json('vitals')->nullable();
             $table->timestamps();
         });
     }
 
-    public function down()
+    public function down(): void
     {
         Schema::dropIfExists('care_logs');
     }

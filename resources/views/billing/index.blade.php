@@ -1,38 +1,100 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>KASS-Care Billing</title>
-</head>
+@extends('layouts.app')
 
-<body>
+@section('content')
+<div class="max-w-3xl mx-auto mt-12 space-y-6">
 
-<h1>KASS-Care Billing</h1>
+    {{-- HEADER --}}
+    <div class="bg-white shadow rounded-xl p-6">
+        <h1 class="text-2xl font-bold text-gray-800">
+            Facility Billing
+        </h1>
+        <p class="text-gray-600 mt-2">
+            Manage your facility subscription and access KASS Care features.
+        </p>
+    </div>
 
-<table border="1" cellpadding="10">
+    {{-- FACILITY DETAILS --}}
+    <div class="bg-white shadow rounded-xl p-6">
+        <h2 class="text-lg font-semibold text-gray-700 mb-4">
+            Facility Details
+        </h2>
 
-<tr>
-<th>Client</th>
-<th>Caregiver</th>
-<th>Date</th>
-<th>Hours</th>
-<th>Rate</th>
-<th>Amount</th>
-</tr>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
 
-@foreach($invoices as $invoice)
+            <div>
+                <span class="text-gray-500">Name:</span>
+                <div class="font-medium">
+                    {{ $facility->name ?? 'N/A' }}
+                </div>
+            </div>
 
-<tr>
-<td>{{ $invoice['client'] }}</td>
-<td>{{ $invoice['caregiver'] }}</td>
-<td>{{ $invoice['date'] }}</td>
-<td>{{ $invoice['hours'] }}</td>
-<td>${{ $invoice['rate'] }}</td>
-<td>${{ $invoice['amount'] }}</td>
-</tr>
+            <div>
+                <span class="text-gray-500">Plan:</span>
+                <div class="font-medium">
+                    {{ $facility->plan ?? 'No Plan' }}
+                </div>
+            </div>
 
-@endforeach
+            <div>
+                <span class="text-gray-500">Status:</span>
+                <div class="font-medium">
+                    @if(isset($facility) && $facility->subscription_status === 'active')
+                        <span class="text-green-600 font-semibold">Active</span>
+                    @else
+                        <span class="text-red-600 font-semibold">Inactive</span>
+                    @endif
+                </div>
+            </div>
 
-</table>
+            <div>
+                <span class="text-gray-500">Ends At:</span>
+                <div class="font-medium">
+                    {{ $facility->subscription_ends_at ?? 'N/A' }}
+                </div>
+            </div>
 
-</body>
-</html>
+        </div>
+    </div>
+
+    {{-- ACTION BOX --}}
+    <div class="bg-white shadow rounded-xl p-6 text-center">
+
+        @if(!isset($facility) || $facility->subscription_status !== 'active')
+
+            <h3 class="text-xl font-bold text-red-600 mb-3">
+                Subscription Required
+            </h3>
+
+            <p class="text-gray-600 mb-6">
+                Activate your facility to unlock all features including providers, caregivers, visits, and care logs.
+            </p>
+
+            {{-- STRIPE FORM --}}
+            <form action="{{ route('billing.subscribe') }}" method="POST">
+                @csrf
+
+                {{-- REAL STRIPE PRICE ID --}}
+                <input type="hidden" name="price_id" value="price_1TDwRrIdKc8nV1TpxXO5SDqV">
+
+                <button type="submit"
+                    class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700">
+                    Subscribe Now
+                </button>
+            </form>
+
+        @else
+
+            <h3 class="text-xl font-bold text-green-600 mb-3">
+                🎉 Your Facility is Active
+            </h3>
+
+            <p class="text-gray-600">
+                You have full access to all KASS Care features.
+            </p>
+
+        @endif
+
+    </div>
+
+</div>
+@endsection

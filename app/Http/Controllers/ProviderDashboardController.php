@@ -2,44 +2,91 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Visit;
-use App\Models\Client;
-use App\Models\Lab;
-use App\Models\ProviderVisit;
-use App\Models\FacilityVisit;
+use Illuminate\Http\Request;
 
 class ProviderDashboardController extends Controller
 {
     /**
-     * Display the provider dashboard.
-     *
-     * @return \Illuminate\View\View
+     * Provider Dashboard
      */
     public function index()
     {
-        // ✅ Count total visits
-        $totalVisits = class_exists(Visit::class) ? Visit::count() : 0;
+        $user = auth()->user();
 
-        // ✅ Count total clients
-        $totalClients = class_exists(Client::class) ? Client::count() : 0;
+        $visits = Visit::with(['client', 'caregiver'])
+            ->when(!empty($user->facility_id), function ($query) use ($user) {
+                $query->where('facility_id', $user->facility_id);
+            })
+            ->latest('visit_date')
+            ->get();
 
-        // ✅ Count total labs
-        $totalLabs = class_exists(Lab::class) ? Lab::count() : 0;
+        $scheduledVisits = $visits->filter(function ($visit) {
+            return strtolower($visit->status ?? '') === 'scheduled';
+        })->count();
 
-        // ✅ Count provider visits
-        $totalProviderVisits = class_exists(ProviderVisit::class) ? ProviderVisit::count() : 0;
+        $completedVisits = $visits->filter(function ($visit) {
+            return strtolower($visit->status ?? '') === 'completed';
+        })->count();
 
-        // ✅ Count facility visits
-        $totalFacilityVisits = class_exists(FacilityVisit::class) ? FacilityVisit::count() : 0;
+        $inProgressVisits = $visits->filter(function ($visit) {
+            return in_array(strtolower($visit->status ?? ''), ['in_progress', 'in progress']);
+        })->count();
 
-        // Pass all data to the dashboard view
         return view('provider.dashboard', compact(
-            'totalVisits',
-            'totalClients',
-            'totalLabs',
-            'totalProviderVisits',
-            'totalFacilityVisits'
+            'visits',
+            'scheduledVisits',
+            'completedVisits',
+            'inProgressVisits'
         ));
+    }
+
+    /**
+     * Provider Calendar
+     */
+    public function calendar()
+    {
+        $user = auth()->user();
+
+        $visits = Visit::with(['client', 'caregiver'])
+            ->when(!empty($user->facility_id), function ($query) use ($user) {
+                $query->where('facility_id', $user->facility_id);
+            })
+            ->latest('visit_date')
+            ->get();
+
+        return view('provider.calendar', compact('visits'));
+    }
+
+    /**
+     * Compliance Dashboard
+     */
+    public function compliance()
+    {
+        $user = auth()->user();
+
+        $visits = Visit::with(['client', 'caregiver', 'careLogs', 'providerNote'])
+            ->when(!empty($user->facility_id), function ($query) use ($user) {
+                $query->where('facility_id', $user->facility_id);
+            })
+            ->get();
+
+        $missedVisits = $visits->filter(function ($visit) {
+            return strtolower($visit->status ?? '') === 'missed';
+        });
+
+        $missingCareLogs = $visits->filter(function ($visit) {
+            return $visit->careLogs->isEmpty();
+        });
+
+        $missingNotes = $visits->filter(function ($visit) {
+            return !$visit->providerNote;
+        });
+
+        return view('provider.compliance', [
+            'missedVisits' => $missedVisits,
+            'missingCareLogs' => $missingCareLogs,
+            'missingNotes' => $missingNotes,
+        ]);
     }
 }

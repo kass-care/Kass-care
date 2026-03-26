@@ -11,7 +11,8 @@ class Client extends Model
         'email',
         'phone',
         'address',
-        'status', // e.g., 'Active' or 'Inactive'
+        'status',
+        'facility_id', // 🔥 IMPORTANT
     ];
 
     public function carelogs()

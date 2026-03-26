@@ -2,19 +2,31 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Cashier\Billable;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use Notifiable, Billable;
 
     protected $fillable = [
         'name',
         'email',
         'password',
         'role',
+        'facility_id',
+        'plan',
+        'subscription_status',
+        'facility_limit',
+        'subscription_starts_at',
+        'subscription_ends_at',
+        'stripe_customer_id',
+        'stripe_subscription_id',
+        'stripe_id',
+        'pm_type',
+        'pm_last_four',
+        'trial_ends_at',
     ];
 
     protected $hidden = [
@@ -22,26 +34,47 @@ class User extends Authenticatable
         'remember_token',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
-    }
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'subscription_starts_at' => 'datetime',
+        'subscription_ends_at' => 'datetime',
+        'trial_ends_at' => 'datetime',
+    ];
 
-    public function isAdmin(): bool
+    /*
+    |--------------------------------------------------------------------------
+    | ROLE HELPERS
+    |--------------------------------------------------------------------------
+    */
+
+    public function isAdmin()
     {
         return $this->role === 'admin';
     }
 
-    public function isProvider(): bool
+    public function isSuperAdmin()
+    {
+        return $this->role === 'super_admin';
+    }
+
+    public function isProvider()
     {
         return $this->role === 'provider';
     }
 
-    public function isCaregiver(): bool
+    public function isCaregiver()
     {
         return $this->role === 'caregiver';
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | RELATIONSHIPS
+    |--------------------------------------------------------------------------
+    */
+
+    public function facility()
+    {
+        return $this->belongsTo(\App\Models\Facility::class);
     }
 }

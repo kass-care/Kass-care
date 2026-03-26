@@ -16,11 +16,21 @@ class AdminDashboardController extends Controller
         $facilitiesCount = class_exists(\App\Models\Facility::class) ? Facility::count() : 0;
         $visitsCount = class_exists(\App\Models\Visit::class) ? Visit::count() : 0;
 
-        return view('admin.dashboard', compact(
+        $recentClients = class_exists(\App\Models\Client::class)
+            ? Client::latest()->take(5)->get()
+            : collect();
+
+        $recentVisits = class_exists(\App\Models\Visit::class)
+            ? Visit::latest()->take(5)->get()
+            : collect();
+
+        return view('dashboard.index', compact(
             'clientsCount',
             'caregiversCount',
             'facilitiesCount',
-            'visitsCount'
+            'visitsCount',
+            'recentClients',
+            'recentVisits'
         ));
     }
 }

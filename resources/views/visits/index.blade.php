@@ -1,69 +1,99 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container mx-auto px-6 py-10">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+<div class="max-w-7xl mx-auto py-10 px-4">
 
-        <!-- New Visit Form -->
-        <div class="bg-white rounded-2xl shadow-2xl p-10">
-            <h2 class="text-2xl font-bold mb-6">New Visit Record</h2>
-            <form action="{{ route('visits.store') }}" method="POST" class="space-y-6">
-                @csrf
+    <!-- HEADER -->
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold">Visits</h1>
 
-                <div>
-                    <label class="block text-xs font-bold uppercase text-slate-400 mb-2">Patient</label>
-                    <select name="client_id" class="w-full bg-slate-50 rounded-2xl p-4 font-bold">
-                        @foreach($clients as $client)
-                            <option value="{{ $client->id }}">{{ $client->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold uppercase text-slate-400 mb-2">Caregiver</label>
-                    <select name="caregiver_id" class="w-full bg-slate-50 rounded-2xl p-4 font-bold">
-                        @foreach($caregivers as $caregiver)
-                            <option value="{{ $caregiver->id }}">{{ $caregiver->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold uppercase text-slate-400 mb-2">Clinical Notes / Activity</label>
-                    <input type="text" name="activity" placeholder="e.g. CT Scan, Routine Checkup" class="w-full bg-slate-50 rounded-2xl p-4 font-bold">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold uppercase text-slate-400 mb-2">Visit Date</label>
-                    <input type="date" name="scheduled_at" class="w-full bg-slate-50 rounded-2xl p-4 font-bold" value="{{ date('Y-m-d') }}">
-                </div>
-
-                <button type="submit" class="w-full bg-blue-600 text-white rounded-2xl p-4 font-bold shadow-lg hover:bg-blue-700 transition">
-                    Confirm & Log Visit
-                </button>
-            </form>
-        </div>
-
-        <!-- Recent Logs -->
-        <div class="bg-slate-50 rounded-2xl p-10">
-            <h2 class="text-2xl font-bold mb-6 text-slate-800">Recent Logs</h2>
-            <div class="space-y-4">
-                @foreach($visits as $visit)
-                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <p class="font-bold text-slate-900">{{ $visit->client->name }}</p>
-                                <p class="text-xs text-slate-500">{{ $visit->activity }}</p>
-                            </div>
-                            <span class="text-[10px] font-black uppercase text-blue-500 bg-blue-50 px-2 py-1 rounded-lg">
-                                {{ $visit->visit_date }}
-                            </span>
-                        </div>
-                    </div>
-                @endforeach
-            </div>
-        </div>
-
+        <a href="{{ route('visits.create') }}"
+           class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
+            + Add New Visit
+        </a>
     </div>
+
+    <!-- SUCCESS MESSAGE -->
+    @if(session('success'))
+        <div class="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-700">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    <!-- TABLE -->
+    <div class="bg-white shadow rounded-xl overflow-hidden">
+        <table class="min-w-full">
+            <thead class="bg-slate-50">
+                <tr>
+                    <th class="px-4 py-3 text-left">ID</th>
+                    <th class="px-4 py-3 text-left">Client</th>
+                    <th class="px-4 py-3 text-left">Caregiver</th>
+                    <th class="px-4 py-3 text-left">Activity</th>
+                    <th class="px-4 py-3 text-left">Visit Date</th>
+                    <th class="px-4 py-3 text-left">Status</th>
+                    <th class="px-4 py-3 text-left">Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @forelse($visits as $visit)
+                    <tr class="border-t">
+                        <td class="px-4 py-3">{{ $visit->id }}</td>
+                        <td class="px-4 py-3">{{ $visit->client->name ?? 'N/A' }}</td>
+                        <td class="px-4 py-3">{{ $visit->caregiver->name ?? 'N/A' }}</td>
+                        <td class="px-4 py-3">{{ $visit->activity ?? 'N/A' }}</td>
+                        <td class="px-4 py-3">{{ $visit->visit_date ?? 'N/A' }}</td>
+
+                        <!-- STATUS BADGE -->
+                        <td class="px-4 py-3">
+                            @if($visit->status === 'completed')
+                                <span class="bg-green-100 text-green-700 px-2 py-1 rounded">Completed</span>
+                            @elseif($visit->status === 'in_progress')
+                                <span class="bg-blue-100 text-blue-700 px-2 py-1 rounded">In Progress</span>
+                            @elseif($visit->status === 'missed')
+                                <span class="bg-red-100 text-red-700 px-2 py-1 rounded">Missed</span>
+                            @else
+                                <span class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded">
+                                    {{ ucfirst($visit->status) }}
+                                </span>
+                            @endif
+                        </td>
+
+                        <!-- ACTIONS -->
+                        <td class="px-4 py-3 flex gap-2">
+
+                            <!-- EDIT -->
+                            <a href="{{ route('visits.edit', $visit->id) }}"
+                               class="bg-indigo-500 text-white px-3 py-1 rounded hover:bg-indigo-600 text-sm">
+                                Edit
+                            </a>
+
+                            <!-- DELETE -->
+                            <form action="{{ route('visits.destroy', $visit->id) }}"
+                                  method="POST"
+                                  onsubmit="return confirm('Delete this visit?');">
+                                @csrf
+                                @method('DELETE')
+
+                                <button type="submit"
+                                        class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-sm">
+                                    Delete
+                                </button>
+                            </form>
+
+                        </td>
+                    </tr>
+
+                @empty
+                    <tr>
+                        <td colspan="7" class="px-4 py-6 text-center text-slate-500">
+                            No visits found.
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+
 </div>
 @endsection

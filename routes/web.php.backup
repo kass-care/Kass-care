@@ -1,0 +1,189 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
+
+/*
+|--------------------------------------------------------------------------
+| Controllers
+|--------------------------------------------------------------------------
+*/
+
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\BillingController;
+
+use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\FacilityController;
+use App\Http\Controllers\ProviderManagementController;
+use App\Http\Controllers\CaregiverManagementController;
+
+use App\Http\Controllers\ProviderDashboardController;
+use App\Http\Controllers\ProviderNoteController;
+
+use App\Http\Controllers\CaregiverDashboardController;
+use App\Http\Controllers\CaregiverController;
+use App\Http\Controllers\VisitController;
+
+Route::resource('visits', VisitController::class);
+use App\Http\Controllers\ClientController;
+
+/*
+|--------------------------------------------------------------------------
+| PUBLIC
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/', function () {
+    return view('welcome');
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| AUTH ROUTES (Laravel Breeze)
+|--------------------------------------------------------------------------
+*/
+
+require __DIR__.'/auth.php';
+Route::resource('clients', ClientController::class);
+
+/*
+|--------------------------------------------------------------------------
+| DASHBOARD REDIRECT (ROLE BASED)
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth')->get('/dashboard', function () {
+    $user = auth()->user();
+
+    return match ($user->role) {
+        'super_admin', 'admin' => redirect()->route('admin.dashboard'),
+        'provider' => redirect()->route('provider.dashboard'),
+        'caregiver' => redirect()->route('caregiver.dashboard'),
+        default => redirect()->route('login'),
+    };
+})->name('dashboard');
+
+
+/*
+|--------------------------------------------------------------------------
+| BILLING (STRIPE)
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware(['auth'])->group(function () {
+
+    Route::get('/billing', [BillingController::class, 'index'])->name('billing.index');
+
+    Route::post('/subscribe', [BillingController::class, 'subscribe'])->name('billing.subscribe');
+
+    Route::get('/billing/success', [BillingController::class, 'success'])->name('billing.success');
+
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| SUPER ADMIN FACILITY SWITCHER 🔥
+|--------------------------------------------------------------------------
+*/
+
+Route::post('/superadmin/switch-facility', function (Request $request) {
+
+    session(['facility_id' => $request->facility_id]);
+
+    return back();
+
+})->middleware('auth')->name('superadmin.switch.facility');
+
+
+/*
+|--------------------------------------------------------------------------
+| ADMIN (SUPER ADMIN + ADMIN)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'role:admin,super_admin'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+
+        Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+
+        Route::resource('facilities', FacilityController::class);
+        Route::resource('providers', ProviderManagementController::class);
+        Route::resource('caregivers', CaregiverManagementController::class);
+
+        Route::get('/clients', [ClientController::class, 'index'])->name('clients.index');
+        Route::get('/clients/create', [ClientController::class, 'create'])->name('clients.create');
+
+        // ✅ FIXED
+        Route::resource('visits', VisitController::class);
+    });
+
+/*
+|--------------------------------------------------------------------------
+| PROVIDER
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware(['auth', 'role:admin,super_admin'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+
+        Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+
+        Route::resource('facilities', FacilityController::class);
+        Route::resource('providers', ProviderManagementController::class);
+        Route::resource('caregivers', CaregiverManagementController::class);
+
+        Route::get('/clients', [ClientController::class, 'index'])->name('clients.index');
+        Route::get('/clients/create', [ClientController::class, 'create'])->name('clients.create');
+
+        Route::get('/visits', [VisitController::class, 'index'])->name('visits.index');
+        Route::get('/visits/create', [VisitController::class, 'create'])->name('visits.create');
+    });
+
+/*
+|--------------------------------------------------------------------------
+| CAREGIVER
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware(['auth', 'subscription', 'role:caregiver'])
+    ->prefix('caregiver')
+    ->name('caregiver.')
+    ->group(function () {
+
+        Route::get('/dashboard', [CaregiverDashboardController::class, 'index'])->name('dashboard');
+
+        Route::get('/carelog/{visit}', [CaregiverController::class, 'showCareLog'])->name('carelog');
+
+        Route::post('/carelog/{visit}', [CaregiverController::class, 'storeCareLog'])->name('carelog.store');
+
+        Route::get('/check-in/{id}', [CaregiverController::class, 'checkIn'])->name('checkin');
+
+        Route::post('/check-in/{id}', [CaregiverController::class, 'storeCheckIn'])->name('checkin.store');
+
+        Route::get('/check-out/{id}', [CaregiverController::class, 'checkOut'])->name('checkout');
+
+        Route::post('/check-out/{id}', [CaregiverController::class, 'storeCheckOut'])->name('checkout.save');
+
+    });
+
+
+/*
+|--------------------------------------------------------------------------
+| PROFILE
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth')->group(function () {
+
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+});

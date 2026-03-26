@@ -30,7 +30,10 @@ class AuthenticatedSessionController extends Controller
 
         $user = Auth::user();
 
-        if (in_array($user->role, ['admin', 'super_admin'])) {
+       if ($user->role === 'super_admin') {
+    return redirect()->route('admin.dashboard');
+}
+        if ($user->role === 'admin') {
             return redirect()->route('admin.dashboard');
         }
 
@@ -42,7 +45,7 @@ class AuthenticatedSessionController extends Controller
             return redirect()->route('caregiver.dashboard');
         }
 
-        return redirect()->route('dashboard');
+        abort(403, 'Unauthorized');
     }
 
     /**

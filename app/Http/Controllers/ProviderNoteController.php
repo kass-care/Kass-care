@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Visit;
 use App\Models\ProviderNote;
+use App\Models\Visit;
 use Illuminate\Http\Request;
 
 class ProviderNoteController extends Controller
@@ -19,29 +19,39 @@ class ProviderNoteController extends Controller
 
     public function create(Request $request)
     {
-        $visits = Visit::with(['client', 'caregiver'])
-            ->orderBy('visit_date', 'asc')
-            ->get();
+        $visitId = $request->get('visit_id');
 
-        $selectedVisit = $request->get('visit_id');
+        if (!$visitId) {
+            return redirect()
+                ->route('provider.calendar')
+                ->with('error', 'No visit was selected for note creation.');
+        }
 
-        return view('provider.notes.create', compact('visits', 'selectedVisit'));
+        $visit = Visit::with(['client', 'caregiver'])->findOrFail($visitId);
+
+        return view('provider.notes.create', compact('visit'));
     }
 
     public function store(Request $request)
     {
-        $request->validate([
-            'visit_id' => 'required|exists:visits,id',
-            'note' => 'required|string',
-            'status' => 'nullable|string|max:100',
+        $validated = $request->validate([
+            'visit_id' => ['required', 'exists:visits,id'],
+            'note' => ['required', 'string'],
         ]);
 
-        ProviderNote::create([
-            'visit_id' => $request->visit_id,
-            'provider_id' => auth()->id(),
-            'note' => $request->note,
-            'status' => $request->status ?? 'Open',
-        ]);
+        $visit = Visit::with(['client', 'caregiver'])->findOrFail($validated['visit_id']);
+
+        ProviderNote::updateOrCreate(
+            ['visit_id' => $visit->id],
+            [
+                'client_id'   => $visit->client_id,
+                'visit_id'    => $visit->id,
+                'provider_id' => auth()->id(),
+                'note'        => $validated['note'],
+                'status'      => 'signed',
+                'signed_at'   => now(),
+            ]
+        );
 
         return redirect()
             ->route('provider.notes.index')
