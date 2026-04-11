@@ -1,61 +1,77 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="min-h-screen bg-slate-50 py-10">
-    <div class="max-w-7xl mx-auto px-6">
-        <div class="flex items-center justify-between mb-8">
-            <div>
-                <h1 class="text-3xl font-bold text-slate-900">Care Logs</h1>
-                <p class="text-slate-600 mt-2">Saved caregiver documentation and ADL charting.</p>
-            </div>
-
-            <a href="{{ route('caregiver.care-logs.create') }}"
-               class="inline-flex items-center rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700">
-                + New Care Log
-            </a>
+<div class="max-w-7xl mx-auto py-10 px-4">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-900">Care Logs</h1>
+            <p class="text-slate-600 mt-1">Only logs linked to your assigned visits.</p>
         </div>
 
-        @if(session('success'))
-            <div class="mb-6 rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">
-                {{ session('success') }}
-            </div>
-        @endif
+        <a href="{{ route('caregiver.care-logs.create') }}"
+           class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-lg font-semibold">
+            + New Care Log
+        </a>
+    </div>
 
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            <table class="min-w-full divide-y divide-slate-200">
-                <thead class="bg-slate-100">
+    @if(session('success'))
+        <div class="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-700">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    <div class="bg-white shadow rounded-2xl overflow-hidden border border-slate-200">
+        <table class="min-w-full">
+            <thead class="bg-slate-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Log ID</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Visit</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Client</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Caregiver</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Created</th>
+                    <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Action</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                @forelse($careLogs as $careLog)
                     <tr>
-                        <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">Visit</th>
-                        <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">Client</th>
-                        <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">Caregiver</th>
-                        <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">Created</th>
-                        <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">Action</th>
+                        <td class="px-6 py-4 text-sm text-slate-800">#{{ $careLog->id }}</td>
+                        <td class="px-6 py-4 text-sm text-slate-800">
+                            {{ $careLog->visit_id ? '#' . $careLog->visit_id : 'N/A' }}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-slate-800">
+                            {{ optional(optional($careLog->visit)->client)->name ?? 'N/A' }}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-slate-800">
+                            {{ optional(optional($careLog->visit)->caregiver)->name ?? 'N/A' }}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-slate-600">
+                            {{ optional($careLog->created_at)->format('M d, Y h:i A') }}
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                           @php
+    $viewRoute = match(auth()->user()->role) {
+        'caregiver' => route('caregiver.care-logs.show', $careLog->id),
+        'provider', 'admin', 'super_admin' => route('provider.care-logs.show', $careLog->id),
+        default => '#',
+    };
+@endphp
+
+<a href="{{ $viewRoute }}" class="text-indigo-600 font-semibold hover:text-indigo-800">
+    View Log
+</a>
+                            </a>
+                        </td>
                     </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-200 bg-white">
-                    @forelse($careLogs as $careLog)
-                        <tr>
-                            <td class="px-6 py-4 text-sm text-slate-700">#{{ $careLog->visit->id ?? 'N/A' }}</td>
-                            <td class="px-6 py-4 text-sm text-slate-700">{{ $careLog->visit->client->name ?? 'N/A' }}</td>
-                            <td class="px-6 py-4 text-sm text-slate-700">{{ $careLog->visit->caregiver->name ?? 'N/A' }}</td>
-                            <td class="px-6 py-4 text-sm text-slate-700">{{ $careLog->created_at?->format('M d, Y h:i A') }}</td>
-                            <td class="px-6 py-4 text-sm">
-                                <a href="{{ route('caregiver.care-logs.show', $careLog) }}"
-                                   class="text-indigo-600 hover:text-indigo-800 font-medium">
-                                    View Log
-                                </a>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="5" class="px-6 py-10 text-center text-sm text-slate-500">
-                                No care logs found.
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+                @empty
+                    <tr>
+                        <td colspan="6" class="px-6 py-10 text-center text-slate-500">
+                            No care logs found for this caregiver yet.
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
     </div>
 </div>
 @endsection

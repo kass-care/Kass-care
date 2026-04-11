@@ -44,8 +44,15 @@ class Kernel extends HttpKernel
      *
      * @var array<string, class-string|string>
      */
-    protected $middlewareAliases = [
-        'auth' => \App\Http\Middleware\Authenticate::class,
-        'role' => \App\Http\Middleware\RoleMiddleware::class,
-    ];
+protected $middlewareAliases = [
+    'auth' => \App\Http\Middleware\Authenticate::class,
+'facility.context' => \App\Http\Middleware\EnsureFacilityContext::class,    
+'check.subscription' => \App\Http\Middleware\CheckSubscription::class,
+    'role' => \App\Http\Middleware\RoleMiddleware::class,
+    'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
+    'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
+
+    'superadmin' => \App\Http\Middleware\SuperAdminMiddleware::class,
+];
+
 }

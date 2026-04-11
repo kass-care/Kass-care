@@ -1,0 +1,36 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+
+// Adding \Admin\ tells Laravel to look inside that folder
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\FacilityController;
+use App\Http\Controllers\Admin\ClientController;
+use App\Http\Controllers\Admin\CaregiverController;
+use App\Http\Controllers\Admin\VisitController;
+use App\Http\Controllers\Admin\TaskController;
+
+// The rest of the routes I gave you remain the same...
+});
+
+// Authenticated Routes (The Protected Area)
+Route::middleware(['auth', 'verified'])->group(function () {
+
+    // 1. Dashboard
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // 2. Facilities
+    Route::resource('facilities', FacilityController::class);
+    Route::post('/facilities/{facility}/select', [FacilityController::class, 'select'])->name('facilities.select');
+
+    // 3. Core Resources (Clients, Caregivers, Visits)
+    Route::resource('clients', ClientController::class);
+    Route::resource('caregivers', CaregiverController::class);
+    Route::resource('visits', VisitController::class);
+    Route::resource('tasks', TaskController::class);
+
+    // 4. Custom Views
+    Route::get('/calendar', [VisitController::class, 'calendar'])->name('calendar');
+});
+
+require __DIR__.'/auth.php';

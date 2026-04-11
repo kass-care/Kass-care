@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\Facility;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -22,31 +23,47 @@ class AuthenticatedSessionController extends Controller
     /**
      * Handle an incoming authentication request.
      */
-    public function store(LoginRequest $request): RedirectResponse
-    {
-        $request->authenticate();
+     public function store(LoginRequest $request): RedirectResponse
+{
+    $request->authenticate();
 
-        $request->session()->regenerate();
+    $request->session()->regenerate();
 
-        $user = Auth::user();
+    $user = Auth::user();
 
-       if ($user->role === 'super_admin') {
-    return redirect()->route('admin.dashboard');
-}
-        if ($user->role === 'admin') {
-            return redirect()->route('admin.dashboard');
-        }
-
-        if ($user->role === 'provider') {
-            return redirect()->route('provider.dashboard');
-        }
-
-        if ($user->role === 'caregiver') {
-            return redirect()->route('caregiver.dashboard');
-        }
-
+    if (!$user) {
         abort(403, 'Unauthorized');
     }
+
+    // SUPER ADMIN
+    if ($user->role === 'super_admin') {
+        return redirect()->route('admin.dashboard');
+    }
+
+    // FACILITY ADMIN
+    if ($user->role === 'admin') {
+
+        if (!empty($user->facility_id) && Facility::where('id', $user->facility_id)->exists()) {
+            $request->session()->put('facility_id', $user->facility_id);
+        }
+
+        return redirect()->route('facility.admin.home');
+    }
+
+    // PROVIDER
+    if ($user->role === 'provider') {
+        return redirect()->route('provider.dashboard');
+    }
+
+    // CAREGIVER
+    if ($user->role === 'caregiver') {
+        return redirect()->route('caregiver.dashboard');
+    }
+
+    Auth::logout();
+
+    abort(403, 'Unauthorized');
+}
 
     /**
      * Destroy an authenticated session.
@@ -56,7 +73,6 @@ class AuthenticatedSessionController extends Controller
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
-
         $request->session()->regenerateToken();
 
         return redirect('/');

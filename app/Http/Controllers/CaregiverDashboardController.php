@@ -29,12 +29,6 @@ class CaregiverDashboardController extends Controller
 
         $visits = Visit::with(['client', 'caregiver'])
             ->where('caregiver_id', $caregiver->id)
-            ->when(
-                $user->role !== 'super_admin' && !empty($user->facility_id),
-                function ($query) use ($user) {
-                    $query->where('facility_id', $user->facility_id);
-                }
-            )
             ->latest()
             ->get();
 
@@ -43,7 +37,7 @@ class CaregiverDashboardController extends Controller
                 return true;
             }
 
-            if (!empty($visit->scheduled_at) && Carbon::parse($visit->scheduled_at)->isToday()) {
+            if (!empty($visit->start_time) && Carbon::parse($visit->start_time)->isToday()) {
                 return true;
             }
 
@@ -65,7 +59,6 @@ class CaregiverDashboardController extends Controller
                     'name' => $latestVisit->client->name ?? 'Unknown Client',
                     'latest_status' => $latestVisit->status ?? 'N/A',
                     'latest_visit_date' => $latestVisit->visit_date
-                        ?? $latestVisit->scheduled_at
                         ?? $latestVisit->updated_at,
                     'visit_id' => $latestVisit->id,
                 ];

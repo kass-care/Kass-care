@@ -9,7 +9,7 @@
     {{-- Top Buttons --}}
     <div class="row mb-4">
         <div class="col-md-3 mb-3">
-            <a href="{{ route('visits.index') }}" class="btn btn-primary w-100">Visits</a>
+            <a href="{{ route('admin.visits.index') }}" class="btn btn-primary w-100">Visits</a>
         </div>
         <div class="col-md-3 mb-3">
             <a href="{{ route('clients.index') }}" class="btn btn-primary w-100">Clients</a>

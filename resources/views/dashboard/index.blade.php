@@ -1,161 +1,142 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="max-w-7xl mx-auto py-10 px-6">
+<div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
 
-    <div class="flex items-center justify-between mb-8">
-        <div>
-            <h1 class="text-3xl font-bold text-gray-800">KASS CARE SUPER ADMIN DASHBOARD</h1>
-            <p class="text-gray-500 mt-1">Manage facilities, providers, caregivers, clients, and visits.</p>
-        </div>
-
-        @if(session('success'))
-            <div class="bg-green-100 text-green-700 px-4 py-2 rounded-lg">
-                {{ session('success') }}
-            </div>
-        @endif
-    </div>
-
-    {{-- STATS --}}
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
-        <div class="bg-white shadow rounded-xl p-6">
-            <p class="text-sm uppercase tracking-wide text-gray-500">Clients</p>
-            <h2 class="text-3xl font-bold text-indigo-600 mt-2">{{ $clientCount ?? 0 }}</h2>
-        </div>
-
-        <div class="bg-white shadow rounded-xl p-6">
-            <p class="text-sm uppercase tracking-wide text-gray-500">Caregivers</p>
-            <h2 class="text-3xl font-bold text-indigo-600 mt-2">{{ $caregiverCount ?? 0 }}</h2>
-        </div>
-
-        <div class="bg-white shadow rounded-xl p-6">
-            <p class="text-sm uppercase tracking-wide text-gray-500">Visits</p>
-            <h2 class="text-3xl font-bold text-indigo-600 mt-2">{{ $visitCount ?? 0 }}</h2>
-        </div>
-
-        <div class="bg-white shadow rounded-xl p-6">
-            <p class="text-sm uppercase tracking-wide text-gray-500">Alerts</p>
-            <h2 class="text-3xl font-bold text-red-500 mt-2">{{ $alertCount ?? 0 }}</h2>
-        </div>
-    </div>
-
-    {{-- FACILITIES --}}
-    <div class="bg-white shadow rounded-xl p-6 mb-10">
-        <h2 class="text-xl font-semibold mb-4 text-gray-700">Facilities</h2>
-
-        @if(isset($facilities) && $facilities->count())
-            <div class="space-y-3">
-                @foreach($facilities as $facility)
-                    <div class="flex flex-col md:flex-row md:items-center md:justify-between border p-4 rounded-lg">
-                        <div class="mb-3 md:mb-0">
-                            <h3 class="font-bold text-gray-800">{{ $facility->name }}</h3>
-                            <p class="text-sm text-gray-500">{{ $facility->address ?? 'No address' }}</p>
+    {{-- PAGE HEADER --}}
+    <div class="mb-6 rounded-3xl bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-900 text-white shadow-2xl overflow-hidden">
+        <div class="px-6 py-6 md:px-8 md:py-7">
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-5 items-stretch">
+                <div class="xl:col-span-2">
+                    <p class="text-[11px] uppercase tracking-[0.35em] text-cyan-300 font-semibold">
+                        KASS CARE SAAS
+                    </p>
+                    
+                    <div class="flex items-center gap-3 mt-2">
+                        <div class="relative">
+                            <div class="w-8 h-8 rounded-full border-2 border-yellow-300 flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-cyan-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <span class="absolute -top-1 -right-1 text-yellow-300 animate-pulse">+</span>
                         </div>
-
-                        <div class="flex flex-wrap gap-2">
-                            <form method="POST" action="{{ route('facility.select', $facility->id) }}">
-                                @csrf
-                                <button type="submit"
-                                        class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
-                                    Enter Facility
-                                </button>
-                            </form>
-
-                            <a href="{{ route('admin.facilities.index') }}"
-                               class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300">
-                                Open Facilities
-                            </a>
-                        </div>
+                        <span class="text-sm font-semibold text-yellow-200">we are not helpless</span>
                     </div>
-                @endforeach
+
+                    <h1 class="mt-3 text-3xl md:text-4xl font-extrabold tracking-tight">
+                        Super Admin Engineering Console
+                    </h1>
+                    <p class="mt-3 max-w-3xl text-sm text-indigo-100 leading-6">
+                        Full command over facilities, workforce, clients, visits, and backups. This dashboard is built to make you feel in control.
+                    </p>
+                </div>
             </div>
-        @else
-            <p class="text-gray-500">No facilities found.</p>
-        @endif
-
-        <div class="mt-4">
-            <a href="{{ route('admin.facilities.create') }}"
-               class="inline-block bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
-                Add Facility
-            </a>
-        </div>
-    </div>
-
-    {{-- MAIN CARDS --}}
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-        {{-- PROVIDERS --}}
-        <div class="bg-white shadow rounded-xl p-6">
-            <h3 class="text-lg font-semibold mb-2">Providers</h3>
-            <p class="text-gray-500 mb-4">Manage providers and permissions for each facility.</p>
-
-            <div class="flex gap-2 flex-wrap">
-                <a href="{{ route('admin.providers.index') }}"
-                   class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
-                    Open Providers
+            
+            <div class="mt-5 flex flex-wrap gap-3">
+                <a href="{{ route('facilities.index') }}" class="inline-flex items-center rounded-xl bg-cyan-400 px-4 py-2.5 text-sm font-bold text-slate-900">
+                    Open Facilities
                 </a>
-
-                <a href="{{ route('admin.providers.create') }}"
-                   class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300">
-                    Add Provider
-                </a>
-            </div>
-        </div>
-
-        {{-- CAREGIVERS --}}
-        <div class="bg-white shadow rounded-xl p-6">
-            <h3 class="text-lg font-semibold mb-2">Caregivers</h3>
-            <p class="text-gray-500 mb-4">Manage caregivers, assignments, and workforce structure.</p>
-
-            <div class="flex gap-2 flex-wrap">
-                <a href="{{ route('admin.caregivers.index') }}"
-                   class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
-                    Open Caregivers
-                </a>
-
-                <a href="{{ route('admin.caregivers.create') }}"
-                   class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300">
-                    Add Caregiver
-                </a>
-            </div>
-        </div>
-
-        {{-- CLIENTS --}}
-        <div class="bg-white shadow rounded-xl p-6">
-            <h3 class="text-lg font-semibold mb-2">Clients</h3>
-            <p class="text-gray-500 mb-4">Open all clients and create new client records as super admin.</p>
-
-            <div class="flex gap-2 flex-wrap">
-                <a href="{{ route('admin.clients.index') }}"
-                   class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
-                    Open Clients
-                </a>
-
-                <a href="{{ route('admin.clients.create') }}"
-                   class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300">
-                    Add Client
-                </a>
-            </div>
-        </div>
-
-        {{-- VISITS --}}
-        <div class="bg-white shadow rounded-xl p-6">
-            <h3 class="text-lg font-semibold mb-2">Visits</h3>
-            <p class="text-gray-500 mb-4">Access visit records and create visits directly from the owner dashboard.</p>
-
-            <div class="flex gap-2 flex-wrap">
-                <a href="{{ route('admin.visits.index') }}"
-                   class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
-                    Open Visits
-                </a>
-
-                <a href="{{ route('admin.visits.create') }}"
-                   class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300">
-                    Add Visit
+                <a href="{{ route('tasks.index') }}" class="inline-flex items-center rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white">
+                    Open Tasks
                 </a>
             </div>
         </div>
     </div>
 
+    {{-- SUCCESS MESSAGE --}}
+    @if(session('success'))
+        <div class="mb-6 rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-green-700 shadow-sm">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    {{-- EXECUTIVE KPI CARDS --}}
+    <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+        @php
+            $stats = [
+                ['label' => 'Facilities', 'count' => $facilityCount ?? 0, 'color' => 'text-indigo-700'],
+                ['label' => 'Clients', 'count' => $clientCount ?? 0, 'color' => 'text-indigo-700'],
+                ['label' => 'Caregivers', 'count' => $caregiverCount ?? 0, 'color' => 'text-indigo-700'],
+                ['label' => 'Visits', 'count' => $visitCount ?? 0, 'color' => 'text-indigo-700'],
+                ['label' => 'Open Tasks', 'count' => $openTaskCount ?? 0, 'color' => 'text-amber-700'],
+                ['label' => 'Alerts', 'count' => $alertCount ?? 0, 'color' => 'text-rose-700'],
+            ];
+        @endphp
+
+        @foreach($stats as $stat)
+            <div class="rounded-2xl bg-white p-5 shadow-sm border border-indigo-100">
+                <p class="text-[10px] uppercase tracking-widest text-gray-500 font-semibold">{{ $stat['label'] }}</p>
+                <h2 class="mt-2 text-3xl font-extrabold {{ $stat['color'] }}">{{ $stat['count'] }}</h2>
+            </div>
+        @endforeach
+    </div>
+
+    {{-- OPERATIONS + FACILITIES --}}
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
+        {{-- Facility Command --}}
+        <div class="xl:col-span-2 rounded-3xl bg-white p-6 shadow-sm border border-gray-100">
+            <div class="flex flex-col md:flex-row md:items-center justify-between mb-6">
+                <div>
+                    <p class="text-[10px] uppercase tracking-widest text-gray-500 font-semibold">Facility Command</p>
+                    <h2 class="mt-1 text-2xl font-bold text-gray-900">Active Facilities</h2>
+                </div>
+                <a href="{{ route('facilities.create') }}" class="mt-4 md:mt-0 inline-flex items-center rounded-xl bg-cyan-400 px-5 py-3 text-sm font-bold text-slate-950">
+                    + Add Facility
+                </a>
+            </div>
+
+            @if(isset($facilities) && $facilities->count() > 0)
+                <div class="space-y-4">
+                    @foreach($facilities as $facility)
+                        <div class="rounded-2xl border border-gray-200 p-4 hover:shadow-md transition bg-white">
+                            <div class="flex flex-col md:flex-row lg:items-center lg:justify-between">
+                                <div>
+                                    <h3 class="text-lg font-bold text-gray-900">{{ $facility->name }}</h3>
+                                    <p class="text-sm text-gray-500">{{ $facility->address ?? 'No address set' }}</p>
+                                </div>
+                                <div class="mt-4 flex gap-3">
+                                    <form action="{{ route('facilities.select', $facility->id) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white">
+                                            Enter Facility
+                                        </button>
+                                    </form>
+                                    <a href="{{ route('facilities.show', $facility->id) }}" class="rounded-xl bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-700">
+                                        View
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="rounded-2xl border border-dashed border-gray-300 p-8 text-center text-gray-500">
+                    No facilities found. Create one to get started.
+                </div>
+            @endif
+        </div>
+
+        {{-- System Insights --}}
+        <div class="rounded-3xl bg-white p-6 shadow-sm border border-gray-100">
+            <p class="text-[10px] uppercase tracking-widest text-gray-500 font-semibold">System Insight</p>
+            <h2 class="mt-1 text-2xl font-bold text-gray-900">Admin Intelligence</h2>
+            
+            <div class="mt-5 space-y-4">
+                <div class="rounded-2xl bg-indigo-50 border border-indigo-100 p-4">
+                    <p class="text-[10px] uppercase tracking-widest text-indigo-700 font-semibold">Scheduled Visits</p>
+                    <p class="mt-1 text-2xl font-extrabold text-indigo-700">{{ $scheduledVisitCount ?? 0 }}</p>
+                </div>
+                <div class="rounded-2xl bg-emerald-50 border border-emerald-100 p-4">
+                    <p class="text-[10px] uppercase tracking-widest text-emerald-700 font-semibold">Completed Today</p>
+                    <p class="mt-1 text-2xl font-extrabold text-emerald-700">{{ $completedVisitCount ?? 0 }}</p>
+                </div>
+                <div class="rounded-2xl bg-rose-50 border border-rose-100 p-4">
+                    <p class="text-[10px] uppercase tracking-widest text-rose-700 font-semibold">System Alerts</p>
+                    <p class="mt-1 text-2xl font-extrabold text-rose-700">{{ $alertCount ?? 0 }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection

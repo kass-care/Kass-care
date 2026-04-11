@@ -2,26 +2,25 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Facility extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'name',
-        'location',
+        'email',
+        'phone',
+        'address',
         'plan',
         'subscription_status',
-        'provider_limit',
-        'caregiver_limit',
-        'subscription_starts_at',
-        'subscription_ends_at',
-        'stripe_id',
-        'stripe_subscription_id',
+        'is_active',
     ];
 
     protected $casts = [
-        'subscription_starts_at' => 'datetime',
-        'subscription_ends_at' => 'datetime',
+        'is_active' => 'boolean',
     ];
 
     public function users()
@@ -29,19 +28,14 @@ class Facility extends Model
         return $this->hasMany(User::class);
     }
 
-    public function providers()
+    public function clients()
     {
-        return $this->hasMany(User::class)->where('role', 'provider');
+        return $this->hasMany(Client::class);
     }
 
     public function caregivers()
     {
-        return $this->hasMany(User::class)->where('role', 'caregiver');
-    }
-
-    public function clients()
-    {
-        return $this->hasMany(Client::class);
+        return $this->hasMany(Caregiver::class);
     }
 
     public function visits()

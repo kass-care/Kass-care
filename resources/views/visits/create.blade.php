@@ -17,9 +17,9 @@
         </div>
     @endif
 
-    <form method="POST" action="{{ route('visits.store') }}"
-          style="background: #ffffff; border-radius: 18px; padding: 32px; box-shadow: 0 10px 25px rgba(0,0,0,0.08);">
-        @csrf
+       <form method="POST" action="{{ route('admin.visits.store') }}">
+<div style="background: #ffffff; border-radius: 18px; padding: 32px; box-shadow: 0 10px 25px rgba(0,0,0,0.08);">       
+ @csrf
 
         <div style="margin-bottom: 22px;">
             <label style="display:block; font-size:16px; font-weight:600; margin-bottom:10px;">
@@ -99,7 +99,7 @@
                 Save Visit
             </button>
 
-            <a href="{{ route('visits.index') }}"
+            <a href="{{ route('admin.visits.index') }}"
                style="color:#374151; font-size:18px; font-weight:600; text-decoration:none;">
                 Cancel
             </a>
