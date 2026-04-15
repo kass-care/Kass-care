@@ -8,7 +8,7 @@
             <p class="text-slate-600 mt-1">Only logs linked to your assigned visits.</p>
         </div>
 
-        <a href="{{ route('caregiver.care-logs.create') }}"
+        <a href="{{ route('provider.care-logs.create') }}"
            class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-lg font-semibold">
             + New Care Log
         </a>

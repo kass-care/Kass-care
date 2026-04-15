@@ -58,12 +58,21 @@
                         <td class="p-3">{{ $facility->name }}</td>
                         <td class="p-3">{{ $facility->address ?? '—' }}</td>
                         <td class="p-3">
-                            <div class="flex flex-wrap gap-2">
-                                <a href="{{ route('admin.facilities.show', $facility) }}"
-                                   class="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600 text-sm">
-                                    View
-                                </a>
 
+                            <div class="flex flex-wrap gap-2">
+
+<form method="POST" action="{{ route('select.facility', $facility->id) }}">
+    @csrf
+    <button type="submit"
+        class="bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700 text-sm">
+        Enter
+    </button>
+</form>
+
+<a href="{{ route('admin.facilities.show', $facility) }}"
+   class="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600 text-sm">
+    View
+</a>
                                 <a href="{{ route('admin.facilities.edit', $facility) }}"
                                    class="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 text-sm">
                                     Edit

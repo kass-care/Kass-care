@@ -66,86 +66,103 @@ Auth scaffolding
 */
 require __DIR__.'/auth.php';
 
-
 /*
 |--------------------------------------------------------------------------
-| Facility selector (multi-tenant session switch)
+| Facility context switch + dashboard redirects
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth'])->post('/select-facility/{id}', function ($id) {
-    session(['facility_id' => $id]);
-    return back();
-})->name('select.facility');
+Route::middleware('auth')->group(function () {
 
-Route::middleware(['auth'])->post('/clear-facility-context', function () {
-    session()->forget('facility_id');
-    return back();
-})->name('clear.facility');
-/*
-|--------------------------------------------------------------------------
-| Redirect by role
-|--------------------------------------------------------------------------
-*/
+    Route::post('/select-facility/{facility}', function (\App\Models\Facility $facility) {
+        $user = auth()->user();
 
-Route::middleware('auth')->get('/redirect-by-role', function () {
-    $user = auth()->user();
+        abort_if(!$user, 403, 'Unauthorized.');
 
-    return match ($user->role) {
-        'super_admin' => redirect()->route('admin.dashboard'),
-        'admin'       => redirect()->route('facility.admin.home'),
-        'provider'    => redirect()->route('provider.dashboard'),
-        'caregiver'   => redirect()->route('caregiver.dashboard'),
-        default       => redirect()->route('login'),
-    };
-})->name('redirect.by.role');
+        // Caregivers do not switch facility context manually
+        if ($user->role === 'caregiver') {
+            abort(403, 'Caregivers cannot switch facility context.');
+        }
 
-Route::post('/select-facility/{id}', function ($id) {
-    session(['facility_id' => $id]);
-    return redirect('/facility-admin/home');
-})->name('facility.select');
-/*
-|--------------------------------------------------------------------------
-| Generic dashboard entry
-|--------------------------------------------------------------------------
-*/
+        // Save selected facility in session
+        session([
+            'facility_id'   => $facility->id,
+            'facility_name' => $facility->name,
+        ]);
 
-Route::middleware('auth')->get('/dashboard', function () {
-    $user = auth()->user();
+        // Role-aware redirect
+        return match ($user->role) {
+            'super_admin' => redirect()
+                ->route('admin.dashboard')
+                ->with('success', 'You are now managing: ' . $facility->name),
 
-    return match ($user->role) {
-        'super_admin' => redirect()->route('admin.dashboard'),
-        'admin'       => redirect()->route('facility.admin.home'),
-        'provider'    => redirect()->route('provider.dashboard'),
-        'caregiver'   => redirect()->route('caregiver.dashboard'),
-        default       => redirect()->route('login'),
-    };
-})->name('dashboard');
+            'admin' => redirect()
+                ->route('facility.admin.home')
+                ->with('success', 'You are now managing: ' . $facility->name),
 
-Route::middleware('auth')->get('/debug-user', function () {
-    return response()->json([
-        'id'                  => auth()->user()?->id,
-        'name'                => auth()->user()?->name,
-        'email'               => auth()->user()?->email,
-        'role'                => auth()->user()?->role,
-        'facility_id'         => auth()->user()?->facility_id,
-        'session_facility_id' => session('facility_id'),
-    ]);
+            'provider' => redirect()
+                ->route('provider.dashboard')
+                ->with('success', 'Facility context changed to: ' . $facility->name),
+
+            default => redirect()
+                ->route('dashboard'),
+        };
+    })->name('select.facility');
+
+    Route::post('/clear-facility-context', function () {
+        session()->forget(['facility_id', 'facility_name']);
+
+        return back()->with('success', 'Facility context cleared.');
+    })->name('clear.facility');
+
+    Route::get('/redirect-by-role', function () {
+        $user = auth()->user();
+
+        abort_if(!$user, 403, 'Unauthorized.');
+
+        return match ($user->role) {
+            'super_admin' => redirect()->route('admin.dashboard'),
+
+            'admin' => redirect()->route('facility.admin.home'),
+
+            'provider' => redirect()->route('provider.dashboard'),
+
+            'caregiver' => redirect()->route('caregiver.dashboard'),
+
+            default => redirect()->route('login'),
+        };
+    })->name('redirect.by.role');
+
+    Route::get('/dashboard', function () {
+        $user = auth()->user();
+
+        abort_if(!$user, 403, 'Unauthorized.');
+
+        return match ($user->role) {
+            'super_admin' => redirect()->route('admin.dashboard'),
+
+            'admin' => redirect()->route('facility.admin.home'),
+
+            'provider' => redirect()->route('provider.dashboard'),
+
+            'caregiver' => redirect()->route('caregiver.dashboard'),
+
+            default => redirect()->route('login'),
+        };
+    })->name('dashboard');
+
+    Route::get('/debug-user', function () {
+        return response()->json([
+            'id'                  => auth()->user()?->id,
+            'name'                => auth()->user()?->name,
+            'email'               => auth()->user()?->email,
+            'role'                => auth()->user()?->role,
+            'facility_id'         => auth()->user()?->facility_id,
+            'session_facility_id' => session('facility_id'),
+            'session_facility_name' => session('facility_name'),
+        ]);
+    })->name('debug.user');
 });
-
-/*
-|--------------------------------------------------------------------------
-| Facility admin home
-|--------------------------------------------------------------------------
-*/
-
-Route::middleware(['auth', 'role:admin'])->get('/facility-admin/home', function () {
-    if (auth()->user()?->role !== 'admin') {
-        abort(403, 'Unauthorized');
-    }
-
-    return view('admin.facility-home');
-})->name('facility.admin.home');
 
 /*
 |--------------------------------------------------------------------------
@@ -252,7 +269,7 @@ Route::middleware(['auth', 'role:provider,admin,super_admin'])->group(function (
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'role:admin'])
+Route::middleware(['auth', 'role:admin,super_admin'])
     ->prefix('facility')
     ->name('facility.')
     ->group(function () {
@@ -329,6 +346,24 @@ Route::middleware(['auth', 'role:provider,super_admin', 'check.subscription'])
 
         Route::get('/patients/{id}/summary', [ProviderPatientController::class, 'summary'])
             ->name('patients.summary');
+ /*
+|--------------------------------------------------------------------------
+| Provider Care Logs
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/care-logs', [CareLogController::class, 'index'])
+    ->name('care-logs.index');
+
+Route::get('/care-logs/create', [CareLogController::class, 'create'])
+    ->name('care-logs.create');
+
+Route::post('/care-logs', [CareLogController::class, 'store'])
+    ->name('care-logs.store');
+
+Route::get('/care-logs/{careLog}', [CareLogController::class, 'show'])
+    ->name('care-logs.show');       
+
        /*
         |--------------------------------------------------------------------------
         | Patient Documents
@@ -510,3 +545,38 @@ Route::middleware('auth')->group(function () {
 
 Route::post('/stripe/webhook', [WebhookController::class, 'handleWebhook'])
     ->name('cashier.webhook');
+Route::post('/select-facility/{facility}', function (\App\Models\Facility $facility) {
+    $user = auth()->user();
+
+    abort_if(!$user, 403, 'Unauthorized.');
+
+    if (in_array($user->role, ['super_admin', 'admin'])) {
+        session([
+            'facility_id' => $facility->id,
+            'facility_name' => $facility->name,
+        ]);
+
+        return redirect()->route('dashboard')
+            ->with('success', 'You are now managing: ' . $facility->name);
+    }
+
+    if ($user->role === 'provider') {
+        session([
+            'facility_id' => $facility->id,
+            'facility_name' => $facility->name,
+        ]);
+
+        return redirect()->route('provider.dashboard')
+            ->with('success', 'Facility context changed to: ' . $facility->name);
+    }
+
+    if ($user->role === 'caregiver') {
+        abort(403, 'Caregivers cannot switch facility context.');
+    }
+
+    abort(403, 'Access denied.');
+})->middleware('auth')->name('select.facility');
+Route::post('/clear-facility-context', function () {
+    session()->forget(['facility_id', 'facility_name']);
+    return redirect('/admin/dashboard');
+})->middleware('auth')->name('facility.clear');

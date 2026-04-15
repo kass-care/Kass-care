@@ -217,28 +217,16 @@ class CareLogController extends Controller
 
         return view($this->indexView(), compact('careLogs'));
     }
+public function create(Request $request)
+{
+    $user = $this->currentUser();
+    $selectedVisit = null;
 
-    public function create(Request $request)
-    {
-        $user = $this->currentUser();
-        $selectedVisit = null;
+    if ($user->role === 'caregiver') {
+        $caregiver = $this->caregiverRecord();
+        abort_if(!$caregiver, 403, 'Caregiver profile not found.');
 
-        if ($user->role === 'caregiver') {
-            $caregiver = $this->caregiverRecord();
-            abort_if(!$caregiver, 403, 'Caregiver profile not found.');
-
-            $visits = $this->caregiverVisitQuery()
-                ->orderBy('visit_date')
-                ->get();
-
-            if ($request->filled('visit_id')) {
-                $selectedVisit = $visits->firstWhere('id', (int) $request->visit_id);
-            }
-
-            return view('care-logs.create', compact('visits', 'selectedVisit'));
-        }
-
-        $visits = $this->visitBaseQuery()
+        $visits = $this->caregiverVisitQuery()
             ->orderBy('visit_date')
             ->get();
 
@@ -246,8 +234,19 @@ class CareLogController extends Controller
             $selectedVisit = $visits->firstWhere('id', (int) $request->visit_id);
         }
 
-        return view('care-logs.create', compact('visits', 'selectedVisit'));
+        return view('caregiver.care-logs.create', compact('visits', 'selectedVisit'));
     }
+
+    $visits = $this->visitBaseQuery()
+        ->orderBy('visit_date')
+        ->get();
+
+    if ($request->filled('visit_id')) {
+        $selectedVisit = $visits->firstWhere('id', (int) $request->visit_id);
+    }
+
+    return view('provider.care-logs.create', compact('visits', 'selectedVisit'));
+}
 
     public function store(Request $request)
     {
@@ -320,62 +319,68 @@ class CareLogController extends Controller
                 $payload['caregiver_id'] = $caregiver->id;
             }
         }
+CareLog::create($payload);
 
-        CareLog::create($payload);
+if (!empty($validated['check_in_time']) && Schema::hasColumn('visits', 'check_in_time')) {
+    $visit->check_in_time = $validated['check_in_time'];
+}
 
-        if (!empty($validated['check_in_time']) && Schema::hasColumn('visits', 'check_in_time')) {
-            $visit->check_in_time = $validated['check_in_time'];
-        }
+if (!empty($validated['check_in_time']) && Schema::hasColumn('visits', 'check_in')) {
+    $visit->check_in = date('Y-m-d H:i:s', strtotime(now()->format('Y-m-d') . ' ' . $validated['check_in_time']));
+}
 
-        if (!empty($validated['check_in_time']) && Schema::hasColumn('visits', 'check_in')) {
-            $visit->check_in = $validated['check_in_time'];
-        }
+if (!empty($validated['check_out_time']) && Schema::hasColumn('visits', 'check_out_time')) {
+    $visit->check_out_time = $validated['check_out_time'];
+}
 
-        if (!empty($validated['check_out_time']) && Schema::hasColumn('visits', 'check_out_time')) {
-            $visit->check_out_time = $validated['check_out_time'];
-        }
+if (!empty($validated['check_out_time']) && Schema::hasColumn('visits', 'check_out')) {
+    $visit->check_out = date('Y-m-d H:i:s', strtotime(now()->format('Y-m-d') . ' ' . $validated['check_out_time']));
+}
 
-        if (!empty($validated['check_out_time']) && Schema::hasColumn('visits', 'check_out')) {
-            $visit->check_out = $validated['check_out_time'];
-        }
+if (!empty($validated['latitude']) && Schema::hasColumn('visits', 'check_in_latitude')) {
+    $visit->check_in_latitude = $validated['latitude'];
+}
 
-        if (!empty($validated['latitude']) && Schema::hasColumn('visits', 'check_in_latitude')) {
-            $visit->check_in_latitude = $validated['latitude'];
-        }
+if (!empty($validated['longitude']) && Schema::hasColumn('visits', 'check_in_longitude')) {
+    $visit->check_in_longitude = $validated['longitude'];
+}
 
-        if (!empty($validated['longitude']) && Schema::hasColumn('visits', 'check_in_longitude')) {
-            $visit->check_in_longitude = $validated['longitude'];
-        }
+if (!empty($validated['check_in_time']) && empty($validated['check_out_time'])) {
 
-        if (!empty($validated['check_in_time']) && empty($validated['check_out_time'])) {
-            if (Schema::hasColumn('visits', 'status')) {
-                $visit->status = 'in_progress';
-            }
-            if (Schema::hasColumn('visits', 'visit_started')) {
-                $visit->visit_started = true;
-            }
-            if (Schema::hasColumn('visits', 'visit_started_at')) {
-                $visit->visit_started_at = now();
-            }
-        }
-
-        if (!empty($validated['check_out_time'])) {
-            if (Schema::hasColumn('visits', 'status')) {
-                $visit->status = 'completed';
-            }
-            if (Schema::hasColumn('visits', 'visit_completed')) {
-                $visit->visit_completed = true;
-            }
-            if (Schema::hasColumn('visits', 'visit_completed_at')) {
-                $visit->visit_completed_at = now();
-            }
-        }
-
-        $visit->save();
-
-        return $this->redirectAfterSave()
-            ->with('success', 'Care log saved successfully.');
+    if (Schema::hasColumn('visits', 'status')) {
+        $visit->status = 'in_progress';
     }
+
+    if (Schema::hasColumn('visits', 'visit_started')) {
+        $visit->visit_started = true;
+    }
+
+    if (Schema::hasColumn('visits', 'visit_started_at')) {
+        $visit->visit_started_at = now();
+    }
+}
+
+if (!empty($validated['check_out_time'])) {
+
+    if (Schema::hasColumn('visits', 'status')) {
+        $visit->status = 'completed';
+    }
+
+    if (Schema::hasColumn('visits', 'visit_completed')) {
+        $visit->visit_completed = true;
+    }
+
+    if (Schema::hasColumn('visits', 'visit_completed_at')) {
+        $visit->visit_completed_at = now();
+    }
+}
+
+$visit->save();
+
+return $this->redirectAfterSave()
+    ->with('success', 'Care log saved successfully.');
+}
+  
 
     public function show(CareLog $careLog)
     {

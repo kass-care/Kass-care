@@ -321,7 +321,7 @@
                             </div>
 
                             <div class="flex flex-wrap gap-3">
-                                <form action="{{ route('facility.select', $facility->id) }}" method="POST">
+                                <form action="{{ route('select.facility', $facility->id) }}" method="POST">
                                     @csrf
                                     <button type="submit"
                                             class="inline-flex items-center rounded-2xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 transition">
