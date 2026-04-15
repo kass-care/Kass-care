@@ -28,9 +28,39 @@ class CareLog extends Model
     protected static function booted(): void
     {
         static::addGlobalScope('facility', function (Builder $query) {
-            if (Auth::check() && !empty(Auth::user()->facility_id)) {
-                $query->whereHas('visit', function (Builder $visitQuery) {
-                    $visitQuery->where('facility_id', Auth::user()->facility_id);
+            if (!Auth::check()) {
+                return;
+            }
+
+            $user = Auth::user();
+
+            if ($user->role === 'super_admin') {
+                $selectedFacilityId = session('facility_id');
+
+                if (!empty($selectedFacilityId)) {
+                    $query->whereHas('visit', function (Builder $visitQuery) use ($selectedFacilityId) {
+                        $visitQuery->where('facility_id', $selectedFacilityId);
+                    });
+                }
+
+                return;
+            }
+
+            if ($user->role === 'provider') {
+                $selectedFacilityId = session('facility_id') ?? $user->facility_id;
+
+                if (!empty($selectedFacilityId)) {
+                    $query->whereHas('visit', function (Builder $visitQuery) use ($selectedFacilityId) {
+                        $visitQuery->where('facility_id', $selectedFacilityId);
+                    });
+                }
+
+                return;
+            }
+
+            if (!empty($user->facility_id)) {
+                $query->whereHas('visit', function (Builder $visitQuery) use ($user) {
+                    $visitQuery->where('facility_id', $user->facility_id);
                 });
             }
         });
@@ -117,7 +147,6 @@ class CareLog extends Model
         }
 
         $vitals = $this->vitals;
-
         $organizationId = $visit->organization_id ?? null;
         $caregiverId = $visit->caregiver_id ?? null;
 

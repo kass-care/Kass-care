@@ -8,7 +8,6 @@ use App\Models\Patient;
 use App\Models\User;
 use App\Models\Visit;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Schema;
 
 class FacilityVisitController extends Controller
 {
@@ -26,7 +25,8 @@ class FacilityVisitController extends Controller
 
         $visits = Visit::where('facility_id', $facilityId)
             ->with(['client', 'caregiver', 'provider'])
-            ->latest()
+            ->latest('visit_date')
+            ->latest('id')
             ->get();
 
         $patients = Patient::where('facility_id', $facilityId)
@@ -39,8 +39,7 @@ class FacilityVisitController extends Controller
             ->get()
             ->keyBy('id');
 
-        $caregivers = User::where('facility_id', $facilityId)
-            ->where('role', 'caregiver')
+        $caregivers = Caregiver::where('facility_id', $facilityId)
             ->orderBy('name')
             ->get()
             ->keyBy('id');
@@ -76,8 +75,7 @@ class FacilityVisitController extends Controller
             ->orderBy('name')
             ->get();
 
-        $caregivers = User::where('facility_id', $facilityId)
-            ->where('role', 'caregiver')
+        $caregivers = Caregiver::where('facility_id', $facilityId)
             ->orderBy('name')
             ->get();
 
@@ -102,7 +100,7 @@ class FacilityVisitController extends Controller
         $validated = $request->validate([
             'client_id'    => ['required', 'exists:patients,id'],
             'provider_id'  => ['nullable', 'exists:users,id'],
-            'caregiver_id' => ['nullable', 'exists:users,id'],
+            'caregiver_id' => ['nullable', 'exists:caregivers,id'],
             'visit_date'   => ['required', 'date'],
             'status'       => ['nullable', 'string'],
         ], [
@@ -124,50 +122,19 @@ class FacilityVisitController extends Controller
 
         $caregiverId = null;
         if (!empty($validated['caregiver_id'])) {
-            $caregiverUser = User::where('facility_id', $facilityId)
-                ->where('role', 'caregiver')
+            $caregiver = Caregiver::where('facility_id', $facilityId)
                 ->findOrFail($validated['caregiver_id']);
 
-            if (Schema::hasColumn('visits', 'caregiver_id')) {
-                if (Schema::hasColumn('caregivers', 'user_id')) {
-                    $caregiverProfile = Caregiver::where('facility_id', $facilityId)
-                        ->where('user_id', $caregiverUser->id)
-                        ->first();
-
-                    if ($caregiverProfile) {
-                        $caregiverId = $caregiverProfile->id;
-                    }
-                }
-
-                if (!$caregiverId && Schema::hasColumn('caregivers', 'email') && !empty($caregiverUser->email)) {
-                    $caregiverProfile = Caregiver::where('facility_id', $facilityId)
-                        ->where('email', $caregiverUser->email)
-                        ->first();
-
-                    if ($caregiverProfile) {
-                        $caregiverId = $caregiverProfile->id;
-                    }
-                }
-
-                if (!$caregiverId && Schema::hasColumn('caregivers', 'name')) {
-                    $caregiverProfile = Caregiver::where('facility_id', $facilityId)
-                        ->where('name', $caregiverUser->name)
-                        ->first();
-
-                    if ($caregiverProfile) {
-                        $caregiverId = $caregiverProfile->id;
-                    }
-                }
-            }
+            $caregiverId = $caregiver->id;
         }
 
         Visit::create([
-            'facility_id'   => $facilityId,
-            'client_id'     => $patient->id,
-            'provider_id'   => $providerId,
-            'caregiver_id'  => $caregiverId,
-            'visit_date'    => $validated['visit_date'],
-            'status'        => $validated['status'] ?? 'scheduled',
+            'facility_id'  => $facilityId,
+            'client_id'    => $patient->id,
+            'provider_id'  => $providerId,
+            'caregiver_id' => $caregiverId,
+            'visit_date'   => $validated['visit_date'],
+            'status'       => $validated['status'] ?? 'scheduled',
         ]);
 
         return redirect()

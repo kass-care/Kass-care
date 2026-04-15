@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\Eloquent\Builder;
 
 class Alert extends Model
 {
@@ -17,20 +18,51 @@ class Alert extends Model
         'read_at',
     ];
 
-protected static function booted()
-{
-    static::addGlobalScope('facility', function ($query) {
-        if (Auth::check() && Auth::user()->facility_id) {
-            $query->whereHas('visit', function ($visitQuery) {
-                $visitQuery->where('facility_id', Auth::user()->facility_id);
-            });
-        }
-    });
-}
     protected $casts = [
         'resolved' => 'boolean',
         'read_at' => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope('facility', function (Builder $query) {
+            if (!Auth::check()) {
+                return;
+            }
+
+            $user = Auth::user();
+
+            if ($user->role === 'super_admin') {
+                $selectedFacilityId = session('facility_id');
+
+                if (!empty($selectedFacilityId)) {
+                    $query->whereHas('visit', function (Builder $visitQuery) use ($selectedFacilityId) {
+                        $visitQuery->where('facility_id', $selectedFacilityId);
+                    });
+                }
+
+                return;
+            }
+
+            if ($user->role === 'provider') {
+                $selectedFacilityId = session('facility_id') ?? $user->facility_id;
+
+                if (!empty($selectedFacilityId)) {
+                    $query->whereHas('visit', function (Builder $visitQuery) use ($selectedFacilityId) {
+                        $visitQuery->where('facility_id', $selectedFacilityId);
+                    });
+                }
+
+                return;
+            }
+
+            if (!empty($user->facility_id)) {
+                $query->whereHas('visit', function (Builder $visitQuery) use ($user) {
+                    $visitQuery->where('facility_id', $user->facility_id);
+                });
+            }
+        });
+    }
 
     /*
     |--------------------------------------------------------------------------

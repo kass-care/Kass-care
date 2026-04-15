@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Caregiver;
 use App\Models\Client;
 use App\Models\User;
 use App\Models\Visit;
@@ -50,13 +51,8 @@ class VisitController extends Controller
             : Client::orderBy('name')->get();
 
         $caregivers = $facilityId
-            ? User::where('facility_id', $facilityId)
-                ->where('role', 'caregiver')
-                ->orderBy('name')
-                ->get()
-            : User::where('role', 'caregiver')
-                ->orderBy('name')
-                ->get();
+            ? Caregiver::where('facility_id', $facilityId)->orderBy('name')->get()
+            : Caregiver::orderBy('name')->get();
 
         return view('visits.create', compact('clients', 'caregivers'));
     }
@@ -75,7 +71,7 @@ class VisitController extends Controller
 
         $validated = $request->validate([
             'client_id' => ['required', 'exists:clients,id'],
-            'caregiver_id' => ['required', 'exists:users,id'],
+            'caregiver_id' => ['required', 'exists:caregivers,id'],
             'activity' => ['required', 'string', 'max:255'],
             'visit_date' => ['required', 'date'],
             'status' => ['required', 'string', 'max:50'],
@@ -84,14 +80,21 @@ class VisitController extends Controller
         $client = Client::findOrFail($validated['client_id']);
 
         if ($facilityId) {
-            abort_if((int) $client->facility_id !== (int) $facilityId, 403, 'Selected client does not belong to this facility.');
+            abort_if(
+                (int) $client->facility_id !== (int) $facilityId,
+                403,
+                'Selected client does not belong to this facility.'
+            );
         }
 
-        $caregiver = User::where('role', 'caregiver')
-            ->findOrFail($validated['caregiver_id']);
+        $caregiver = Caregiver::findOrFail($validated['caregiver_id']);
 
         if ($facilityId) {
-            abort_if((int) $caregiver->facility_id !== (int) $facilityId, 403, 'Selected caregiver does not belong to this facility.');
+            abort_if(
+                (int) $caregiver->facility_id !== (int) $facilityId,
+                403,
+                'Selected caregiver does not belong to this facility.'
+            );
         }
 
         Visit::create([
@@ -112,15 +115,11 @@ class VisitController extends Controller
     {
         $this->authorizeVisit($visit);
 
-        $user = auth()->user();
-        $facilityId = session('facility_id') ?? $user->facility_id;
-
         $clients = Client::where('facility_id', $visit->facility_id)
             ->orderBy('name')
             ->get();
 
-        $caregivers = User::where('facility_id', $visit->facility_id)
-            ->where('role', 'caregiver')
+        $caregivers = Caregiver::where('facility_id', $visit->facility_id)
             ->orderBy('name')
             ->get();
 
@@ -133,18 +132,25 @@ class VisitController extends Controller
 
         $validated = $request->validate([
             'client_id' => ['required', 'exists:clients,id'],
-            'caregiver_id' => ['required', 'exists:users,id'],
+            'caregiver_id' => ['required', 'exists:caregivers,id'],
             'activity' => ['required', 'string', 'max:255'],
             'visit_date' => ['required', 'date'],
             'status' => ['required', 'string', 'max:50'],
         ]);
 
         $client = Client::findOrFail($validated['client_id']);
-        abort_if((int) $client->facility_id !== (int) $visit->facility_id, 403, 'Selected client does not belong to this facility.');
+        abort_if(
+            (int) $client->facility_id !== (int) $visit->facility_id,
+            403,
+            'Selected client does not belong to this facility.'
+        );
 
-        $caregiver = User::where('role', 'caregiver')
-            ->findOrFail($validated['caregiver_id']);
-        abort_if((int) $caregiver->facility_id !== (int) $visit->facility_id, 403, 'Selected caregiver does not belong to this facility.');
+        $caregiver = Caregiver::findOrFail($validated['caregiver_id']);
+        abort_if(
+            (int) $caregiver->facility_id !== (int) $visit->facility_id,
+            403,
+            'Selected caregiver does not belong to this facility.'
+        );
 
         $visit->update([
             'client_id' => $client->id,
@@ -176,7 +182,11 @@ class VisitController extends Controller
         $facilityId = session('facility_id') ?? $user->facility_id;
 
         if ($user->role !== 'super_admin') {
-            abort_if((int) $visit->facility_id !== (int) $facilityId, 403, 'Unauthorized visit access.');
+            abort_if(
+                (int) $visit->facility_id !== (int) $facilityId,
+                403,
+                'Unauthorized visit access.'
+            );
         }
     }
 }

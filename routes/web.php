@@ -61,15 +61,27 @@ Route::view('/terms', 'legal.terms')->name('terms');
 Route::get('/', function () {
     return view('welcome');
 });
+/*
+Auth scaffolding
+*/
+require __DIR__.'/auth.php';
+
 
 /*
 |--------------------------------------------------------------------------
-| Auth scaffolding
+| Facility selector (multi-tenant session switch)
 |--------------------------------------------------------------------------
 */
 
-require __DIR__ . '/auth.php';
+Route::middleware(['auth'])->post('/select-facility/{id}', function ($id) {
+    session(['facility_id' => $id]);
+    return back();
+})->name('select.facility');
 
+Route::middleware(['auth'])->post('/clear-facility-context', function () {
+    session()->forget('facility_id');
+    return back();
+})->name('clear.facility');
 /*
 |--------------------------------------------------------------------------
 | Redirect by role
@@ -88,6 +100,10 @@ Route::middleware('auth')->get('/redirect-by-role', function () {
     };
 })->name('redirect.by.role');
 
+Route::post('/select-facility/{id}', function ($id) {
+    session(['facility_id' => $id]);
+    return redirect('/facility-admin/home');
+})->name('facility.select');
 /*
 |--------------------------------------------------------------------------
 | Generic dashboard entry
@@ -359,7 +375,7 @@ Route::middleware(['auth', 'role:provider,super_admin', 'check.subscription'])
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'role:caregiver', 'check.subscription'])
+Route::middleware(['auth', 'role:caregiver'])
     ->prefix('caregiver')
     ->name('caregiver.')
     ->group(function () {

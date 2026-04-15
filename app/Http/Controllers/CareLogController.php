@@ -106,16 +106,23 @@ class CareLogController extends Controller
         return null;
     }
 
-    private function caregiverVisitQuery()
+    private function visitBaseQuery()
     {
-        $caregiver = $this->caregiverRecord();
         $facilityId = $this->currentFacilityId();
 
-        $query = Visit::query();
+        $query = Visit::query()->with(['client', 'caregiver', 'facility', 'provider']);
 
         if ($facilityId && Schema::hasColumn('visits', 'facility_id')) {
             $query->where('facility_id', $facilityId);
         }
+
+        return $query;
+    }
+
+    private function caregiverVisitQuery()
+    {
+        $caregiver = $this->caregiverRecord();
+        $query = $this->visitBaseQuery();
 
         if (!$caregiver) {
             return $query->whereRaw('1 = 0');
@@ -130,6 +137,62 @@ class CareLogController extends Controller
         return $query;
     }
 
+    private function careLogBaseQuery()
+    {
+        $facilityId = $this->currentFacilityId();
+
+        $query = CareLog::query()->with(['visit.client', 'visit.caregiver', 'visit.facility', 'visit.provider']);
+
+        if ($facilityId && Schema::hasColumn('visits', 'facility_id')) {
+            $query->whereHas('visit', function ($visitQuery) use ($facilityId) {
+                $visitQuery->where('facility_id', $facilityId);
+            });
+        }
+
+        return $query;
+    }
+
+    private function indexView(): string
+    {
+        $user = $this->currentUser();
+
+        if ($user->role === 'caregiver' && view()->exists('caregiver.care-logs.index')) {
+            return 'caregiver.care-logs.index';
+        }
+
+        if (in_array($user->role, ['provider', 'super_admin'], true) && view()->exists('provider.care-logs.index')) {
+            return 'provider.care-logs.index';
+        }
+
+        return 'caregiver.care-logs.index';
+    }
+
+    private function showView(): string
+    {
+        $user = $this->currentUser();
+
+        if ($user->role === 'caregiver' && view()->exists('caregiver.care-logs.show')) {
+            return 'caregiver.care-logs.show';
+        }
+
+        if (in_array($user->role, ['provider', 'super_admin'], true) && view()->exists('provider.care-logs.show')) {
+            return 'provider.care-logs.show';
+        }
+
+        return 'caregiver.care-logs.show';
+    }
+
+    private function redirectAfterSave()
+    {
+        $user = $this->currentUser();
+
+        return match ($user->role) {
+            'caregiver' => redirect()->route('caregiver.care-logs.index'),
+            'provider', 'super_admin' => redirect()->route('provider.care-logs.index'),
+            default => redirect()->back(),
+        };
+    }
+
     public function index()
     {
         $user = $this->currentUser();
@@ -138,21 +201,21 @@ class CareLogController extends Controller
             $caregiver = $this->caregiverRecord();
             abort_if(!$caregiver, 403, 'Caregiver profile not found.');
 
-            $careLogs = CareLog::with(['visit.client', 'visit.caregiver'])
+            $careLogs = $this->careLogBaseQuery()
                 ->whereHas('visit', function ($query) use ($caregiver) {
                     $query->where('caregiver_id', $caregiver->id);
                 })
                 ->latest()
                 ->get();
 
-            return view('caregiver.care-logs.index', compact('careLogs'));
+            return view($this->indexView(), compact('careLogs'));
         }
 
-        $careLogs = CareLog::with(['visit.client', 'visit.caregiver'])
+        $careLogs = $this->careLogBaseQuery()
             ->latest()
             ->get();
 
-        return view('caregiver.care-logs.index', compact('careLogs'));
+        return view($this->indexView(), compact('careLogs'));
     }
 
     public function create(Request $request)
@@ -165,7 +228,6 @@ class CareLogController extends Controller
             abort_if(!$caregiver, 403, 'Caregiver profile not found.');
 
             $visits = $this->caregiverVisitQuery()
-                ->with(['client', 'caregiver', 'facility', 'provider'])
                 ->orderBy('visit_date')
                 ->get();
 
@@ -176,7 +238,7 @@ class CareLogController extends Controller
             return view('care-logs.create', compact('visits', 'selectedVisit'));
         }
 
-        $visits = Visit::with(['client', 'caregiver', 'facility', 'provider'])
+        $visits = $this->visitBaseQuery()
             ->orderBy('visit_date')
             ->get();
 
@@ -190,10 +252,10 @@ class CareLogController extends Controller
     public function store(Request $request)
     {
         $user = $this->currentUser();
+        $facilityId = $this->currentFacilityId();
 
         $validated = $request->validate([
             'visit_id'             => ['required', 'exists:visits,id'],
-
             'adl_status'           => ['nullable', 'string'],
             'bathroom_assistance'  => ['nullable', 'string'],
             'mobility_support'     => ['nullable', 'string'],
@@ -201,7 +263,6 @@ class CareLogController extends Controller
             'medication_notes'     => ['nullable', 'string'],
             'charting_notes'       => ['nullable', 'string'],
             'care_notes'           => ['nullable', 'string'],
-
             'blood_pressure'       => ['nullable', 'string'],
             'pulse'                => ['nullable', 'string'],
             'temperature'          => ['nullable', 'string'],
@@ -209,14 +270,17 @@ class CareLogController extends Controller
             'oxygen_saturation'    => ['nullable', 'string'],
             'weight'               => ['nullable', 'string'],
             'blood_sugar'          => ['nullable', 'string'],
-
             'check_in_time'        => ['nullable', 'string'],
             'check_out_time'       => ['nullable', 'string'],
             'latitude'             => ['nullable', 'string'],
             'longitude'            => ['nullable', 'string'],
         ]);
 
-        $visit = Visit::findOrFail($validated['visit_id']);
+        $visit = Visit::query()->findOrFail($validated['visit_id']);
+
+        if ($facilityId && Schema::hasColumn('visits', 'facility_id')) {
+            abort_if((int) $visit->facility_id !== (int) $facilityId, 403, 'This visit is outside the selected facility.');
+        }
 
         if ($user->role === 'caregiver') {
             $caregiver = $this->caregiverRecord();
@@ -309,16 +373,20 @@ class CareLogController extends Controller
 
         $visit->save();
 
-        return redirect()
-            ->route('caregiver.care-logs.index')
+        return $this->redirectAfterSave()
             ->with('success', 'Care log saved successfully.');
     }
 
     public function show(CareLog $careLog)
     {
         $user = $this->currentUser();
+        $facilityId = $this->currentFacilityId();
 
-        $careLog->load(['visit.client', 'visit.caregiver']);
+        $careLog->load(['visit.client', 'visit.caregiver', 'visit.facility', 'visit.provider']);
+
+        if ($facilityId && !empty($careLog->visit?->facility_id)) {
+            abort_if((int) $careLog->visit->facility_id !== (int) $facilityId, 403, 'Unauthorized.');
+        }
 
         if ($user->role === 'caregiver') {
             $caregiver = $this->caregiverRecord();
@@ -328,6 +396,6 @@ class CareLogController extends Controller
             abort_if(!$ownsVisit, 403, 'Unauthorized.');
         }
 
-        return view('caregiver.care-logs.show', compact('careLog'));
+        return view($this->showView(), compact('careLog'));
     }
 }
