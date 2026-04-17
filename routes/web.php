@@ -76,6 +76,10 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/select-facility/{facility}', function (\App\Models\Facility $facility) {
         $user = auth()->user();
+               Route::post('/clear-facility-context', function () {
+    session()->forget('facility_id');
+    return back()->with('success', 'Facility context cleared.');
+})->name('clear.facility');
 
         abort_if(!$user, 403, 'Unauthorized.');
 
@@ -580,3 +584,7 @@ Route::post('/clear-facility-context', function () {
     session()->forget(['facility_id', 'facility_name']);
     return redirect('/admin/dashboard');
 })->middleware('auth')->name('facility.clear');
+Route::post('/clear-facility-context', function () {
+    session()->forget('facility_id');
+    return redirect()->back();
+})->name('clear.facility');
