@@ -67,7 +67,7 @@ class FacilityOnboardingController extends Controller
         ]);
 
         $selectedPlan = $request->plan;
-        $$facilityLimit = $plans[$selectedPlan]['facility_limit'];
+        $facilityLimit = $plans[$selectedPlan]['facility_limit'];
 
         DB::beginTransaction();
 
@@ -75,12 +75,11 @@ class FacilityOnboardingController extends Controller
             $facility = Facility::create([
                 'name' => $request->facility_name,
                 'email' => $request->facility_email,
-               'accepted_terms' => true,
+                'accepted_terms' => true,
                 'accepted_terms_at' => now(),
                 'contact_person' => $request->admin_name,
                 'subscription_status' => 'inactive',
                 'facility_limit' => $facilityLimit,
-                
             ]);
 
             $user = User::create([

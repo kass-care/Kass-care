@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Caregiver;
+use App\Models\Client;
 use App\Models\Facility;
 use App\Models\Patient;
 use App\Models\User;
@@ -23,18 +24,20 @@ class FacilityVisitController extends Controller
 
         $facility = Facility::findOrFail($facilityId);
 
+        $this->syncFacilityClientsFromPatients($facilityId);
+
         $visits = Visit::where('facility_id', $facilityId)
             ->with(['client', 'caregiver', 'provider'])
             ->latest('visit_date')
             ->latest('id')
             ->get();
 
-        $patients = Patient::where('facility_id', $facilityId)
+        $clients = Client::where('facility_id', $facilityId)
+            ->orderBy('name')
             ->get()
             ->keyBy('id');
 
-        $providers = User::where('facility_id', $facilityId)
-            ->where('role', 'provider')
+        $providers = User::where('role', 'provider')
             ->orderBy('name')
             ->get()
             ->keyBy('id');
@@ -47,7 +50,7 @@ class FacilityVisitController extends Controller
         return view('facility.visits.index', compact(
             'facility',
             'visits',
-            'patients',
+            'clients',
             'providers',
             'caregivers'
         ));
@@ -65,13 +68,13 @@ class FacilityVisitController extends Controller
 
         $facility = Facility::findOrFail($facilityId);
 
-        $clients = Patient::where('facility_id', $facilityId)
-            ->orderBy('first_name')
-            ->orderBy('last_name')
+        $this->syncFacilityClientsFromPatients($facilityId);
+
+        $clients = Client::where('facility_id', $facilityId)
+            ->orderBy('name')
             ->get();
 
-        $providers = User::where('facility_id', $facilityId)
-            ->where('role', 'provider')
+        $providers = User::where('role', 'provider')
             ->orderBy('name')
             ->get();
 
@@ -97,8 +100,10 @@ class FacilityVisitController extends Controller
                 ->with('error', 'No facility selected.');
         }
 
+        $this->syncFacilityClientsFromPatients($facilityId);
+
         $validated = $request->validate([
-            'client_id'    => ['required', 'exists:patients,id'],
+            'client_id'    => ['required', 'exists:clients,id'],
             'provider_id'  => ['nullable', 'exists:users,id'],
             'caregiver_id' => ['nullable', 'exists:caregivers,id'],
             'visit_date'   => ['required', 'date'],
@@ -108,13 +113,12 @@ class FacilityVisitController extends Controller
             'visit_date.required' => 'Please choose a visit date.',
         ]);
 
-        $patient = Patient::where('facility_id', $facilityId)
+        $client = Client::where('facility_id', $facilityId)
             ->findOrFail($validated['client_id']);
 
         $providerId = null;
         if (!empty($validated['provider_id'])) {
-            $provider = User::where('facility_id', $facilityId)
-                ->where('role', 'provider')
+            $provider = User::where('role', 'provider')
                 ->findOrFail($validated['provider_id']);
 
             $providerId = $provider->id;
@@ -130,7 +134,7 @@ class FacilityVisitController extends Controller
 
         Visit::create([
             'facility_id'  => $facilityId,
-            'client_id'    => $patient->id,
+            'client_id'    => $client->id,
             'provider_id'  => $providerId,
             'caregiver_id' => $caregiverId,
             'visit_date'   => $validated['visit_date'],
@@ -157,5 +161,29 @@ class FacilityVisitController extends Controller
         $visit->load(['client', 'provider', 'caregiver']);
 
         return view('facility.visits.show', compact('visit'));
+    }
+
+    private function syncFacilityClientsFromPatients(int $facilityId): void
+    {
+        $patients = Patient::where('facility_id', $facilityId)->get();
+
+        foreach ($patients as $patient) {
+            $fullName = trim(($patient->first_name ?? '') . ' ' . ($patient->last_name ?? ''));
+
+            if ($fullName === '') {
+                continue;
+            }
+
+            $client = Client::where('facility_id', $facilityId)
+                ->where('name', $fullName)
+                ->first();
+
+            if (!$client) {
+                Client::create([
+                    'name' => $fullName,
+                    'facility_id' => $facilityId,
+                ]);
+            }
+        }
     }
 }

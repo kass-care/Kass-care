@@ -2,7 +2,6 @@
 
 @section('content')
 <div class="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
-
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold">Compliance Dashboard</h1>
 
@@ -44,11 +43,10 @@
                     </tr>
                 </thead>
                 <tbody>
-
                     @foreach($missedVisits as $visit)
                         <tr class="border-b">
-                            <td class="py-2">{{ $visit->client->name ?? 'N/A' }}</td>
-                            <td class="py-2">{{ $visit->caregiver->name ?? 'N/A' }}</td>
+                            <td class="py-2">{{ $visit->client->full_name ?? 'N/A' }}</td>
+                            <td class="py-2">{{ $visit->caregiver->full_name ?? 'N/A' }}</td>
                             <td class="py-2 text-red-600 font-bold">Missed</td>
                             <td class="py-2">Visit missed</td>
                             <td class="py-2">
@@ -59,8 +57,8 @@
 
                     @foreach($missingCareLogs as $visit)
                         <tr class="border-b">
-                            <td class="py-2">{{ $visit->client->name ?? 'N/A' }}</td>
-                            <td class="py-2">{{ $visit->caregiver->name ?? 'N/A' }}</td>
+                            <td class="py-2">{{ $visit->client->full_name ?? 'N/A' }}</td>
+                            <td class="py-2">{{ $visit->caregiver->full_name ?? 'N/A' }}</td>
                             <td class="py-2">{{ ucfirst(strtolower($visit->status ?? 'Scheduled')) }}</td>
                             <td class="py-2 text-yellow-600">Missing Care Log</td>
                             <td class="py-2">
@@ -74,8 +72,8 @@
 
                     @foreach($missingNotes as $visit)
                         <tr class="border-b">
-                            <td class="py-2">{{ $visit->client->name ?? 'N/A' }}</td>
-                            <td class="py-2">{{ $visit->caregiver->name ?? 'N/A' }}</td>
+                            <td class="py-2">{{ $visit->client->full_name ?? 'N/A' }}</td>
+                            <td class="py-2">{{ $visit->caregiver->full_name ?? 'N/A' }}</td>
                             <td class="py-2">{{ ucfirst(strtolower($visit->status ?? 'Completed')) }}</td>
                             <td class="py-2 text-blue-600">Missing Provider Note</td>
                             <td class="py-2">
@@ -94,11 +92,9 @@
                             </td>
                         </tr>
                     @endif
-
                 </tbody>
             </table>
         </div>
     </div>
-
 </div>
 @endsection

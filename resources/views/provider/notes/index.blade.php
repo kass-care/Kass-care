@@ -75,10 +75,10 @@
                                     #{{ $note->visit->id ?? 'N/A' }}
                                 </td>
                                 <td class="px-6 py-4">
-                                    {{ $note->visit->client->name ?? 'N/A' }}
+                                    {{ $note->visit->client->full_name ?? 'N/A' }}
                                 </td>
                                 <td class="px-6 py-4">
-                                    {{ $note->visit->caregiver->name ?? 'N/A' }}
+                                    {{ $note->visit->caregiver->full_name ?? 'N/A' }}
                                 </td>
                                 <td class="px-6 py-4">
                                     {{ $note->visit->visit_date ?? 'N/A' }}

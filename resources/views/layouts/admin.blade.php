@@ -174,7 +174,7 @@
                     </p>
 
                     <div class="space-y-1.5">
-                        <a href="{{ route('admin.facilities.index') }}"
+                        <a href="{{ route('admin.caregivers.index') }}"
                            class="group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition
                            {{ request()->routeIs('admin.facilities.*') ? 'bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-500/20' : 'text-slate-200 hover:bg-slate-900 hover:text-white' }}">
                             <span>🏥</span>
@@ -187,13 +187,14 @@
     <span>Providers</span>
 </a>
 
-                        <a href="{{ route('admin.facilities.index') }}">
-                           class="group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition
-                           {{ request()->routeIs('admin.caregivers.*') ? 'bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-500/20' : 'text-slate-200 hover:bg-slate-900 hover:text-white' }}">
-                            <span>👨‍⚕️</span>
-                            <span>Caregivers</span>
-                        </a>
-
+                           <a href="{{ route('admin.caregivers.index') }}"
+   class="group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition
+   {{ request()->routeIs('admin.caregivers.*') 
+      ? 'bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-500/20' 
+      : 'text-slate-200 hover:bg-slate-900 hover:text-white' }}">
+    <span>👨‍⚕️</span>
+    <span>Caregivers</span>
+</a>
                         <a href="{{ route('admin.clients.index') }}"
                            class="group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition
                            {{ request()->routeIs('admin.clients.*') ? 'bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-500/20' : 'text-slate-200 hover:bg-slate-900 hover:text-white' }}">

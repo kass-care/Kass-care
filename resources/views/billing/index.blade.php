@@ -41,7 +41,7 @@
             <div class="rounded-3xl bg-white border border-slate-200 shadow-sm p-6">
                 <p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Account</p>
                 <h2 class="mt-3 text-xl font-black text-slate-900">
-                    {{ $user->name ?? 'N/A' }}
+                    {{ optional($user)->name ?? 'N/A' }}
                 </h2>
                 <p class="mt-2 text-sm text-slate-500">
                     {{ $user->email ?? 'N/A' }}

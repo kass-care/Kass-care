@@ -17,7 +17,7 @@
                 <div class="xl:col-span-2 p-8 lg:p-10">
                     <p class="text-[11px] uppercase tracking-[0.35em] text-cyan-200 font-bold">Facility Context Active</p>
                     <h1 class="mt-3 text-3xl md:text-4xl font-black leading-tight">
-                        {{ $selectedFacility->name }}
+                        {{ $selectedFacility->name ?? 'Facility Access' }}
                     </h1>
                     <p class="mt-4 max-w-3xl text-sm md:text-base text-indigo-100 leading-7">
                         You are currently viewing platform data filtered to this facility. All dashboard totals below reflect the selected facility context.
@@ -34,7 +34,7 @@
                             Change Facility
                         </a>
 
-                        <form action="{{ route('facility.clear') }}" method="POST">
+                        <form action="{{ route('clear.facility') }}" method="POST">
                             @csrf
                             <button type="submit"
                                     class="inline-flex items-center rounded-2xl border border-red-300/30 bg-red-500/20 px-5 py-3 text-sm font-semibold text-white hover:bg-red-500/30 transition">

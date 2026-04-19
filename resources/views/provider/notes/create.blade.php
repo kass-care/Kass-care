@@ -38,7 +38,7 @@
         <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
             <div class="mb-6 space-y-2">
                 <p><strong>Visit ID:</strong> {{ $visit->id }}</p>
-                <p><strong>Client:</strong> {{ $visit->client->name ?? 'N/A' }}</p>
+                <p><strong>Client:</strong> {{ $visit->client->full_name ?? 'N/A' }}</p>
                 <p><strong>Caregiver:</strong> {{ $visit->caregiver->name ?? 'N/A' }}</p>
                 <p><strong>Date:</strong> {{ $visit->visit_date ?? 'N/A' }}</p>
             </div>

@@ -236,7 +236,7 @@
                     </div>
 
                     <span class="hidden md:inline text-sm font-medium text-gray-600">
-                        {{ auth()->user()->name }}
+                        <span>{{ auth()->user()?->name ?? 'Guest' }}</span>
                     </span>
 
                     <form method="POST" action="{{ route('logout') }}">
@@ -286,6 +286,16 @@
             </div>
         </div>
     @endif
+                           @include('layouts.navigation')
+
+@if(auth()->check())
+    <div class="bg-gradient-to-r from-indigo-700 via-purple-700 to-indigo-800 text-white text-sm">
+        <div class="mx-auto max-w-7xl px-4 py-2 text-center font-medium">
+            🚀 KASSCare Pilot Program — Thank you for helping shape the future of healthcare documentation.
+        </div>
+    </div>
+@endif
+
 
     @yield('content')
 </main>

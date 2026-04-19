@@ -65,56 +65,38 @@ Route::get('/', function () {
 Auth scaffolding
 */
 require __DIR__.'/auth.php';
-
 /*
 |--------------------------------------------------------------------------
 | Facility context switch + dashboard redirects
 |--------------------------------------------------------------------------
 */
-
 Route::middleware('auth')->group(function () {
 
     Route::post('/select-facility/{facility}', function (\App\Models\Facility $facility) {
         $user = auth()->user();
-               Route::post('/clear-facility-context', function () {
-    session()->forget('facility_id');
-    return back()->with('success', 'Facility context cleared.');
-})->name('clear.facility');
 
         abort_if(!$user, 403, 'Unauthorized.');
 
-        // Caregivers do not switch facility context manually
         if ($user->role === 'caregiver') {
             abort(403, 'Caregivers cannot switch facility context.');
         }
 
-        // Save selected facility in session
         session([
-            'facility_id'   => $facility->id,
+            'facility_id' => $facility->id,
             'facility_name' => $facility->name,
         ]);
 
-        // Role-aware redirect
         return match ($user->role) {
-            'super_admin' => redirect()
-                ->route('admin.dashboard')
-                ->with('success', 'You are now managing: ' . $facility->name),
-
-            'admin' => redirect()
-                ->route('facility.admin.home')
-                ->with('success', 'You are now managing: ' . $facility->name),
-
-            'provider' => redirect()
-                ->route('provider.dashboard')
-                ->with('success', 'Facility context changed to: ' . $facility->name),
-
-            default => redirect()
-                ->route('dashboard'),
+            'super_admin' => redirect()->route('admin.dashboard'),
+            'admin' => redirect()->route('facility.admin.home'),
+            'provider' => redirect()->route('provider.dashboard'),
+            default => redirect()->route('dashboard'),
         };
     })->name('select.facility');
 
     Route::post('/clear-facility-context', function () {
-        session()->forget(['facility_id', 'facility_name']);
+        session()->forget('facility_id');
+        session()->forget('facility_name');
 
         return back()->with('success', 'Facility context cleared.');
     })->name('clear.facility');
@@ -126,13 +108,9 @@ Route::middleware('auth')->group(function () {
 
         return match ($user->role) {
             'super_admin' => redirect()->route('admin.dashboard'),
-
             'admin' => redirect()->route('facility.admin.home'),
-
             'provider' => redirect()->route('provider.dashboard'),
-
             'caregiver' => redirect()->route('caregiver.dashboard'),
-
             default => redirect()->route('login'),
         };
     })->name('redirect.by.role');
@@ -144,28 +122,25 @@ Route::middleware('auth')->group(function () {
 
         return match ($user->role) {
             'super_admin' => redirect()->route('admin.dashboard'),
-
             'admin' => redirect()->route('facility.admin.home'),
-
             'provider' => redirect()->route('provider.dashboard'),
-
             'caregiver' => redirect()->route('caregiver.dashboard'),
-
             default => redirect()->route('login'),
         };
     })->name('dashboard');
 
     Route::get('/debug-user', function () {
         return response()->json([
-            'id'                  => auth()->user()?->id,
-            'name'                => auth()->user()?->name,
-            'email'               => auth()->user()?->email,
-            'role'                => auth()->user()?->role,
-            'facility_id'         => auth()->user()?->facility_id,
+            'id' => auth()->user()?->id,
+            'name' => auth()->user()?->name,
+            'email' => auth()->user()?->email,
+            'role' => auth()->user()?->role,
+            'facility_id' => auth()->user()?->facility_id,
             'session_facility_id' => session('facility_id'),
             'session_facility_name' => session('facility_name'),
         ]);
     })->name('debug.user');
+
 });
 
 /*

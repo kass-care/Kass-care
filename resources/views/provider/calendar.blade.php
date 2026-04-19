@@ -77,7 +77,7 @@
                                 <td class="px-6 py-4 text-sm text-gray-700">#{{ $visit->id }}</td>
 
                                 <td class="px-6 py-4 text-sm font-medium text-gray-900">
-                                    {{ $visit->client->name ?? 'N/A' }}
+                                    {{ $visit->client->full_name ?? 'N/A' }}
                                 </td>
 
                                 <td class="px-6 py-4 text-sm text-gray-700">

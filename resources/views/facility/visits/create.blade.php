@@ -50,9 +50,11 @@
                         <option value="">Select client</option>
                         @foreach ($clients as $client)
                             @php
-                                $clientName = trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? ''));
-                                if ($clientName === '') {
-                                    $clientName = $client->name ?? 'Unnamed Client';
+                                $clientName = $client->name
+                                    ?? trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? ''));
+
+                                if (!$clientName) {
+                                    $clientName = 'Unnamed Client';
                                 }
                             @endphp
                             <option value="{{ $client->id }}" {{ old('client_id') == $client->id ? 'selected' : '' }}>
@@ -74,7 +76,7 @@
                         <option value="">Select provider</option>
                         @foreach ($providers as $provider)
                             <option value="{{ $provider->id }}" {{ old('provider_id') == $provider->id ? 'selected' : '' }}>
-                                {{ $provider->name }}
+                                {{ $provider->name ?? 'Unnamed Provider' }}
                             </option>
                         @endforeach
                     </select>
@@ -146,3 +148,4 @@
     </div>
 </body>
 </html>
+
