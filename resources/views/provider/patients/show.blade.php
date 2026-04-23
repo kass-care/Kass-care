@@ -10,9 +10,9 @@
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
         <div class="flex items-start justify-between">
             <div>
-                <h2 class="text-2xl font-bold text-gray-900">{{ $client->name }}</h2>
-                <p class="text-gray-600 mt-2"><span class="font-semibold">Phone:</span> {{ $client->phone ?: 'N/A' }}</p>
-                <p class="text-gray-600"><span class="font-semibold">Status:</span> {{ $client->status ?: 'N/A' }}</p>
+                <h2 class="text-2xl font-bold text-gray-900">{{ $patient->name }}</h2>
+                <p class="text-gray-600 mt-2"><span class="font-semibold">Phone:</span> {{ $patient->phone ?: 'N/A' }}</p>
+                <p class="text-gray-600"><span class="font-semibold">Status:</span> {{ $patient->status ?: 'N/A' }}</p>
             </div>
 
             <div>
@@ -28,7 +28,7 @@
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
             <h3 class="text-lg font-bold text-gray-900 mb-4">Diagnoses</h3>
 
-            @forelse($client->diagnoses as $diagnosis)
+            @forelse($patient->diagnoses as $diagnosis)
                 <div class="py-2 border-b border-gray-100 text-gray-700">
                     {{ $diagnosis->name ?? $diagnosis->diagnosis ?? 'Diagnosis' }}
                 </div>
@@ -40,7 +40,7 @@
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
             <h3 class="text-lg font-bold text-gray-900 mb-4">Medications</h3>
 
-            @forelse($client->medications as $medication)
+            @forelse($patient->medications as $medication)
                 <div class="py-2 border-b border-gray-100">
                     <div class="font-medium text-gray-800">
                         {{ $medication->name ?? $medication->medication_name ?? 'Medication' }}
@@ -61,7 +61,7 @@
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         <h3 class="text-lg font-bold text-gray-900 mb-4">Recent Visits</h3>
 
-        @forelse($client->visits->sortByDesc('visit_date')->take(5) as $visit)
+        @forelse($patient->visits->sortByDesc('visit_date')->take(5) as $visit)
             <div class="flex items-center justify-between py-3 border-b border-gray-100">
                 <div>
                     <div class="font-medium text-gray-800">

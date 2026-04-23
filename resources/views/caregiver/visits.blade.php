@@ -42,55 +42,88 @@
 
         @if(isset($visits) && $visits->count())
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                @foreach($visits as $visit)
+                @foreach ($visits as $visit)
                     @php
                         $status = $visit->status ?? 'scheduled';
 
                         $clientName =
                             optional($visit->client)->full_name
-                            ?? trim((optional($visit->client)->first_name ?? '') . ' ' . (optional($visit->client)->last_name ?? ''))
-                            ?: optional($visit->client)->name
-                            ?: 'Client';
+                            ?? trim(
+                                (optional($visit->client)->first_name ?? '')
+                                . ' ' .
+                                (optional($visit->client)->last_name ?? '')
+                            );
+
+                        if (blank($clientName)) {
+                            $clientName = optional($visit->client)->name ?: 'Client';
+                        }
 
                         $facilityName = optional($visit->facility)->name ?? 'No facility linked';
 
                         $providerName =
                             optional($visit->provider)->name
-                            ?? trim((optional($visit->provider)->first_name ?? '') . ' ' . (optional($visit->provider)->last_name ?? ''))
-                            ?: 'Not linked';
+                            ?? trim(
+                                (optional($visit->provider)->first_name ?? '')
+                                . ' ' .
+                                (optional($visit->provider)->last_name ?? '')
+                            );
+
+                        if (blank($providerName)) {
+                            $providerName = optional($visit->provider)->email ?: 'Not linked';
+                        }
 
                         $visitDate = $visit->visit_date
                             ? \Carbon\Carbon::parse($visit->visit_date)->format('M d, Y')
                             : 'N/A';
 
-                        $visitTime = 'N/A';
-                        if ($visit->start_time || $visit->end_time) {
-                            $start = $visit->start_time ? \Carbon\Carbon::parse($visit->start_time)->format('g:i A') : null;
-                            $end = $visit->end_time ? \Carbon\Carbon::parse($visit->end_time)->format('g:i A') : null;
-                            $visitTime = trim(($start ?? '') . ($end ? ' - '.$end : ''));
-                        }
+                        $visitTimeValue = $visit->check_in_time
+                            ?? $visit->check_in
+                            ?? $visit->start_time
+                            ?? null;
 
-                        $checkInText = $visit->check_in_time
-                            ? \Carbon\Carbon::parse($visit->check_in_time)->format('M d, Y h:i A')
+                        $visitTime = $visitTimeValue
+                            ? \Carbon\Carbon::parse($visitTimeValue)->format('M d, Y h:i A')
+                            : 'N/A';
+
+                        $checkInValue = $visit->check_in_time ?? $visit->check_in ?? null;
+                        $checkInText = $checkInValue
+                            ? \Carbon\Carbon::parse($checkInValue)->format('M d, Y h:i A')
                             : 'Not checked in yet';
 
-                        $checkOutText = $visit->check_out_time
-                            ? \Carbon\Carbon::parse($visit->check_out_time)->format('M d, Y h:i A')
+                        $checkOutValue = $visit->check_out_time ?? $visit->check_out ?? null;
+                        $checkOutText = $checkOutValue
+                            ? \Carbon\Carbon::parse($checkOutValue)->format('M d, Y h:i A')
                             : 'Not checked out yet';
-                        
-                       $durationText = 'Not available yet';
 
-if (!empty($visit->duration_minutes)) {
-    $hours = floor($visit->duration_minutes / 60);
-    $minutes = $visit->duration_minutes % 60;
+                        $durationText = 'Not available yet';
 
-    if ($hours > 0) {
-        $durationText = $hours . ' hr ' . $minutes . ' mins';
-    } else {
-        $durationText = $minutes . ' mins';
-    }
-}
-                         
+                        if (!empty($visit->duration_minutes)) {
+                            $hours = floor((int) $visit->duration_minutes / 60);
+                            $minutes = (int) $visit->duration_minutes % 60;
+
+                            if ($hours > 0) {
+                                $durationText = $hours . ' hr ' . $minutes . ' mins';
+                            } else {
+                                $durationText = $minutes . ' mins';
+                            }
+                        } elseif ($checkInValue && $checkOutValue) {
+                            try {
+                                $start = \Carbon\Carbon::parse($checkInValue);
+                                $end = \Carbon\Carbon::parse($checkOutValue);
+                                $minutes = $start->diffInMinutes($end);
+                                $hours = floor($minutes / 60);
+                                $mins = $minutes % 60;
+
+                                $durationText = $hours > 0
+                                    ? $hours . ' hr ' . $mins . ' mins'
+                                    : $mins . ' mins';
+                            } catch (\Throwable $e) {
+                                $durationText = 'Not available yet';
+                            }
+                        }
+
+                        $canCheckIn = !$checkInValue && !in_array($status, ['completed', 'missed']);
+                        $canCheckOut = $checkInValue && !$checkOutValue && $status !== 'completed';
                     @endphp
 
                     <div class="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 overflow-hidden">
@@ -164,38 +197,36 @@ if (!empty($visit->duration_minutes)) {
                             </div>
 
                             <div class="mt-6 flex flex-wrap gap-3">
-                                @if(!$visit->check_in_time && ($visit->status ?? 'scheduled') === 'scheduled')
-                                    <form method="POST"
-                                          action="{{ route('caregiver.checkin.store', $visit->id) }}"
-                                          class="evv-form">
+                                @if($canCheckIn)
+                                    <form method="POST" action="{{ route('caregiver.checkin.store', $visit->id) }}" class="evv-form">
                                         @csrf
                                         <input type="hidden" name="latitude" class="latitude-input">
                                         <input type="hidden" name="longitude" class="longitude-input">
 
-                                        <button type="submit"
-                                                class="inline-flex items-center justify-center rounded-xl bg-green-600 px-5 py-3 text-sm font-semibold text-white hover:bg-green-700">
+                                        <button
+                                            type="submit"
+                                            class="inline-flex items-center justify-center rounded-xl bg-green-600 px-5 py-3 text-sm font-semibold text-white hover:bg-green-700 transition">
                                             Check In
                                         </button>
                                     </form>
                                 @endif
 
-                                @if($visit->check_in_time && !$visit->check_out_time && ($visit->status ?? '') !== 'completed')
-                                    <form method="POST"
-                                          action="{{ route('caregiver.visits.checkout', $visit->id) }}"
-                                          class="evv-form">
+                                @if($canCheckOut)
+                                    <form method="POST" action="{{ route('caregiver.visits.checkout', $visit->id) }}" class="evv-form">
                                         @csrf
                                         <input type="hidden" name="latitude" class="latitude-input">
                                         <input type="hidden" name="longitude" class="longitude-input">
 
-                                        <button type="submit"
-                                                class="inline-flex items-center justify-center rounded-xl bg-red-600 px-5 py-3 text-sm font-semibold text-white hover:bg-red-700">
+                                        <button
+                                            type="submit"
+                                            class="inline-flex items-center justify-center rounded-xl bg-red-600 px-5 py-3 text-sm font-semibold text-white hover:bg-red-700 transition">
                                             Check Out
                                         </button>
                                     </form>
                                 @endif
 
                                 <a href="{{ route('caregiver.care-logs.create', ['visit_id' => $visit->id]) }}"
-                                   class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white hover:bg-indigo-700">
+                                   class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white hover:bg-indigo-700 transition">
                                     Open Visit
                                 </a>
                             </div>
@@ -222,15 +253,16 @@ if (!empty($visit->duration_minutes)) {
         @else
             <div class="rounded-2xl bg-white px-6 py-12 text-center shadow-sm ring-1 ring-slate-200">
                 <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-indigo-100">
-                    <span class="text-2xl">🩺</span>
+                    <span class="text-2xl">🗓️</span>
                 </div>
                 <h2 class="mt-4 text-2xl font-bold text-slate-900">No visits assigned yet</h2>
                 <p class="mt-2 text-sm text-slate-600">
                     Once visits are assigned to this caregiver, they will appear here for EVV check-in and check-out.
                 </p>
+
                 <div class="mt-6">
                     <a href="{{ route('caregiver.dashboard') }}"
-                       class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white hover:bg-indigo-700">
+                       class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white hover:bg-indigo-700 transition">
                         Back to Dashboard
                     </a>
                 </div>
@@ -241,27 +273,36 @@ if (!empty($visit->duration_minutes)) {
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const forms = document.querySelectorAll('.evv-form');
+    document.querySelectorAll('.evv-form').forEach(function (form) {
+        form.addEventListener('submit', function () {
+            if (!navigator.geolocation) {
+                return;
+            }
 
-    if (!navigator.geolocation) {
-        console.log('Geolocation not supported by this browser.');
-        return;
-    }
+            const latitudeInput = form.querySelector('.latitude-input');
+            const longitudeInput = form.querySelector('.longitude-input');
 
-    navigator.geolocation.getCurrentPosition(
-        function (position) {
-            forms.forEach(function (form) {
-                const latInput = form.querySelector('.latitude-input');
-                const lngInput = form.querySelector('.longitude-input');
+            if (!latitudeInput || !longitudeInput) {
+                return;
+            }
 
-                if (latInput) latInput.value = position.coords.latitude;
-                if (lngInput) lngInput.value = position.coords.longitude;
-            });
-        },
-        function (error) {
-            console.log('Location permission denied or unavailable.', error);
-        }
-    );
+            navigator.geolocation.getCurrentPosition(
+                function (position) {
+                    latitudeInput.value = position.coords.latitude;
+                    longitudeInput.value = position.coords.longitude;
+                    form.submit();
+                },
+                function () {
+                    form.submit();
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                }
+            );
+        }, { once: true });
+    });
 });
 </script>
 @endsection

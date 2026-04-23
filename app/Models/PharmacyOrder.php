@@ -20,11 +20,22 @@ class PharmacyOrder extends Model
         'pharmacy_fax',
         'instructions',
         'status',
-        'prescribed_at',
+        'prescribed_at'
     ];
+
+    /*
+    |--------------------------------------------------------------------------
+    | Relationships
+    |--------------------------------------------------------------------------
+    */
 
     public function client()
     {
         return $this->belongsTo(Client::class);
+    }
+
+    public function provider()
+    {
+        return $this->belongsTo(User::class, 'provider_id');
     }
 }

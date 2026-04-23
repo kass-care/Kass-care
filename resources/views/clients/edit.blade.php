@@ -40,6 +40,52 @@
                 </div>
 
                 <div>
+                      <div class="bg-white rounded-xl border p-6 mt-6">
+
+<h3 class="text-lg font-semibold mb-4">
+Compliance Tracking
+</h3>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+<div>
+<label class="block text-sm font-semibold mb-2">
+Annual Wellness Exam
+</label>
+
+<input
+type="date"
+name="annual_wellness_exam"
+value="{{ $client->annual_wellness_exam }}"
+class="w-full border rounded-lg px-3 py-2">
+</div>
+
+<div>
+<label class="block text-sm font-semibold mb-2">
+Labs
+</label>
+
+<input
+type="date"
+name="last_lab_test"
+value="{{ $client->last_lab_test }}"
+class="w-full border rounded-lg px-3 py-2">
+</div>
+
+<div>
+<label class="block text-sm font-semibold mb-2">
+Medical Screening
+</label>
+
+<input
+type="date"
+name="last_medical_screening"
+value="{{ $client->last_medical_screening }}"
+class="w-full border rounded-lg px-3 py-2">
+</div>
+
+</div>
+</div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Date of Birth</label>
                     <input type="date" name="date_of_birth" value="{{ old('date_of_birth', $client->date_of_birth) }}"
                            class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">

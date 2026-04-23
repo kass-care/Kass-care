@@ -299,13 +299,6 @@
                         <span>↗</span>
                     </a>
 
-                    @if (\Illuminate\Support\Facades\Route::has('provider.care-logs.index'))
-                        <a href="{{ route('provider.care-logs.index') }}"
-                           class="flex items-center justify-between rounded-2xl bg-gray-100 px-5 py-4 transition hover:bg-gray-200">
-                            <span class="font-semibold text-gray-700">Care Logs</span>
-                            <span>↗</span>
-                        </a>
-                    @endif
 
                     @if (\Illuminate\Support\Facades\Route::has('provider.tasks.index'))
                         <a href="{{ route('provider.tasks.index') }}"

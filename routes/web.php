@@ -240,6 +240,18 @@ Route::middleware(['auth', 'role:provider,admin,super_admin'])->group(function (
 
     Route::delete('/facility-cycles/{facilityProviderCycle}', [FacilityProviderCycleController::class, 'destroy'])
         ->name('facility-provider-cycles.destroy');
+
+Route::get('/pharmacy', [PharmacyOrderController::class, 'index'])
+    ->name('pharmacy.index');
+
+Route::get('/pharmacy/create', [PharmacyOrderController::class, 'create'])
+    ->name('pharmacy.create');
+
+Route::post('/pharmacy', [PharmacyOrderController::class, 'store'])
+    ->name('pharmacy.store');
+
+Route::get('/pharmacy/{order}', [PharmacyOrderController::class, 'show'])
+    ->name('pharmacy.show');
 });
 
 /*
@@ -374,13 +386,23 @@ Route::get('/care-logs/{careLog}', [CareLogController::class, 'show'])
         Route::post('/care-logs', [CareLogController::class, 'store'])->name('care-logs.store');
         Route::get('/care-logs/{careLog}', [CareLogController::class, 'show'])->name('care-logs.show');
 
-        Route::get('/pharmacy', [PharmacyOrderController::class, 'index'])->name('pharmacy.index');
-        Route::get('/pharmacy/create', [PharmacyOrderController::class, 'create'])->name('pharmacy.create');
-        Route::post('/pharmacy/store', [PharmacyOrderController::class, 'store'])->name('pharmacy.store');
-        Route::post('/pharmacy/{id}/status', [PharmacyOrderController::class, 'updateStatus'])->name('pharmacy.status');
-        Route::post('/pharmacy/order/{pdf}', [PharmacyOrderController::class, 'downloadPdf'])->name('pharmacy.pdf');
-        Route::post('/pharmacy/order/prescription/email', [PharmacyOrderController::class, 'email'])->name('pharmacy.email');
+      Route::get('/pharmacy', [PharmacyOrderController::class, 'index'])
+    ->name('pharmacy.index');
 
+Route::get('/pharmacy/create', [PharmacyOrderController::class, 'create'])
+    ->name('pharmacy.create');
+
+Route::post('/pharmacy/store', [PharmacyOrderController::class, 'store'])
+    ->name('pharmacy.store');
+
+Route::get('/pharmacy/order/{order}/pdf', [PharmacyOrderController::class, 'downloadPdf'])
+    ->name('pharmacy.pdf');
+
+Route::post('/pharmacy/order/{order}/email', [PharmacyOrderController::class, 'emailPrescription'])
+    ->name('pharmacy.email');
+
+Route::post('/pharmacy/{id}/status', [PharmacyOrderController::class, 'updateStatus'])
+    ->name('pharmacy.status');
         Route::get('/tasks', [TaskController::class, 'index'])->name('tasks.index');
     });
 /*

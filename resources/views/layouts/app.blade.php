@@ -210,7 +210,6 @@
                         </button>
 
                         <div id="notifDropdown"
-                             class="hidden absolute right-0 mt-3 w-96 rounded-2xl border border-gray-200 bg-white shadow-xl">
                             <div class="flex items-center justify-between border-b bg-gray-50 px-4 py-3">
                                 <h3 class="text-sm font-bold text-gray-800">Notifications</h3>
                                 <button id="markAllRead"

@@ -24,6 +24,11 @@ class FacilityCaregiverController extends Controller
 
         $facility = Facility::findOrFail($facilityId);
 
+        // Permanent self-heal:
+        // if caregiver users exist for this facility without caregiver profiles,
+        // rebuild the missing caregiver profile rows automatically.
+        $this->syncFacilityCaregiverProfiles($facility);
+
         $caregivers = Caregiver::where('facility_id', $facilityId)
             ->latest()
             ->get();
@@ -42,6 +47,9 @@ class FacilityCaregiverController extends Controller
         }
 
         $facility = Facility::findOrFail($facilityId);
+
+        // Self-heal before loading create page
+        $this->syncFacilityCaregiverProfiles($facility);
 
         return view('facility.caregivers.create', compact('facility'));
     }
@@ -83,15 +91,17 @@ class FacilityCaregiverController extends Controller
                 'organization_id' => $facility->organization_id,
             ]);
 
-            Caregiver::create([
-                'organization_id' => $facility->organization_id,
-                'facility_id' => $facility->id,
-                'user_id' => $user->id,
-                'name' => $validated['name'],
-                'email' => $validated['email'],
-                'phone' => $validated['phone'] ?? null,
-                'status' => $validated['status'] ?? 'Active',
-            ]);
+            Caregiver::updateOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'organization_id' => $facility->organization_id,
+                    'facility_id' => $facility->id,
+                    'name' => $validated['name'],
+                    'email' => $validated['email'],
+                    'phone' => $validated['phone'] ?? null,
+                    'status' => $validated['status'] ?? 'Active',
+                ]
+            );
         });
 
         return redirect()
@@ -156,20 +166,34 @@ class FacilityCaregiverController extends Controller
 
             if ($caregiver->user_id) {
                 $user = User::find($caregiver->user_id);
+            } else {
+                $user = null;
+            }
 
-                if ($user) {
-                    $user->name = $validated['name'];
-                    $user->email = $validated['email'];
-                    $user->role = 'caregiver';
-                    $user->facility_id = $facility->id;
-                    $user->organization_id = $facility->organization_id;
+            if (!$user) {
+                $user = User::create([
+                    'name' => $validated['name'],
+                    'email' => $validated['email'],
+                    'password' => Hash::make($validated['password'] ?? 'TempPass123!'),
+                    'role' => 'caregiver',
+                    'facility_id' => $facility->id,
+                    'organization_id' => $facility->organization_id,
+                ]);
 
-                    if (!empty($validated['password'])) {
-                        $user->password = Hash::make($validated['password']);
-                    }
+                $caregiver->user_id = $user->id;
+                $caregiver->save();
+            } else {
+                $user->name = $validated['name'];
+                $user->email = $validated['email'];
+                $user->role = 'caregiver';
+                $user->facility_id = $facility->id;
+                $user->organization_id = $facility->organization_id;
 
-                    $user->save();
+                if (!empty($validated['password'])) {
+                    $user->password = Hash::make($validated['password']);
                 }
+
+                $user->save();
             }
         });
 
@@ -196,16 +220,38 @@ class FacilityCaregiverController extends Controller
             $caregiver->delete();
 
             if ($userId) {
-                $user = User::find($userId);
-
-                if ($user && $user->role === 'caregiver') {
-                    $user->delete();
-                }
+                User::where('id', $userId)->delete();
             }
         });
 
         return redirect()
             ->route('facility.caregivers.index')
             ->with('success', 'Caregiver deleted successfully.');
+    }
+
+    /**
+     * Permanent self-heal for facilities:
+     * if caregiver users exist without matching caregiver profile rows,
+     * auto-create the missing caregiver profiles.
+     */
+    private function syncFacilityCaregiverProfiles(Facility $facility): void
+    {
+        $caregiverUsers = User::where('role', 'caregiver')
+            ->where('facility_id', $facility->id)
+            ->get();
+
+        foreach ($caregiverUsers as $user) {
+            Caregiver::firstOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'organization_id' => $facility->organization_id,
+                    'facility_id' => $facility->id,
+                    'name' => $user->name ?: 'Unnamed Caregiver',
+                    'email' => $user->email,
+                    'phone' => $user->phone ?? null,
+                    'status' => 'Active',
+                ]
+            );
+        }
     }
 }

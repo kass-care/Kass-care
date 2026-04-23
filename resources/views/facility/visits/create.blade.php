@@ -65,39 +65,41 @@
                 </div>
 
                 <div>
-                    <label for="provider_id" class="block text-sm font-semibold text-slate-300 mb-2">
-                        Provider
-                    </label>
-                    <select
-                        name="provider_id"
-                        id="provider_id"
-                        class="block w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    >
-                        <option value="">Select provider</option>
-                        @foreach ($providers as $provider)
-                            <option value="{{ $provider->id }}" {{ old('provider_id') == $provider->id ? 'selected' : '' }}>
-                                {{ $provider->name ?? 'Unnamed Provider' }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
+                          <div>
+    <label for="provider_id" class="block text-sm font-semibold text-slate-300 mb-2">
+        Provider
+    </label>
+    <select
+        name="provider_id"
+        id="provider_id"
+        class="block w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white focus:border-indigo-500 focus:outline-none"
+    >
+        <option value="">Select provider</option>
+        @foreach ($providers as $provider)
+            <option value="{{ $provider->id }}" {{ old('provider_id') == $provider->id ? 'selected' : '' }}>
+                {{ $provider->name ?? 'Unnamed Provider' }}
+            </option>
+        @endforeach
+    </select>
+</div>
 
-                <div>
-                    <label for="caregiver_id" class="block text-sm font-semibold text-slate-300 mb-2">
-                        Caregiver
-                    </label>
-                    <select
-                        name="caregiver_id"
-                        id="caregiver_id"
-                        class="block w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    >
-                        <option value="">Select caregiver</option>
-                        @foreach ($caregivers as $caregiver)
-                            <option value="{{ $caregiver->id }}" {{ old('caregiver_id') == $caregiver->id ? 'selected' : '' }}>
-                                {{ $caregiver->name ?? 'Unnamed Caregiver' }}
-                            </option>
-                        @endforeach
-                    </select>
+<div>
+    <label for="caregiver_id" class="block text-sm font-semibold text-slate-300 mb-2">
+        Caregiver
+    </label>
+    <select
+        name="caregiver_id"
+        id="caregiver_id"
+        class="block w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white focus:border-indigo-500 focus:outline-none"
+    >
+        <option value="">Select caregiver</option>
+        @foreach ($caregivers as $caregiver)
+            <option value="{{ $caregiver->id }}" {{ old('caregiver_id') == $caregiver->id ? 'selected' : '' }}>
+                {{ $caregiver->name ?? 'Unnamed Caregiver' }}
+            </option>
+        @endforeach
+    </select>
+</div>
                 </div>
 
                 <div>

@@ -19,35 +19,29 @@
                     Real-time facility intelligence for clients, caregivers, visits, providers, and operational control.
                 </p>
             </div>
+          <div class="flex flex-wrap items-center gap-3">
+    <a href="{{ route('dashboard') }}"
+       class="inline-flex items-center rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-900">
+        Dashboard
+    </a>
 
-            <div class="flex flex-wrap items-center gap-3">
-                <a href="{{ route('dashboard') }}"
-                   class="inline-flex items-center rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100">
-                    Dashboard
-                </a>
+    <form method="POST" action="/select-facility/{{ auth()->user()->facility_id }}">
+        @csrf
+        <button type="submit"
+            class="inline-flex items-center rounded-2xl border border-indigo-400 px-5 py-3 text-sm font-semibold text-indigo-200">
+            Enter Facility Context
+        </button>
+    </form>
 
-                <form method="POST" action="/select-facility/{{ auth()->user()->facility_id }}">
-    @csrf
-    <button type="submit"
-        class="inline-flex items-center rounded-2xl border border-indigo-400 px-5 py-3 text-sm font-semibold text-indigo-300 hover:bg-indigo-500 hover:text-white transition">
-        Enter Facility Context
-    </button>
-</form>
-                    
-                    
-                            class="inline-flex items-center rounded-2xl border border-indigo-400 px-5 py-3 text-sm font-semibold text-indigo-200 transition hover:bg-indigo-500/10">
-                        Enter Facility Context
-                    </button>
-                </form>
+    <form method="POST" action="{{ route('logout') }}" class="inline-block">
+        @csrf
+        <button type="submit"
+            class="inline-flex items-center rounded-2xl border border-red-400/50 bg-red-500/10 px-5 py-3 text-sm font-semibold text-red-200">
+            Logout
+        </button>
+    </form>
+</div>
 
-                <form method="POST" action="{{ route('logout') }}" class="inline-block">
-                    @csrf
-                    <button type="submit"
-                            class="inline-flex items-center rounded-2xl border border-red-400/50 bg-red-500/10 px-5 py-3 text-sm font-semibold text-red-200 transition hover:bg-red-500/20">
-                        Logout
-                    </button>
-                </form>
-            </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
