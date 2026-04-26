@@ -28,19 +28,20 @@ class PharmacyOrderController extends Controller
 
         return view('provider.pharmacy.index', compact('orders'));
     }
+        public function create()
+{
+    $user = auth()->user();
 
-    public function create()
-    {
-        $user = auth()->user();
-        $facilityId = session('facility_id') ?? ($user->facility_id ?? null);
+    $facilityIds = \DB::table('facility_provider')
+        ->where('provider_id', $user->id)
+        ->pluck('facility_id');
 
-          $clients = Client::when($facilityId, function ($query) use ($facilityId) {
-        $query->where('facility_id', $facilityId);
-    })
-    ->orderBy('id')
-    ->get();
-        return view('provider.pharmacy.create', compact('clients'));
-    }
+    $clients = Client::whereIn('facility_id', $facilityIds)
+        ->orderBy('name')
+        ->get();
+
+    return view('provider.pharmacy.create', compact('clients'));
+}
 
     public function store(Request $request)
     {

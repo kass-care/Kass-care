@@ -47,14 +47,27 @@ class ProviderNoteController extends Controller
                 $query->where('facility_id', $facilityId);
             })
             ->findOrFail($visitId);
-        $subjective = '';
-$objective = '';
-$assessment = '';
-$plan = '';
 
-$weight = null;
-$height = null;
-$bmi = null;
+        $client = $visit->client;
+
+        $clientName = $client
+            ? trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? ''))
+            : 'Unknown Client';
+
+        if ($client && empty($clientName) && !empty($client->name)) {
+            $clientName = $client->name;
+        }
+
+        $clientDob = $client->date_of_birth ?? $client->dob ?? null;
+
+        $subjective = '';
+        $objective = '';
+        $assessment = '';
+        $plan = '';
+
+        $weight = null;
+        $height = null;
+        $bmi = null;
 
         $latestLog = $visit->careLogs
             ->sortByDesc('created_at')
@@ -94,28 +107,34 @@ $bmi = null;
 
                 if (!empty($vitals['weight'])) {
                     $objectiveLines[] = '- Weight: ' . $vitals['weight'];
+                    $weight = $vitals['weight'];
                 }
 
                 if (!empty($vitals['height'])) {
                     $objectiveLines[] = '- Height: ' . $vitals['height'];
+                    $height = $vitals['height'];
                 }
 
                 $objective = implode("\n", $objectiveLines);
             }
 
             $assessment = 'Patient evaluated based on caregiver observations and recorded vitals.';
-            $plan = 'Continue monitoring. Adjust care plan as clinically indicated.';
         }
-          return view('provider.notes.create', compact(
-    'visit',
-    'subjective',
-    'objective',
-    'assessment',
-    'plan',
-    'weight',
-    'height',
-    'bmi'
-));
+
+        $plan = 'Continue monitoring. Adjust care plan as clinically indicated.';
+
+        return view('provider.notes.create', compact(
+            'visit',
+            'clientName',
+            'clientDob',
+            'subjective',
+            'objective',
+            'assessment',
+            'plan',
+            'weight',
+            'height',
+            'bmi'
+        ));
     }
 
     public function store(Request $request)
@@ -139,7 +158,21 @@ $bmi = null;
             })
             ->findOrFail($validated['visit_id']);
 
+        $client = $visit->client;
+
+        $clientName = $client
+            ? trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? ''))
+            : 'Unknown Client';
+
+        if ($client && empty($clientName) && !empty($client->name)) {
+            $clientName = $client->name;
+        }
+
+        $clientDob = $client->date_of_birth ?? $client->dob ?? null;
+
         $combinedNote = trim(
+            "Client: " . $clientName . "\n" .
+            "DOB: " . ($clientDob ?: 'N/A') . "\n\n" .
             "S: " . ($validated['subjective'] ?? '') . "\n\n" .
             "O: " . ($validated['objective'] ?? '') . "\n\n" .
             "A: " . ($validated['assessment'] ?? '') . "\n\n" .

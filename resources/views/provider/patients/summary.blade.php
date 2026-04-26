@@ -8,13 +8,11 @@
 
     $riskLevel = $intelligence['risk_level'] ?? 'LOW';
 
-    if ($riskLevel === 'HIGH') {
-        $riskClasses = 'bg-red-100 text-red-700';
-    } elseif ($riskLevel === 'MODERATE') {
-        $riskClasses = 'bg-yellow-100 text-yellow-700';
-    } else {
-        $riskClasses = 'bg-green-100 text-green-700';
-    }
+    $riskClasses = match($riskLevel) {
+        'HIGH' => 'bg-red-100 text-red-700',
+        'MODERATE' => 'bg-yellow-100 text-yellow-700',
+        default => 'bg-green-100 text-green-700',
+    };
 
     $latestVitalsData = [];
 
@@ -26,6 +24,15 @@
     $pulse = $latestVitalsData['pulse'] ?? 'N/A';
     $temp = $latestVitalsData['temperature'] ?? $latestVitalsData['temp'] ?? 'N/A';
     $oxygen = $latestVitalsData['oxygen'] ?? $latestVitalsData['oxygen_saturation'] ?? 'N/A';
+
+    $allergies = $patient->allergies ?? $patient->allergy ?? 'Not documented';
+
+    $specialtyTeam = [
+        'Psychiatrist' => $patient->psychiatrist ?? null,
+        'Cardiologist' => $patient->cardiologist ?? null,
+        'Primary Care' => $patient->primary_care_provider ?? null,
+        'Pharmacy' => $patient->pharmacy ?? null,
+    ];
 @endphp
 
 <div class="max-w-7xl mx-auto py-8 px-4">
@@ -33,10 +40,9 @@
     <div class="bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 rounded-3xl shadow-xl overflow-hidden mb-6">
         <div class="px-6 py-6 md:px-8 md:py-7">
             <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-
                 <div class="flex-1">
                     <div class="flex items-center gap-3 mb-3">
-                        <div class="h-14 w-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-white text-xl font-bold shadow-lg">
+                        <div class="h-14 w-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-white font-black text-xl">
                             {{ strtoupper(substr($patient->name ?? 'P', 0, 1)) }}
                         </div>
 
@@ -51,86 +57,51 @@
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 mt-5">
-
                         <div class="rounded-2xl bg-white/10 border border-white/10 px-4 py-3 text-white">
                             <div class="text-xs uppercase tracking-wide text-indigo-200">Date of Birth</div>
                             <div class="mt-1 text-base font-semibold">
-                                {{ !empty($patient->date_of_birth) ? \Carbon\Carbon::parse($patient->date_of_birth)->format('M d, Y') : 'N/A' }}
+                                {{ !empty($patient->date_of_birth) ? \Carbon\Carbon::parse($patient->date_of_birth)->format('m/d/Y') : 'N/A' }}
                             </div>
                         </div>
 
                         <div class="rounded-2xl bg-white/10 border border-white/10 px-4 py-3 text-white">
                             <div class="text-xs uppercase tracking-wide text-indigo-200">Age</div>
-                            <div class="mt-1 text-base font-semibold">
-                                {{ $snapshot['age'] ?? 'N/A' }}
-                            </div>
+                            <div class="mt-1 text-base font-semibold">{{ $snapshot['age'] ?? 'N/A' }}</div>
                         </div>
 
                         <div class="rounded-2xl bg-white/10 border border-white/10 px-4 py-3 text-white">
                             <div class="text-xs uppercase tracking-wide text-indigo-200">Phone</div>
-                            <div class="mt-1 text-base font-semibold">
-                                {{ $patient->phone ?? 'N/A' }}
-                            </div>
+                            <div class="mt-1 text-base font-semibold">{{ $patient->phone ?? 'N/A' }}</div>
                         </div>
 
                         <div class="rounded-2xl bg-white/10 border border-white/10 px-4 py-3 text-white">
                             <div class="text-xs uppercase tracking-wide text-indigo-200">Facility</div>
-                            <div class="mt-1 text-base font-semibold">
-                                {{ $patient->facility->name ?? 'N/A' }}
-                            </div>
+                            <div class="mt-1 text-base font-semibold">{{ $patient->facility->name ?? 'N/A' }}</div>
                         </div>
 
                         <div class="rounded-2xl bg-white/10 border border-white/10 px-4 py-3 text-white">
                             <div class="text-xs uppercase tracking-wide text-indigo-200">Provider</div>
-                            <div class="mt-1 text-base font-semibold">
-                                {{ $patient->provider->name ?? 'N/A' }}
-                            </div>
+                            <div class="mt-1 text-base font-semibold">{{ $patient->provider->name ?? 'N/A' }}</div>
                         </div>
 
                         <div class="rounded-2xl bg-white/10 border border-white/10 px-4 py-3 text-white">
                             <div class="text-xs uppercase tracking-wide text-indigo-200">Status</div>
-                            <div class="mt-1">
-                                <span class="inline-flex items-center rounded-full bg-emerald-400/20 px-3 py-1 text-sm font-semibold text-emerald-200 border border-emerald-300/20">
-                                    {{ $patient->status ?? 'N/A' }}
-                                </span>
-                            </div>
+                            <div class="mt-1 text-base font-semibold">{{ $patient->status ?? 'N/A' }}</div>
                         </div>
-
-                    </div>
-
-                    <div class="flex flex-wrap gap-2 mt-5">
-                        <span class="inline-flex items-center rounded-full bg-rose-400/20 px-3 py-1 text-xs font-semibold text-rose-100 border border-rose-300/20">
-                            Diagnosis Count: {{ $snapshot['diagnosisCount'] ?? 0 }}
-                        </span>
-
-                        <span class="inline-flex items-center rounded-full bg-amber-400/20 px-3 py-1 text-xs font-semibold text-amber-100 border border-amber-300/20">
-                            Medications: {{ $snapshot['medicationCount'] ?? 0 }}
-                        </span>
-
-                        <span class="inline-flex items-center rounded-full bg-cyan-400/20 px-3 py-1 text-xs font-semibold text-cyan-100 border border-cyan-300/20">
-                            Visits: {{ $snapshot['visitCount'] ?? 0 }}
-                        </span>
-
-                        @if(!empty($snapshot['last_visit']))
-                            <span class="inline-flex items-center rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-slate-100 border border-white/10">
-                                Last Visit: {{ $snapshot['last_visit'] }}
-                            </span>
-                        @endif
                     </div>
                 </div>
 
                 <div class="flex flex-col sm:flex-row lg:flex-col gap-3 lg:min-w-[220px]">
                     <a href="{{ route('provider.patients.workspace', $patient->id) }}"
-                       class="inline-flex items-center justify-center rounded-2xl bg-white text-indigo-800 px-5 py-3 text-sm font-bold shadow hover:bg-indigo-50 transition">
+                       class="inline-flex items-center justify-center rounded-2xl bg-white text-indigo-800 px-5 py-3 text-sm font-bold shadow hover:bg-indigo-50">
                         Open My Workspace
                     </a>
 
                     <a href="{{ route('dashboard') }}"
-                       class="inline-flex items-center justify-center rounded-2xl bg-white/10 border border-white/15 px-5 py-3 text-sm font-semibold text-white hover:bg-white/20 transition">
+                       class="inline-flex items-center justify-center rounded-2xl bg-white/10 border border-white/15 px-5 py-3 text-sm font-bold text-white hover:bg-white/15">
                         Back to Dashboard
                     </a>
                 </div>
-
             </div>
         </div>
     </div>
@@ -173,13 +144,35 @@
             </div>
         </div>
 
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-5">
+            <div class="rounded-2xl bg-red-50 border border-red-100 p-5">
+                <div class="text-xs uppercase font-bold text-red-600 mb-2">Allergies</div>
+                <div class="text-lg font-bold text-red-800">
+                    {{ $allergies ?: 'Not documented' }}
+                </div>
+            </div>
+
+            <div class="rounded-2xl bg-indigo-50 border border-indigo-100 p-5">
+                <div class="text-xs uppercase font-bold text-indigo-600 mb-3">Specialty Team</div>
+
+                <div class="space-y-2 text-sm">
+                    @foreach($specialtyTeam as $label => $value)
+                        <div class="flex justify-between gap-4 border-b border-indigo-100 pb-2 last:border-b-0">
+                            <span class="font-semibold text-gray-700">{{ $label }}</span>
+                            <span class="text-gray-900">{{ $value ?: 'Not assigned' }}</span>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+
         <div class="mt-5">
             <h3 class="font-semibold text-gray-900 mb-3">Active Alerts</h3>
 
             @if(!empty($intelligence['alerts']))
                 <div class="flex flex-wrap gap-2">
                     @foreach($intelligence['alerts'] as $alert)
-                        <span class="inline-flex items-center rounded-full bg-red-100 text-red-700 px-3 py-2 text-sm font-medium">
+                        <span class="inline-flex items-center rounded-full bg-red-100 text-red-700 px-3 py-2 text-sm font-semibold">
                             {{ $alert }}
                         </span>
                     @endforeach

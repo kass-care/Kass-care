@@ -4,32 +4,25 @@ namespace App\Http\Controllers;
 
 use App\Models\Caregiver;
 use App\Models\Client;
-use App\Models\User;
 use App\Models\Visit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class VisitController extends Controller
 {
     public function index()
     {
         $user = auth()->user();
-        abort_if(!$user, 403, 'Unauthorized.');
 
-        $selectedFacilityId = session('facility_id');
-        $facilityId = $selectedFacilityId ?? $user->facility_id;
+        // Get provider facilities
+        $facilityIds = DB::table('facility_provider')
+            ->where('provider_id', $user->id)
+            ->pluck('facility_id');
 
-        $query = Visit::with(['client', 'caregiver'])->latest();
-
-        if ($user->role === 'super_admin') {
-            if ($facilityId) {
-                $query->where('facility_id', $facilityId);
-            }
-        } else {
-            abort_if(!$facilityId, 403, 'No facility assigned.');
-            $query->where('facility_id', $facilityId);
-        }
-
-        $visits = $query->get();
+        $visits = Visit::with(['client', 'caregiver'])
+            ->whereIn('facility_id', $facilityIds)
+            ->latest()
+            ->get();
 
         return view('visits.index', compact('visits'));
     }
@@ -37,22 +30,18 @@ class VisitController extends Controller
     public function create()
     {
         $user = auth()->user();
-        abort_if(!$user, 403, 'Unauthorized.');
 
-        $selectedFacilityId = session('facility_id');
-        $facilityId = $selectedFacilityId ?? $user->facility_id;
+        $facilityIds = DB::table('facility_provider')
+            ->where('provider_id', $user->id)
+            ->pluck('facility_id');
 
-        if ($user->role !== 'super_admin') {
-            abort_if(!$facilityId, 403, 'No facility assigned.');
-        }
+        $clients = Client::whereIn('facility_id', $facilityIds)
+            ->orderBy('name')
+            ->get();
 
-        $clients = $facilityId
-            ? Client::where('facility_id', $facilityId)->orderBy('name')->get()
-            : Client::orderBy('name')->get();
-
-        $caregivers = $facilityId
-            ? Caregiver::where('facility_id', $facilityId)->orderBy('name')->get()
-            : Caregiver::orderBy('name')->get();
+        $caregivers = Caregiver::whereIn('facility_id', $facilityIds)
+            ->orderBy('name')
+            ->get();
 
         return view('visits.create', compact('clients', 'caregivers'));
     }
@@ -60,14 +49,10 @@ class VisitController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
-        abort_if(!$user, 403, 'Unauthorized.');
 
-        $selectedFacilityId = session('facility_id');
-        $facilityId = $selectedFacilityId ?? $user->facility_id;
-
-        if ($user->role !== 'super_admin') {
-            abort_if(!$facilityId, 403, 'No facility assigned.');
-        }
+        $facilityIds = DB::table('facility_provider')
+            ->where('provider_id', $user->id)
+            ->pluck('facility_id');
 
         $validated = $request->validate([
             'client_id' => ['required', 'exists:clients,id'],
@@ -78,24 +63,20 @@ class VisitController extends Controller
         ]);
 
         $client = Client::findOrFail($validated['client_id']);
-
-        if ($facilityId) {
-            abort_if(
-                (int) $client->facility_id !== (int) $facilityId,
-                403,
-                'Selected client does not belong to this facility.'
-            );
-        }
-
         $caregiver = Caregiver::findOrFail($validated['caregiver_id']);
 
-        if ($facilityId) {
-            abort_if(
-                (int) $caregiver->facility_id !== (int) $facilityId,
-                403,
-                'Selected caregiver does not belong to this facility.'
-            );
-        }
+        // SECURITY CHECK
+        abort_if(
+            !$facilityIds->contains($client->facility_id),
+            403,
+            'Client not in your facilities.'
+        );
+
+        abort_if(
+            !$facilityIds->contains($caregiver->facility_id),
+            403,
+            'Caregiver not in your facilities.'
+        );
 
         Visit::create([
             'client_id' => $client->id,
@@ -115,13 +96,14 @@ class VisitController extends Controller
     {
         $this->authorizeVisit($visit);
 
-        $clients = Client::where('facility_id', $visit->facility_id)
-            ->orderBy('name')
-            ->get();
+        $user = auth()->user();
 
-        $caregivers = Caregiver::where('facility_id', $visit->facility_id)
-            ->orderBy('name')
-            ->get();
+        $facilityIds = DB::table('facility_provider')
+            ->where('provider_id', $user->id)
+            ->pluck('facility_id');
+
+        $clients = Client::whereIn('facility_id', $facilityIds)->get();
+        $caregivers = Caregiver::whereIn('facility_id', $facilityIds)->get();
 
         return view('visits.edit', compact('visit', 'clients', 'caregivers'));
     }
@@ -139,17 +121,18 @@ class VisitController extends Controller
         ]);
 
         $client = Client::findOrFail($validated['client_id']);
+        $caregiver = Caregiver::findOrFail($validated['caregiver_id']);
+
         abort_if(
-            (int) $client->facility_id !== (int) $visit->facility_id,
+            $client->facility_id != $visit->facility_id,
             403,
-            'Selected client does not belong to this facility.'
+            'Client mismatch.'
         );
 
-        $caregiver = Caregiver::findOrFail($validated['caregiver_id']);
         abort_if(
-            (int) $caregiver->facility_id !== (int) $visit->facility_id,
+            $caregiver->facility_id != $visit->facility_id,
             403,
-            'Selected caregiver does not belong to this facility.'
+            'Caregiver mismatch.'
         );
 
         $visit->update([
@@ -179,14 +162,19 @@ class VisitController extends Controller
     private function authorizeVisit(Visit $visit): void
     {
         $user = auth()->user();
-        $facilityId = session('facility_id') ?? $user->facility_id;
 
-        if ($user->role !== 'super_admin') {
-            abort_if(
-                (int) $visit->facility_id !== (int) $facilityId,
-                403,
-                'Unauthorized visit access.'
-            );
+        if ($user->role === 'super_admin') {
+            return;
         }
+
+        $facilityIds = DB::table('facility_provider')
+            ->where('provider_id', $user->id)
+            ->pluck('facility_id');
+
+        abort_if(
+            !$facilityIds->contains($visit->facility_id),
+            403,
+            'Unauthorized visit access.'
+        );
     }
 }

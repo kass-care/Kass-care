@@ -1,6 +1,20 @@
 @extends('layouts.app')
 
 @section('content')
+@php
+    $client = $providerNote->visit->client ?? null;
+
+    $clientName = $client
+        ? trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? ''))
+        : 'N/A';
+
+    if ($client && empty($clientName) && !empty($client->name)) {
+        $clientName = $client->name;
+    }
+
+    $clientDob = $client->date_of_birth ?? $client->dob ?? null;
+@endphp
+
 <div class="max-w-4xl mx-auto py-10">
     <div class="flex items-center justify-between mb-6">
         <div>
@@ -16,7 +30,8 @@
 
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 space-y-4">
         <p><strong>Visit ID:</strong> {{ $providerNote->visit->id ?? 'N/A' }}</p>
-        <p><strong>Client:</strong> {{ $providerNote->visit->client->name ?? 'N/A' }}</p>
+        <p><strong>Client:</strong> {{ $clientName ?: 'N/A' }}</p>
+        <p><strong>Date of Birth:</strong> {{ $clientDob ?: 'N/A' }}</p>
         <p><strong>Caregiver:</strong> {{ $providerNote->visit->caregiver->name ?? 'N/A' }}</p>
         <p><strong>Date:</strong> {{ $providerNote->visit->visit_date ?? 'N/A' }}</p>
 

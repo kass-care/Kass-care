@@ -9,7 +9,6 @@
 <body class="h-full bg-gray-100 text-gray-900 font-sans antialiased">
 @php
     $role = auth()->check() ? (auth()->user()->role ?? 'admin') : 'guest';
-
     $theme = match ($role) {
         'provider' => [
             'brand_text' => 'text-indigo-700',
@@ -69,6 +68,15 @@
         'caregiver' => 'caregiver.dashboard',
         default => 'dashboard',
     };
+
+
+    $unreadProviderMessages = 0;
+
+    if (auth()->check() && $role === 'provider' && class_exists(\App\Models\ProviderMessage::class)) {
+        $unreadProviderMessages = \App\Models\ProviderMessage::where('provider_id', auth()->id())
+            ->whereNull('read_at')
+            ->count();
+    }
 
     $selectedFacilityId = session('facility_id');
     $selectedFacility = null;
@@ -199,6 +207,21 @@
                         </div>
                     @endif
 
+
+                    @if($role === 'provider' && Route::has('provider.messages.index'))
+                        <a href="{{ route('provider.messages.index') }}"
+                           class="relative inline-flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-gray-100"
+                           title="Facility Messages">
+                            <span class="text-xl">✉️</span>
+
+                            @if($unreadProviderMessages > 0)
+                                <span class="absolute -top-1 -right-1 min-w-[20px] rounded-full bg-red-600 px-1.5 py-0.5 text-center text-xs font-bold text-white">
+                                    {{ $unreadProviderMessages }}
+                                </span>
+                            @endif
+                        </a>
+                    @endif
+
                     <div class="relative">
                         <button type="button"
                                 id="notifBtn"
@@ -209,7 +232,8 @@
                             </span>
                         </button>
 
-                        <div id="notifDropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg z-50">
+                        <div id="notifDropdown"
+     class="hidden absolute right-0 mt-2 w-80 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl z-50">
                             <div class="flex items-center justify-between border-b bg-gray-50 px-4 py-3">
                                 <h3 class="text-sm font-bold text-gray-800">Notifications</h3>
                                 <button id="markAllRead"
@@ -337,37 +361,98 @@
     const facilitySwitcherMenu = document.getElementById('facilitySwitcherMenu');
     const facilitySwitcherWrap = document.getElementById('facilitySwitcherWrap');
 
-    // =========================
-    // NOTIFICATION TOGGLE
-    // =========================
-    if (notifBtn && notifDropdown) {
-        notifBtn.addEventListener('click', function (event) {
-            event.stopPropagation();
-            notifDropdown.classList.toggle('hidden');
+    function escapeHtml(value) {
+        if (value === null || value === undefined) return '';
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function alertCard(alert) {
+        const unreadClass = alert.read_at ? 'bg-white' : '{{ $theme['soft_bg'] }}';
+        const typeLabel = escapeHtml(alert.type ?? 'Alert');
+        const message = escapeHtml(alert.message ?? '');
+        const createdAt = escapeHtml(alert.created_at ?? '');
+
+        return `
+            <div class="px-4 py-3 border-b border-gray-100 ${unreadClass}">
+                <div class="text-sm font-bold text-gray-800 capitalize">${typeLabel}</div>
+                <div class="mt-1 text-sm text-gray-600">${message}</div>
+                <div class="mt-2 text-xs text-gray-400">${createdAt}</div>
+            </div>
+        `;
+    }
+
+    function renderNotifications(data) {
+        if (!notifCount || !notifList) return;
+
+        if (data.unread > 0) {
+            notifCount.textContent = data.unread;
+            notifCount.classList.remove('hidden');
+        } else {
+            notifCount.textContent = '';
+            notifCount.classList.add('hidden');
+        }
+
+        if (!data.alerts || data.alerts.length === 0) {
+            notifList.innerHTML = '<div class="p-4 text-sm text-gray-500">No notifications yet.</div>';
+            return;
+        }
+
+        notifList.innerHTML = data.alerts.map(alertCard).join('');
+    }
+
+    function fetchNotifications() {
+        fetch('{{ route('notifications.fetch') }}', {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => renderNotifications(data))
+        .catch(() => {
+            if (notifList) {
+                notifList.innerHTML = '<div class="p-4 text-sm text-red-500">Could not load notifications.</div>';
+            }
         });
     }
 
-    // =========================
-    // FACILITY SWITCHER TOGGLE
-    // =========================
-    if (facilitySwitcherBtn && facilitySwitcherMenu) {
-        facilitySwitcherBtn.addEventListener('click', function (event) {
-            event.preventDefault();
-            event.stopPropagation();
+    if (notifBtn) {
+        notifBtn.addEventListener('click', function () {
+            notifDropdown.classList.toggle('hidden');
+
+            if (!notifDropdown.classList.contains('hidden')) {
+                fetchNotifications();
+            }
+        });
+    }
+
+    if (markAllReadBtn) {
+        markAllReadBtn.addEventListener('click', function () {
+            fetch('{{ route('notifications.readAll') }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(() => fetchNotifications());
+        });
+    }
+
+    if (facilitySwitcherBtn) {
+        facilitySwitcherBtn.addEventListener('click', function () {
             facilitySwitcherMenu.classList.toggle('hidden');
         });
-
-        facilitySwitcherMenu.addEventListener('click', function (event) {
-            event.stopPropagation();
-        });
     }
 
-    // =========================
-    // CLICK OUTSIDE HANDLER
-    // =========================
     document.addEventListener('click', function (event) {
-
-        // CLOSE NOTIFICATIONS
         if (
             notifDropdown &&
             notifBtn &&
@@ -377,7 +462,6 @@
             notifDropdown.classList.add('hidden');
         }
 
-        // CLOSE FACILITY DROPDOWN
         if (
             facilitySwitcherWrap &&
             facilitySwitcherMenu &&
@@ -385,62 +469,7 @@
         ) {
             facilitySwitcherMenu.classList.add('hidden');
         }
-
     });
-
-    // =========================
-    // FETCH NOTIFICATIONS
-    // =========================
-    function fetchNotifications() {
-        fetch("{{ route('notifications.fetch') }}", {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'application/json'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (!notifList) return;
-
-            if (data.unread > 0) {
-                notifCount.textContent = data.unread;
-                notifCount.classList.remove('hidden');
-            } else {
-                notifCount.classList.add('hidden');
-            }
-
-            if (!data.alerts || data.alerts.length === 0) {
-                notifList.innerHTML = '<div class="p-4 text-sm text-gray-500">No notifications yet.</div>';
-                return;
-            }
-
-            notifList.innerHTML = data.alerts.map(alert => `
-                <div class="px-4 py-3 border-b">
-                    <div class="font-semibold text-gray-800">${alert.type ?? 'Alert'}</div>
-                    <div class="text-sm text-gray-600">${alert.message}</div>
-                    <div class="text-xs text-gray-400 mt-1">${alert.created_at}</div>
-                </div>
-            `).join('');
-        })
-        .catch(() => {
-            if (notifList) {
-                notifList.innerHTML = '<div class="p-4 text-sm text-red-500">Could not load notifications.</div>';
-            }
-        });
-    }
-
-    if (markAllReadBtn) {
-        markAllReadBtn.addEventListener('click', function () {
-            fetch("{{ route('notifications.readAll') }}", {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': "{{ csrf_token() }}",
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json'
-                }
-            }).then(() => fetchNotifications());
-        });
-    }
 
     fetchNotifications();
     setInterval(fetchNotifications, 10000);

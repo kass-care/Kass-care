@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Auth;
 class Client extends Model
 {
     protected $fillable = [
+        'first_name',
+        'last_name',
         'name',
         'email',
         'phone',
@@ -27,6 +29,13 @@ class Client extends Model
         'medical_history',
         'family_history',
         'social_history',
+        'photo',
+
+        'allergies',
+        'psychiatrist',
+        'cardiologist',
+        'primary_care_provider',
+        'pharmacy',
     ];
 
     protected $casts = [
@@ -40,17 +49,39 @@ class Client extends Model
     {
         static::creating(function ($client) {
             if (Auth::check() && empty($client->facility_id)) {
-                $client->facility_id = Auth::user()->facility_id;
+                $client->facility_id = session('facility_id') ?? Auth::user()->facility_id;
             }
         });
 
         static::addGlobalScope('facility', function ($query) {
-            if (
-                Auth::check() &&
-                Auth::user()->role !== 'super_admin' &&
-                Auth::user()->facility_id
-            ) {
-                $query->where('facility_id', Auth::user()->facility_id);
+            if (!Auth::check()) {
+                return;
+            }
+
+            $user = Auth::user();
+
+            if ($user->role === 'super_admin') {
+                $selectedFacilityId = session('facility_id');
+
+                if (!empty($selectedFacilityId)) {
+                    $query->where('facility_id', $selectedFacilityId);
+                }
+
+                return;
+            }
+
+            if ($user->role === 'provider') {
+                $selectedFacilityId = session('facility_id') ?? $user->facility_id;
+
+                if (!empty($selectedFacilityId)) {
+                    $query->where('facility_id', $selectedFacilityId);
+                }
+
+                return;
+            }
+
+            if (!empty($user->facility_id)) {
+                $query->where('facility_id', $user->facility_id);
             }
         });
     }
@@ -67,7 +98,7 @@ class Client extends Model
 
     public function visits()
     {
-        return $this->hasMany(Visit::class);
+        return $this->hasMany(Visit::class, 'client_id');
     }
 
     public function latestVisit()
@@ -87,10 +118,20 @@ class Client extends Model
 
     public function careLogs()
     {
-        return $this->hasMany(CareLog::class);
+        return $this->hasMany(CareLog::class, 'client_id');
     }
-public function documents()
-{
-    return $this->hasMany(\App\Models\PatientDocument::class, 'patient_id', 'id');
-}
+
+    public function documents()
+    {
+        return $this->hasMany(PatientDocument::class, 'patient_id', 'id');
+    }
+
+    public function getPhotoUrlAttribute()
+    {
+        if ($this->photo) {
+            return asset('storage/' . $this->photo);
+        }
+
+        return 'https://ui-avatars.com/api/?name=' . urlencode($this->name ?? 'Patient');
+    }
 }

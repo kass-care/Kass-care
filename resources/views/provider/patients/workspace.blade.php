@@ -2,6 +2,39 @@
 
 @section('content')
 <div class="min-h-screen bg-slate-50 py-8">
+    <div class="sticky top-0 z-40 mb-6 rounded-3xl border border-indigo-200 bg-white/95 p-5 shadow-lg backdrop-blur">
+    <div class="flex items-center gap-4">
+       <img
+    src="{{ optional($patient)->photo
+        ? asset('storage/' . $patient->photo)
+        : 'https://ui-avatars.com/api/?name=' . urlencode($patient->name ?? 'Patient') }}"
+    class="h-16 w-16 rounded-full object-cover border border-indigo-200 shadow"
+>
+            alt="Patient photo"
+        >
+
+        <div>
+            <p class="text-xs font-bold uppercase tracking-widest text-indigo-600">
+                Patient Workspace
+            </p>
+
+            <h1 class="text-2xl font-black text-slate-900">
+                {{ $patient->name
+                    ?? trim(($patient->first_name ?? '') . ' ' . ($patient->last_name ?? ''))
+                    ?: 'Patient' }}
+            </h1>
+
+            <p class="text-sm text-slate-500">
+                DOB:
+                {{ $patient->date_of_birth ? \Carbon\Carbon::parse($patient->date_of_birth)->format('M d, Y') : 'N/A' }}
+                · Age:
+                {{ $patient->date_of_birth ? \Carbon\Carbon::parse($patient->date_of_birth)->age : 'N/A' }}
+                · Room:
+                {{ $patient->room ?? 'N/A' }}
+            </p>
+        </div>
+    </div>
+</div>
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
         <div class="mb-8 rounded-3xl bg-gradient-to-r from-indigo-700 via-indigo-600 to-blue-500 px-6 py-8 text-white shadow-xl">
@@ -10,6 +43,7 @@
                     <p class="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-100">KASS CARE</p>
                     <h1 class="mt-3 text-3xl font-bold">{{ $patientName }}</h1>
                     <p class="mt-2 text-sm text-indigo-100">
+
                         Provider Clinical Workspace
                     </p>
 
@@ -187,6 +221,8 @@
                                 No visit history yet.
                             </div>
                         @endforelse
+
+
                     </div>
                 </div>
             </div>
@@ -194,6 +230,68 @@
             <div class="space-y-6">
 
                 <div class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+                   <div class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+    <div class="flex items-center justify-between">
+        <div>
+            <h2 class="text-xl font-bold text-slate-900">Facility Messages</h2>
+            <p class="mt-1 text-sm text-slate-500">
+                Communication between facility staff and provider for this patient.
+            </p>
+        </div>
+
+        <span class="text-sm font-semibold text-indigo-600">
+            {{ $providerMessages->count() }} message(s)
+        </span>
+    </div>
+
+    <div class="mt-6 space-y-4">
+        @forelse($providerMessages->take(10) as $msg)
+            <div class="rounded-2xl border border-slate-200 p-4">
+                
+                <div class="flex items-center justify-between">
+                    <div class="text-sm font-bold text-slate-900">
+                        {{ $msg->subject ?? 'Message' }}
+                    </div>
+
+                    <span class="text-xs font-semibold px-3 py-1 rounded-full
+                        {{ $msg->priority === 'urgent' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700' }}">
+                        {{ ucfirst($msg->priority ?? 'normal') }}
+                    </span>
+                </div>
+
+                <div class="mt-2 text-sm text-slate-600">
+                    From: {{ $msg->facility->name ?? 'Facility' }}
+                    • {{ optional($msg->created_at)->diffForHumans() }}
+                </div>
+
+                <div class="mt-3 rounded-xl bg-slate-50 p-3 text-sm text-slate-800">
+                    {{ $msg->message }}
+                </div>
+
+                @if($msg->provider_reply)
+                    <div class="mt-3 rounded-xl bg-green-50 border border-green-200 p-3 text-sm text-slate-800">
+                        <span class="block text-xs font-bold text-green-600 mb-1">
+                            Your Reply
+                        </span>
+                        {{ $msg->provider_reply }}
+                    </div>
+                @endif
+
+                <div class="mt-3">
+                    <a href="{{ route('provider.messages.show', $msg) }}"
+                       class="text-xs font-bold text-indigo-600 hover:text-indigo-800">
+                        Open →
+                    </a>
+                </div>
+
+            </div>
+        @empty
+            <div class="rounded-2xl border border-dashed border-slate-300 p-8 text-center text-slate-500">
+                No messages for this patient yet.
+            </div>
+        @endforelse
+    </div>
+</div>
                     <h2 class="text-lg font-bold text-slate-900">Patient Profile</h2>
                     <div class="mt-5 space-y-4">
                         <div>

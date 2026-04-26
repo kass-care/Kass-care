@@ -4,10 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\Auth;
 
 class Visit extends Model
 {
@@ -67,8 +67,7 @@ class Visit extends Model
     {
         static::creating(function (Visit $visit) {
             if (Auth::check() && empty($visit->facility_id)) {
-                $selectedFacilityId = session('facility_id') ?? Auth::user()->facility_id;
-                $visit->facility_id = $selectedFacilityId;
+                $visit->facility_id = session('facility_id') ?? Auth::user()->facility_id;
             }
         });
 
@@ -107,22 +106,22 @@ class Visit extends Model
 
     public function client(): BelongsTo
     {
-        return $this->belongsTo(Patient::class, 'client_id');
+        return $this->belongsTo(Client::class, 'client_id');
     }
 
     public function caregiver(): BelongsTo
     {
-        return $this->belongsTo(Caregiver::class, 'caregiver_id');
-    }
-
-    public function facility(): BelongsTo
-    {
-        return $this->belongsTo(Facility::class, 'facility_id');
+        return $this->belongsTo(User::class, 'caregiver_id');
     }
 
     public function provider(): BelongsTo
     {
         return $this->belongsTo(User::class, 'provider_id');
+    }
+
+    public function facility(): BelongsTo
+    {
+        return $this->belongsTo(Facility::class, 'facility_id');
     }
 
     public function careLogs(): HasMany

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CareLog;
 use App\Models\Client;
+use App\Models\ProviderMessage;
 use App\Models\ProviderNote;
 use App\Models\Visit;
 use Illuminate\Support\Carbon;
@@ -15,21 +16,18 @@ class ProviderPatientController extends Controller
     {
         $user = auth()->user();
         abort_if(!$user, 403, 'Unauthorized.');
-
         return $user;
     }
 
     private function currentFacilityId(): ?int
     {
         $user = $this->currentUser();
-
         return session('facility_id') ?? $user->facility_id ?? null;
     }
 
     private function patientBaseQuery()
     {
         $query = Client::query();
-
         $facilityId = $this->currentFacilityId();
 
         if ($facilityId && Schema::hasColumn('clients', 'facility_id')) {
@@ -45,15 +43,9 @@ class ProviderPatientController extends Controller
             return $patient->name;
         }
 
-        $firstName = $patient->first_name ?? null;
-        $lastName  = $patient->last_name ?? null;
-        $fullName  = trim(($firstName ?? '') . ' ' . ($lastName ?? ''));
+        $fullName = trim(($patient->first_name ?? '') . ' ' . ($patient->last_name ?? ''));
 
-        if ($fullName !== '') {
-            return $fullName;
-        }
-
-        return 'Patient';
+        return $fullName !== '' ? $fullName : 'Patient';
     }
 
     private function buildAlertCount(array $latestVitals): int
@@ -83,28 +75,27 @@ class ProviderPatientController extends Controller
 
     private function buildSnapshot(Client $patient, $visits): array
     {
-        $dob = $patient->date_of_birth ?? null;
         $age = null;
 
-        try {
-            if (!empty($dob)) {
-                $age = Carbon::parse($dob)->age;
+        if (!empty($patient->date_of_birth)) {
+            try {
+                $age = Carbon::parse($patient->date_of_birth)->age;
+            } catch (\Throwable $e) {
+                $age = null;
             }
-        } catch (\Throwable $e) {
-            $age = null;
         }
 
         $lastVisit = $visits->first();
 
         return [
-            'age'             => $age,
-            'diagnosisCount'  => method_exists($patient, 'diagnoses') ? $patient->diagnoses->count() : 0,
+            'age' => $age,
+            'diagnosisCount' => method_exists($patient, 'diagnoses') ? $patient->diagnoses->count() : 0,
             'medicationCount' => method_exists($patient, 'medications') ? $patient->medications->count() : 0,
-            'visitCount'      => $visits->count(),
-            'last_visit'      => $lastVisit && !empty($lastVisit->visit_date)
+            'visitCount' => $visits->count(),
+            'last_visit' => $lastVisit && !empty($lastVisit->visit_date)
                 ? Carbon::parse($lastVisit->visit_date)->format('M d, Y')
                 : null,
-            'lastVisit'       => $lastVisit,
+            'lastVisit' => $lastVisit,
         ];
     }
 
@@ -131,6 +122,7 @@ class ProviderPatientController extends Controller
         }
 
         $riskLevel = 'LOW';
+
         if (count($alerts) >= 2) {
             $riskLevel = 'HIGH';
         } elseif (count($alerts) === 1) {
@@ -139,8 +131,16 @@ class ProviderPatientController extends Controller
 
         return [
             'risk_level' => $riskLevel,
-            'alerts'     => $alerts,
+            'alerts' => $alerts,
         ];
+    }
+
+    private function patientMessages(Client $patient)
+    {
+        return ProviderMessage::with(['facility', 'sender', 'provider'])
+            ->where('client_id', $patient->id)
+            ->latest()
+            ->get();
     }
 
     public function index($id)
@@ -166,19 +166,19 @@ class ProviderPatientController extends Controller
 
         $latestCareLog = $careLogs->first();
         $latestVitals = is_array($latestCareLog?->vitals) ? $latestCareLog->vitals : [];
-        $latestAdls   = is_array($latestCareLog?->adls) ? $latestCareLog->adls : [];
-
+        $latestAdls = is_array($latestCareLog?->adls) ? $latestCareLog->adls : [];
         $alertCount = $this->buildAlertCount($latestVitals);
 
         return view('provider.patients.workspace', [
-            'patient'       => $patient,
-            'patientName'   => $this->patientDisplayName($patient),
-            'visits'        => $visits,
-            'careLogs'      => $careLogs,
+            'patient' => $patient,
+            'patientName' => $this->patientDisplayName($patient),
+            'visits' => $visits,
+            'careLogs' => $careLogs,
+            'providerMessages' => $this->patientMessages($patient),
             'latestCareLog' => $latestCareLog,
-            'latestVitals'  => $latestVitals,
-            'latestAdls'    => $latestAdls,
-            'alertCount'    => $alertCount,
+            'latestVitals' => $latestVitals,
+            'latestAdls' => $latestAdls,
+            'alertCount' => $alertCount,
         ]);
     }
 
@@ -203,42 +203,30 @@ class ProviderPatientController extends Controller
             ->latest()
             ->get();
 
-        $providerNotes = class_exists(ProviderNote::class)
-            ? ProviderNote::query()
-                ->where(function ($query) use ($patient) {
-                    if (Schema::hasColumn('provider_notes', 'client_id')) {
-                        $query->orWhere('client_id', $patient->id);
-                    }
-
-                    if (Schema::hasColumn('provider_notes', 'patient_id')) {
-                        $query->orWhere('patient_id', $patient->id);
-                    }
-                })
-                ->latest()
-                ->get()
-            : collect();
+        $providerNotes = ProviderNote::query()
+            ->where('client_id', $patient->id)
+            ->latest()
+            ->get();
 
         $latestCareLog = $careLogs->first();
         $latestVitals = is_array($latestCareLog?->vitals) ? $latestCareLog->vitals : [];
-        $latestAdls   = is_array($latestCareLog?->adls) ? $latestCareLog->adls : [];
-
-        $snapshot = $this->buildSnapshot($patient, $visits);
-        $intelligence = $this->buildIntelligence($latestVitals);
-
-        $lastVisitDate = optional($visits->first())->visit_date;
+        $latestAdls = is_array($latestCareLog?->adls) ? $latestCareLog->adls : [];
 
         return view('provider.patients.summary', [
-            'patient'       => $patient,
-            'patientName'   => $this->patientDisplayName($patient),
-            'visits'        => $visits,
-            'careLogs'      => $careLogs,
+            'patient' => $patient,
+            'patientName' => $this->patientDisplayName($patient),
+            'visits' => $visits,
+            'careLogs' => $careLogs,
             'providerNotes' => $providerNotes,
+            'providerMessages' => $this->patientMessages($patient),
             'latestCareLog' => $latestCareLog,
-            'latestVitals'  => $latestVitals,
-            'latestAdls'    => $latestAdls,
-            'snapshot'      => $snapshot,
-            'intelligence'  => $intelligence,
-            'lastVisitDate' => $lastVisitDate ? Carbon::parse($lastVisitDate) : null,
+            'latestVitals' => $latestVitals,
+            'latestAdls' => $latestAdls,
+            'snapshot' => $this->buildSnapshot($patient, $visits),
+            'intelligence' => $this->buildIntelligence($latestVitals),
+            'lastVisitDate' => optional($visits->first())->visit_date
+                ? Carbon::parse(optional($visits->first())->visit_date)
+                : null,
         ]);
     }
 }
