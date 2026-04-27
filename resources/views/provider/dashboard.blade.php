@@ -11,6 +11,7 @@
         $lowOxygenCount   = $lowOxygenCount ?? 0;
         $feverCount       = $feverCount ?? 0;
         $pulseIssueCount  = $pulseIssueCount ?? 0;
+        $screeningCount   = $screeningCount ?? ($preventiveScreeningCount ?? 0);
 
         $recentPatients = collect();
 
@@ -24,18 +25,15 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-2 space-y-6">
 
-            {{-- HERO --}}
             <div class="rounded-3xl bg-gradient-to-r from-indigo-700 via-indigo-600 to-blue-500 text-white p-8 shadow-sm">
-                <p class="text-xs uppercase tracking-[0.35em] font-semibold text-indigo-100">
-                    KASS CARE
-                </p>
+                <p class="text-xs uppercase tracking-[0.35em] font-semibold text-indigo-100">KASS CARE</p>
 
                 <h1 class="mt-3 text-4xl font-bold">
                     Provider Clinical Command Center
                 </h1>
 
                 <p class="mt-3 text-indigo-100 text-lg max-w-3xl">
-                    Review caregiver charting, monitor clinical alerts, communicate with facilities,
+                    Monitor clinical alerts, review patient activity, communicate with facilities,
                     and move quickly across notes, pharmacy, compliance, and patient workspaces.
                 </p>
 
@@ -47,37 +45,29 @@
                         </a>
                     @endif
 
-                    @if(Route::has('provider.messages.index'))
-                        <a href="{{ route('provider.messages.index') }}"
+                    @if(Route::has('provider.alerts.index'))
+                        <a href="{{ route('provider.alerts.index', ['type' => 'all']) }}"
                            class="inline-flex items-center rounded-2xl bg-white/15 px-5 py-3 font-semibold text-white hover:bg-white/20">
-                            📥 View Messages
-                        </a>
-                    @endif
-
-                    @if(Route::has('provider.alerts'))
-                        <a href="{{ route('provider.alerts', ['type' => 'all']) }}"
-                           class="inline-flex items-center rounded-2xl bg-white/15 px-5 py-3 font-semibold text-white hover:bg-white/20">
-                            Open Alerts
+                            🔔 Open Alerts
                         </a>
                     @endif
 
                     @if(Route::has('provider.notes.index'))
                         <a href="{{ route('provider.notes.index') }}"
                            class="inline-flex items-center rounded-2xl bg-white/15 px-5 py-3 font-semibold text-white hover:bg-white/20">
-                            Provider Notes
+                            📝 Provider Notes
                         </a>
                     @endif
 
                     @if(Route::has('provider.compliance'))
                         <a href="{{ route('provider.compliance') }}"
                            class="inline-flex items-center rounded-2xl bg-emerald-500 px-5 py-3 font-semibold text-white hover:bg-emerald-600">
-                            Start Rounds
+                            ✅ Compliance
                         </a>
                     @endif
                 </div>
             </div>
 
-            {{-- DASHBOARD CARDS --}}
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
                     <p class="text-xs uppercase tracking-[0.25em] text-gray-500 font-semibold">Scheduled</p>
@@ -94,47 +84,42 @@
                     <p class="mt-3 text-4xl font-bold text-gray-900">{{ $inProgressCount }}</p>
                 </div>
 
-                <a href="{{ Route::has('provider.alerts') ? route('provider.alerts', ['type' => 'all']) : '#' }}"
+                <a href="{{ Route::has('provider.alerts.index') ? route('provider.alerts', ['type' => 'all']) : '#' }}"
                    class="rounded-2xl border border-red-100 bg-red-50 p-5 shadow-sm hover:shadow-md transition">
                     <p class="text-xs uppercase tracking-[0.25em] text-red-500 font-semibold">Flagged</p>
                     <p class="mt-3 text-4xl font-bold text-red-700">{{ $flaggedCount }}</p>
                 </a>
 
-                <a href="{{ Route::has('provider.alerts') ? route('provider.alerts', ['type' => 'high_bp']) : '#' }}"
+                <a href="{{ Route::has('provider.alerts.index') ? route('provider.alerts.index', ['type' => 'high_bp']) : '#' }}"
                    class="rounded-2xl border border-red-100 bg-white p-5 shadow-sm hover:shadow-md transition">
                     <p class="text-xs uppercase tracking-[0.25em] text-red-500 font-semibold">High BP</p>
                     <p class="mt-3 text-4xl font-bold text-red-700">{{ $highBpCount }}</p>
                 </a>
 
-                <a href="{{ Route::has('provider.alerts') ? route('provider.alerts', ['type' => 'low_oxygen']) : '#' }}"
+                <a href="{{ Route::has('provider.alerts') ? route('provider.alerts.index', ['type' => 'low_oxygen']) : '#' }}"
                    class="rounded-2xl border border-orange-100 bg-white p-5 shadow-sm hover:shadow-md transition">
                     <p class="text-xs uppercase tracking-[0.25em] text-orange-500 font-semibold">Low Oxygen</p>
                     <p class="mt-3 text-4xl font-bold text-orange-700">{{ $lowOxygenCount }}</p>
                 </a>
 
-                <a href="{{ Route::has('provider.alerts') ? route('provider.alerts', ['type' => 'fever']) : '#' }}"
+                <a href="{{ Route::has('provider.alerts') ? route('provider.alerts.index', ['type' => 'fever']) : '#' }}"
                    class="rounded-2xl border border-yellow-100 bg-white p-5 shadow-sm hover:shadow-md transition">
                     <p class="text-xs uppercase tracking-[0.25em] text-yellow-600 font-semibold">Fever / Temp</p>
                     <p class="mt-3 text-4xl font-bold text-yellow-700">{{ $feverCount }}</p>
                 </a>
 
-                <a href="{{ Route::has('provider.alerts') ? route('provider.alerts', ['type' => 'pulse']) : '#' }}"
-                   class="rounded-2xl border border-purple-100 bg-white p-5 shadow-sm hover:shadow-md transition">
-                    <p class="text-xs uppercase tracking-[0.25em] text-purple-500 font-semibold">Pulse Issues</p>
-                    <p class="mt-3 text-4xl font-bold text-purple-700">{{ $pulseIssueCount }}</p>
+                <a href="{{ Route::has('provider.alerts') ? route('provider.alerts.index', ['type' => 'preventive_screening']) : '#' }}"
+                   class="rounded-2xl border border-purple-100 bg-purple-50 p-5 shadow-sm hover:shadow-md transition">
+                    <p class="text-xs uppercase tracking-[0.25em] text-purple-600 font-semibold">Screenings</p>
+                    <p class="mt-3 text-4xl font-bold text-purple-700">{{ $screeningCount }}</p>
                 </a>
             </div>
 
-            {{-- RECENT PATIENTS --}}
             <div class="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-                <div class="flex items-center justify-between gap-4">
-                    <div>
-                        <h2 class="text-2xl font-bold text-gray-900">Current Patients</h2>
-                        <p class="mt-1 text-sm text-gray-500">
-                            Quick access to patient workspaces and summaries.
-                        </p>
-                    </div>
-                </div>
+                <h2 class="text-2xl font-bold text-gray-900">Current Patients</h2>
+                <p class="mt-1 text-sm text-gray-500">
+                    Quick access to patient workspaces and summaries.
+                </p>
 
                 <div class="mt-5 space-y-3">
                     @forelse($recentPatients as $patient)
@@ -142,24 +127,20 @@
                             $patientName = $patient->name ?? $patient->full_name ?? 'Unnamed Patient';
                             $patientRoom = $patient->room ?? 'N/A';
 
-                            $patientAlerts =
-                                $patient->dashboard_alert_count
+                            $patientAlerts = $patient->dashboard_alert_count
                                 ?? $patient->alert_count
                                 ?? $patient->alerts_count
                                 ?? 0;
 
-                            $patientMeds =
-                                $patient->dashboard_medication_count
+                            $patientMeds = $patient->dashboard_medication_count
                                 ?? $patient->medication_count
                                 ?? 0;
 
-                            $patientDiagnoses =
-                                $patient->dashboard_diagnosis_count
+                            $patientDiagnoses = $patient->dashboard_diagnosis_count
                                 ?? $patient->diagnosis_count
                                 ?? 0;
 
-                            $patientLastVisit =
-                                $patient->dashboard_last_visit
+                            $patientLastVisit = $patient->dashboard_last_visit
                                 ?? $patient->last_visit
                                 ?? null;
 
@@ -178,13 +159,8 @@
                         <div class="rounded-2xl border border-gray-200 bg-gray-50 p-4 hover:bg-white transition">
                             <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                                 <div class="min-w-0">
-                                    <div class="text-lg font-semibold text-gray-900">
-                                        {{ $patientName }}
-                                    </div>
-
-                                    <div class="text-sm text-gray-500 mt-1">
-                                        Room {{ $patientRoom }}
-                                    </div>
+                                    <div class="text-lg font-semibold text-gray-900">{{ $patientName }}</div>
+                                    <div class="text-sm text-gray-500 mt-1">Room {{ $patientRoom }}</div>
 
                                     <div class="mt-3 flex flex-wrap gap-2 text-sm">
                                         <span class="inline-flex items-center rounded-full px-3 py-1 {{ $alertBadgeClass }}">
@@ -210,7 +186,7 @@
                                     @if(Route::has('provider.patients.workspace'))
                                         <a href="{{ route('provider.patients.workspace', $patient->id) }}"
                                            class="inline-flex items-center rounded-xl bg-indigo-600 hover:bg-indigo-700 px-4 py-2 text-sm font-semibold text-white">
-                                            Open Workspace
+                                            Review Patient
                                         </a>
                                     @endif
 
@@ -231,7 +207,6 @@
                 </div>
             </div>
 
-            {{-- ALERT DRIVEN WORKFLOW --}}
             <div class="rounded-3xl border border-gray-200 bg-white shadow-sm p-6">
                 <p class="text-xs uppercase tracking-[0.35em] text-indigo-600 font-semibold">
                     Provider Task Summary
@@ -243,44 +218,12 @@
 
                 <p class="mt-3 text-gray-500 leading-7">
                     Keep the dashboard clean by reviewing patient alert details from the Alerts page.
-                    Click any alert count above to open matching patients and act quickly.
+                    Click any alert count above to open matching clinical items.
                 </p>
-
-                <div class="mt-5 flex flex-wrap gap-3">
-                    @if(Route::has('provider.alerts'))
-                        <a href="{{ route('provider.alerts', ['type' => 'all']) }}"
-                           class="inline-flex items-center rounded-2xl bg-red-50 px-4 py-2 text-sm font-semibold text-red-700">
-                            View All Alerts
-                        </a>
-
-                        <a href="{{ route('provider.alerts', ['type' => 'high_bp']) }}"
-                           class="inline-flex items-center rounded-2xl bg-red-50 px-4 py-2 text-sm font-semibold text-red-700">
-                            Review High BP
-                        </a>
-
-                        <a href="{{ route('provider.alerts', ['type' => 'low_oxygen']) }}"
-                           class="inline-flex items-center rounded-2xl bg-orange-50 px-4 py-2 text-sm font-semibold text-orange-700">
-                            Review Low Oxygen
-                        </a>
-
-                        <a href="{{ route('provider.alerts', ['type' => 'fever']) }}"
-                           class="inline-flex items-center rounded-2xl bg-yellow-50 px-4 py-2 text-sm font-semibold text-yellow-700">
-                            Review Fever / Temp
-                        </a>
-
-                        <a href="{{ route('provider.alerts', ['type' => 'pulse']) }}"
-                           class="inline-flex items-center rounded-2xl bg-purple-50 px-4 py-2 text-sm font-semibold text-purple-700">
-                            Review Pulse Issues
-                        </a>
-                    @endif
-                </div>
             </div>
         </div>
 
-        {{-- RIGHT SIDE --}}
         <div class="space-y-6">
-
-            {{-- QUICK ACCESS --}}
             <div class="rounded-3xl border border-gray-200 bg-white shadow-sm p-6">
                 <h2 class="text-2xl font-bold text-gray-900 mb-5">Quick Access</h2>
 
@@ -301,10 +244,10 @@
                         </a>
                     @endif
 
-                    @if(Route::has('provider.alerts'))
-                        <a href="{{ route('provider.alerts', ['type' => 'all']) }}"
+                    @if(Route::has('provider.alerts.index'))
+                        <a href="{{ route('provider.alerts.index', ['type' => 'all']) }}"
                            class="flex items-center justify-between rounded-2xl bg-red-50 px-5 py-4 transition hover:bg-red-100">
-                            <span class="font-semibold text-red-700">Clinical Alerts</span>
+                            <span class="font-semibold text-red-700">🔔 Clinical Alerts</span>
                             <span>↗️</span>
                         </a>
                     @endif
@@ -312,7 +255,7 @@
                     @if(Route::has('provider.calendar'))
                         <a href="{{ route('provider.calendar') }}"
                            class="flex items-center justify-between rounded-2xl bg-blue-50 px-5 py-4 transition hover:bg-blue-100">
-                            <span class="font-semibold text-blue-700">Open Schedule</span>
+                            <span class="font-semibold text-blue-700">📅 Open Schedule</span>
                             <span>↗️</span>
                         </a>
                     @endif
@@ -320,7 +263,7 @@
                     @if(Route::has('provider.compliance'))
                         <a href="{{ route('provider.compliance') }}"
                            class="flex items-center justify-between rounded-2xl bg-yellow-50 px-5 py-4 transition hover:bg-yellow-100">
-                            <span class="font-semibold text-yellow-700">Compliance Dashboard</span>
+                            <span class="font-semibold text-yellow-700">✅ Compliance Dashboard</span>
                             <span>↗️</span>
                         </a>
                     @endif
@@ -328,7 +271,7 @@
                     @if(Route::has('provider.notes.index'))
                         <a href="{{ route('provider.notes.index') }}"
                            class="flex items-center justify-between rounded-2xl bg-green-50 px-5 py-4 transition hover:bg-green-100">
-                            <span class="font-semibold text-green-700">Provider Notes</span>
+                            <span class="font-semibold text-green-700">📝 Provider Notes</span>
                             <span>↗️</span>
                         </a>
                     @endif
@@ -336,7 +279,7 @@
                     @if(Route::has('provider.pharmacy.index'))
                         <a href="{{ route('provider.pharmacy.index') }}"
                            class="flex items-center justify-between rounded-2xl bg-cyan-50 px-5 py-4 transition hover:bg-cyan-100">
-                            <span class="font-semibold text-cyan-700">Pharmacy / Rx</span>
+                            <span class="font-semibold text-cyan-700">💊 Pharmacy / Rx</span>
                             <span>↗️</span>
                         </a>
                     @endif
@@ -344,14 +287,13 @@
                     @if(Route::has('provider.tasks.index'))
                         <a href="{{ route('provider.tasks.index') }}"
                            class="flex items-center justify-between rounded-2xl bg-purple-50 px-5 py-4 transition hover:bg-purple-100">
-                            <span class="font-semibold text-purple-700">Tasks</span>
+                            <span class="font-semibold text-purple-700">📌 Tasks</span>
                             <span>↗️</span>
                         </a>
                     @endif
                 </div>
             </div>
 
-            {{-- PROVIDER SUMMARY --}}
             <div class="rounded-3xl border border-gray-200 bg-white shadow-sm p-6">
                 <p class="text-xs uppercase tracking-[0.35em] text-indigo-600 font-semibold">
                     Provider Summary
@@ -367,7 +309,6 @@
                 </p>
             </div>
 
-            {{-- COMMUNICATION SUMMARY --}}
             <div class="rounded-3xl border border-indigo-100 bg-indigo-50 p-6 shadow-sm">
                 <p class="text-xs uppercase tracking-[0.35em] text-indigo-600 font-semibold">
                     Communication
@@ -378,7 +319,8 @@
                 </h3>
 
                 <p class="mt-3 text-sm text-indigo-700 leading-6">
-                    Send messages to facilities, review incoming facility concerns, and keep patient communication connected to provider workflow.
+                    Send messages to facilities, review incoming facility concerns,
+                    and keep patient communication connected to provider workflow.
                 </p>
 
                 @if(Route::has('provider.messages.create'))
@@ -388,7 +330,6 @@
                     </a>
                 @endif
             </div>
-
         </div>
     </div>
 </div>

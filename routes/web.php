@@ -357,6 +357,8 @@ Route::middleware(['auth', 'role:provider,super_admin', 'check.subscription'])
             Route::get('/alerts/list', [ProviderAlertController::class, 'index'])->name('alerts.index');
             Route::post('/alerts/{careLog}/review', [ProviderAlertController::class, 'markReviewed'])
                 ->name('alerts.review');
+              Route::post('/alerts/{alert}/resolve', [ProviderAlertController::class, 'resolveAlert'])
+    ->name('alerts.resolve');
         });
 
         Route::get('/patients/{id}', [ProviderPatientController::class, 'index'])

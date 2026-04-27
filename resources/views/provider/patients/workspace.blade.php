@@ -23,6 +23,16 @@
                     ?? trim(($patient->first_name ?? '') . ' ' . ($patient->last_name ?? ''))
                     ?: 'Patient' }}
             </h1>
+<div class="mt-4 flex gap-3">
+
+    @if(Route::has('provider.notes.create'))
+        <a href="{{ route('provider.notes.create', ['visit_id' => optional($patient->visits->last())->id]) }}"
+           class="inline-flex items-center rounded-xl bg-indigo-600 hover:bg-indigo-700 px-5 py-3 text-sm font-semibold text-white shadow">
+            📝 Create Provider Note
+        </a>
+    @endif
+
+</div>
 
             <p class="text-sm text-slate-500">
                 DOB:

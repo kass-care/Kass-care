@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Alert;
 use App\Models\CareLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -11,60 +12,40 @@ class ProviderAlertController extends Controller
     public function index(Request $request)
     {
         $user = auth()->user();
-        $selectedFacilityId = session('facility_id');
-        $effectiveFacilityId = $selectedFacilityId ?: ($user->facility_id ?? null);
+        abort_if(!$user, 403, 'Unauthorized.');
 
-        $logsQuery = CareLog::query()
-            ->with([
-                'visit.client.facility',
-                'visit.caregiver',
-                'visit.provider',
-            ])
-            ->whereNull('alerts_reviewed_at');
+        $type = $request->get('type');
 
-        if ($user && $user->role === 'super_admin') {
-            if ($selectedFacilityId) {
-                $logsQuery->whereHas('visit', function ($q) use ($selectedFacilityId) {
-                    $q->where('facility_id', $selectedFacilityId);
-                });
-            }
-        } else {
-            if ($effectiveFacilityId) {
-                $logsQuery->whereHas('visit', function ($q) use ($effectiveFacilityId) {
-                    $q->where('facility_id', $effectiveFacilityId);
-                });
-            }
+        $alertsQuery = Alert::with(['visit.client.facility', 'visit.caregiver', 'visit.provider'])
+            ->where('resolved', false);
+
+        if ($type && $type !== 'all') {
+            $alertsQuery->where('type', $type);
         }
 
-        $logs = $logsQuery->latest()->get();
+        $alerts = $alertsQuery
+            ->latest('id')
+            ->get();
 
-        $alertRows = collect();
-
-        foreach ($logs as $log) {
-            $visit = $log->visit;
+        $alertRows = $alerts->map(function (Alert $alert) {
+            $visit = $alert->visit;
             $client = $visit?->client;
 
-            if (!$visit || !$client) {
-                continue;
-            }
-
-            $alertsForThisLog = $this->extractAlertsFromLog($log);
-
-            foreach ($alertsForThisLog as $alert) {
-                $alertRows->push([
-                    'client_id' => $client->id,
-                    'client_name' => $client->name,
-                    'room' => $client->room,
-                    'facility_name' => $client->facility->name ?? '-',
-                    'visit_id' => $visit->id,
-                    'care_log_id' => $log->id,
-                    'type' => $alert['type'],
-                    'severity' => $alert['severity'],
-                    'message' => $alert['message'],
-                    'flagged_at' => $log->created_at,
-                ]);
-            }
-        }
+            return [
+                'alert_id' => $alert->id,
+                'client_id' => $alert->client_id ?? $client?->id,
+                'client_name' => $client?->name ?? 'Unknown Patient',
+                'room' => $client?->room ?? 'N/A',
+                'facility_name' => $visit?->facility?->name ?? $client?->facility?->name ?? '-',
+                'visit_id' => $alert->visit_id,
+                'care_log_id' => null,
+                'type' => ucwords(str_replace('_', ' ', $alert->type)),
+                'raw_type' => $alert->type,
+                'severity' => $alert->severity ?? 'info',
+                'message' => $alert->message ?? $alert->title ?? 'Clinical alert requires review.',
+                'flagged_at' => $alert->created_at,
+            ];
+        });
 
         $latestPatientAlerts = $alertRows
             ->sortByDesc('flagged_at')
@@ -81,10 +62,11 @@ class ProviderAlertController extends Controller
         $mediumAlerts = $alertRows->where('severity', 'medium')->count();
 
         $alertTypeSummary = $alertRows
-            ->groupBy('type')
+            ->groupBy('raw_type')
             ->map(function (Collection $items, $type) {
                 return [
-                    'type' => $type,
+                    'type' => ucwords(str_replace('_', ' ', $type)),
+                    'raw_type' => $type,
                     'count' => $items->count(),
                     'critical_count' => $items->where('severity', 'critical')->count(),
                     'high_count' => $items->where('severity', 'high')->count(),
@@ -107,24 +89,7 @@ class ProviderAlertController extends Controller
     public function markReviewed(CareLog $careLog)
     {
         $user = auth()->user();
-        $selectedFacilityId = session('facility_id');
-        $effectiveFacilityId = $selectedFacilityId ?: ($user->facility_id ?? null);
-
-        if ($user->role !== 'super_admin' && $effectiveFacilityId) {
-            abort_if(
-                (int) optional($careLog->visit)->facility_id !== (int) $effectiveFacilityId,
-                403,
-                'Unauthorized alert review.'
-            );
-        }
-
-        if ($user->role === 'super_admin' && $selectedFacilityId) {
-            abort_if(
-                (int) optional($careLog->visit)->facility_id !== (int) $selectedFacilityId,
-                403,
-                'Unauthorized alert review.'
-            );
-        }
+        abort_if(!$user, 403, 'Unauthorized.');
 
         $careLog->update([
             'alerts_reviewed_at' => now(),
@@ -132,54 +97,28 @@ class ProviderAlertController extends Controller
         ]);
 
         return redirect()
-            ->route('provider.alerts')
-            ->with('success', 'Alert marked as reviewed and removed from active queue.');
+            ->route('provider.alerts.index')
+            ->with('success', 'Care log alert marked as reviewed.');
     }
 
-    private function extractAlertsFromLog(CareLog $log): array
+    public function resolveAlert(Alert $alert)
     {
-        $alerts = [];
+        $user = auth()->user();
+        abort_if(!$user, 403, 'Unauthorized.');
 
-        if ((bool) ($log->high_bp_alert ?? false)) {
-            $alerts[] = [
-                'type' => 'High Blood Pressure',
-                'severity' => 'high',
-                'message' => 'Blood pressure flagged above normal range.',
-            ];
+        $facilityId = session('facility_id') ?? ($user->facility_id ?? null);
+
+        if ($user->role !== 'super_admin' && $facilityId) {
+            abort_if((int) $alert->facility_id !== (int) $facilityId, 403, 'Unauthorized alert review.');
         }
 
-        if ((bool) ($log->low_oxygen_alert ?? false)) {
-            $alerts[] = [
-                'type' => 'Low Oxygen',
-                'severity' => 'critical',
-                'message' => 'Oxygen saturation flagged below safe range.',
-            ];
-        }
+        $alert->update([
+            'resolved' => true,
+            'read_at' => now(),
+        ]);
 
-        if ((bool) ($log->fever_alert ?? false)) {
-            $alerts[] = [
-                'type' => 'Fever',
-                'severity' => 'medium',
-                'message' => 'Temperature flagged above expected range.',
-            ];
-        }
-
-        if ((bool) ($log->low_pulse_alert ?? false)) {
-            $alerts[] = [
-                'type' => 'Low Pulse',
-                'severity' => 'high',
-                'message' => 'Pulse flagged below expected range.',
-            ];
-        }
-
-        if ((bool) ($log->high_pulse_alert ?? false)) {
-            $alerts[] = [
-                'type' => 'High Pulse',
-                'severity' => 'high',
-                'message' => 'Pulse flagged above expected range.',
-            ];
-        }
-
-        return $alerts;
+        return redirect()
+            ->route('provider.alerts.index')
+            ->with('success', 'Alert marked as reviewed.');
     }
 }
