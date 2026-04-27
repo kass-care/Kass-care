@@ -21,7 +21,7 @@
             <select name="client_id" required class="w-full border rounded px-3 py-2">
                 <option value="">Select Client</option>
                 @foreach($clients as $client)
-                    <option value="{{ $client->id }}" {{ old('client_id') == $client->id ? 'selected' : '' }}>
+                    <option value="{{ $client->id }}" {{ (old('client_id', $selectedClientId ?? null) == $client->id) ? 'selected' : '' }}>
                         {{ $client->name }}
                     </option>
                 @endforeach
@@ -170,7 +170,7 @@
         <div class="pt-4">
             <button type="submit"
                     class="bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700">
-                Create Prescription
+                {{ ($mode ?? null) === 'refill' ? 'Create Refill Request' : 'Create Prescription' }}
             </button>
         </div>
     </form>

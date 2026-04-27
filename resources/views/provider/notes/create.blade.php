@@ -185,7 +185,14 @@
                               class="w-full rounded-xl border border-gray-300 px-4 py-3"
                               placeholder="Care observations, ADLs, appetite, mood, pain, caregiver concerns..."></textarea>
                 </div>
-
+                        <div>
+    <label class="block text-sm font-semibold text-gray-700 mb-2">
+        Chief Complaint
+    </label>
+    <textarea name="chief_complaint" rows="3"
+              class="w-full rounded-xl border border-gray-300 px-4 py-3"
+              placeholder="Why is the patient being seen today?">{{ old('chief_complaint') }}</textarea>
+</div>
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Subjective</label>
                     <textarea name="subjective" rows="5"

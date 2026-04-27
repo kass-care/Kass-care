@@ -78,22 +78,23 @@ class ProviderNoteController extends Controller
     {
         $user = auth()->user();
         abort_if(!$user, 403, 'Unauthorized.');
-
+        
         $validated = $request->validate([
-            'visit_id'          => ['required', 'exists:visits,id'],
-            'subjective'        => ['nullable', 'string'],
-            'objective'         => ['nullable', 'string'],
-            'assessment'        => ['nullable', 'string'],
-            'plan'              => ['nullable', 'string'],
+    'visit_id'          => ['required', 'exists:visits,id'],
+    'chief_complaint'   => ['nullable', 'string'], // ✅ ADD THIS
+    'subjective'        => ['nullable', 'string'],
+    'objective'         => ['nullable', 'string'],
+    'assessment'        => ['nullable', 'string'],
+    'plan'              => ['nullable', 'string'],
 
-            'weight'            => ['nullable', 'numeric'],
-            'height'            => ['nullable', 'numeric'],
-            'bmi'               => ['nullable', 'numeric'],
+    'weight'            => ['nullable', 'numeric'],
+    'height'            => ['nullable', 'numeric'],
+    'bmi'               => ['nullable', 'numeric'],
 
-            'screening_items'   => ['nullable', 'array'],
-            'screening_items.*' => ['nullable', 'string'],
-            'screening_other'   => ['nullable', 'string'],
-        ]);
+    'screening_items'   => ['nullable', 'array'],
+    'screening_items.*' => ['nullable', 'string'],
+    'screening_other'   => ['nullable', 'string'],
+]);
 
         $facilityId = session('facility_id') ?? ($user->facility_id ?? null);
 
@@ -141,21 +142,22 @@ class ProviderNoteController extends Controller
             "P: " . ($validated['plan'] ?? '')
         );
 
-        $providerNote = ProviderNote::updateOrCreate(
-            ['visit_id' => $visit->id],
-            [
-                'client_id'   => $visit->client_id,
-                'visit_id'    => $visit->id,
-                'provider_id' => $user->id,
-                'subjective'  => $validated['subjective'] ?? null,
-                'objective'   => $objective,
-                'assessment'  => $validated['assessment'] ?? null,
-                'plan'        => $validated['plan'] ?? null,
-                'note'        => $combinedNote,
-                'status'      => 'signed',
-                'signed_at'   => now(),
-            ]
-        );
+ $providerNote = ProviderNote::updateOrCreate(
+    ['visit_id' => $visit->id],
+    [
+        'client_id'        => $visit->client_id,
+        'visit_id'         => $visit->id,
+        'provider_id'      => $user->id,
+        'chief_complaint'  => $validated['chief_complaint'] ?? null, // ✅ ADD
+        'subjective'       => $validated['subjective'] ?? null,
+        'objective'        => $objective,
+        'assessment'       => $validated['assessment'] ?? null,
+        'plan'             => $validated['plan'] ?? null,
+        'note'             => $combinedNote,
+        'status'           => 'signed',
+        'signed_at'        => now(),
+    ]
+);        
 
         $this->createScreeningAlerts($visit, $providerNote, $screeningItems, $screeningOther);
 

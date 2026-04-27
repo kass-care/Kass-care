@@ -31,7 +31,18 @@
             📝 Create Provider Note
         </a>
     @endif
-
+@if(Route::has('provider.pharmacy.create'))
+    <a href="{{ route('provider.pharmacy.create', ['client_id' => $patient->id, 'mode' => 'refill']) }}"
+       class="inline-flex items-center rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 py-3 text-sm font-semibold text-white shadow">
+        🔁 Refill Medication
+    </a>
+@endif
+@if(Route::has('diagnoses.create'))
+    <a href="{{ route('diagnoses.create', $patient->id) }}"
+       class="inline-flex items-center rounded-xl bg-purple-600 hover:bg-purple-700 px-5 py-3 text-sm font-semibold text-white shadow">
+        🧾 Add Diagnosis
+    </a>
+@endif
 </div>
 
             <p class="text-sm text-slate-500">
@@ -112,6 +123,60 @@
                             <h2 class="text-xl font-bold text-slate-900">Clinical Snapshot</h2>
                             <p class="mt-1 text-sm text-slate-500">Most recent vitals and care documentation.</p>
                         </div>
+<div class="mt-6 rounded-2xl border border-indigo-100 bg-indigo-50 p-5">
+    <div class="flex items-center justify-between mb-4">
+        <div>
+            <h3 class="text-lg font-bold text-slate-900">Active ICD Diagnoses</h3>
+            <p class="text-sm text-slate-600">
+                Diagnosis list updates automatically when provider or assistant adds/updates diagnosis.
+            </p>
+        </div>
+
+        @if(Route::has('diagnoses.create'))
+            <a href="{{ route('diagnoses.create', $patient->id) }}"
+               class="inline-flex items-center rounded-xl bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700">
+                🧾 Add Diagnosis
+            </a>
+        @endif
+    </div>
+
+    <div class="space-y-3">
+        @forelse(($patient->diagnoses ?? collect())->whereIn('status', ['active', 'chronic']) as $diagnosis)
+            <div class="rounded-xl bg-white border border-indigo-100 p-4">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                    <div>
+                        <p class="font-bold text-slate-900">
+                            {{ $diagnosis->diagnosis_name ?? 'Diagnosis' }}
+                        </p>
+
+          @if(!empty($diagnosis->icd_code))
+    <span class="inline-flex items-center rounded-full bg-indigo-100 px-2 py-1 text-xs font-bold text-indigo-700">
+        {{ $diagnosis->icd_code }}
+    </span>
+@endif
+                    </div>
+
+                    <span class="inline-flex w-fit rounded-full px-3 py-1 text-xs font-bold
+                        {{ ($diagnosis->status ?? '') === 'chronic'
+                            ? 'bg-orange-100 text-orange-700'
+                            : 'bg-emerald-100 text-emerald-700' }}">
+                        {{ ucfirst($diagnosis->status ?? 'active') }}
+                    </span>
+                </div>
+
+                @if(!empty($diagnosis->notes))
+                    <p class="mt-3 text-sm text-slate-600">
+                        {{ $diagnosis->notes }}
+                    </p>
+                @endif
+            </div>
+        @empty
+            <div class="rounded-xl border border-dashed border-indigo-200 bg-white p-5 text-sm text-slate-500">
+                No active ICD-coded diagnoses recorded yet.
+            </div>
+        @endforelse
+    </div>
+</div>
 
                         @if($alertCount > 0)
                             <span class="inline-flex rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">

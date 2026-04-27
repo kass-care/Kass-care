@@ -93,6 +93,12 @@
 {{ $providerNote->note ?? '' }}
             </div>
         </div>
+ <div class="rounded-xl bg-slate-50 border border-slate-200 p-4">
+    <p class="text-xs uppercase text-slate-500 font-bold">Chief Complaint</p>
+    <p class="mt-2 text-sm whitespace-pre-line">
+        {{ $providerNote->chief_complaint ?? 'N/A' }}
+    </p>
+</div>          
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="rounded-xl bg-slate-50 border border-slate-200 p-4">

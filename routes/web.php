@@ -347,7 +347,9 @@ Route::middleware(['auth', 'role:provider,super_admin', 'check.subscription'])
         Route::get('/dashboard', [ProviderDashboardController::class, 'index'])->name('dashboard');
         Route::get('/calendar', [ProviderCalendarController::class, 'index'])->name('calendar');
         Route::get('/compliance', [ProviderDashboardController::class, 'compliance'])->name('compliance');
-        Route::get('/alerts', [ProviderDashboardController::class, 'alerts'])->name('alerts');
+        Route::get('/alerts', function () {
+    return redirect()->route('provider.alerts.index');
+})->name('alerts');
         Route::get('/summary', [ProviderDashboardController::class, 'summary'])->name('summary');
 
         Route::post('/care-logs/{id}/review', [ProviderDashboardController::class, 'markReviewed'])
@@ -357,6 +359,7 @@ Route::middleware(['auth', 'role:provider,super_admin', 'check.subscription'])
             Route::get('/alerts/list', [ProviderAlertController::class, 'index'])->name('alerts.index');
             Route::post('/alerts/{careLog}/review', [ProviderAlertController::class, 'markReviewed'])
                 ->name('alerts.review');
+
               Route::post('/alerts/{alert}/resolve', [ProviderAlertController::class, 'resolveAlert'])
     ->name('alerts.resolve');
         });

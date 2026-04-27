@@ -28,7 +28,7 @@ class PharmacyOrderController extends Controller
 
         return view('provider.pharmacy.index', compact('orders'));
     }
-        public function create()
+public function create(Request $request)
 {
     $user = auth()->user();
 
@@ -40,9 +40,15 @@ class PharmacyOrderController extends Controller
         ->orderBy('name')
         ->get();
 
-    return view('provider.pharmacy.create', compact('clients'));
-}
+    $selectedClientId = $request->get('client_id');
+    $mode = $request->get('mode');
 
+    return view('provider.pharmacy.create', compact(
+        'clients',
+        'selectedClientId',
+        'mode'
+    ));
+}
     public function store(Request $request)
     {
         $request->validate([

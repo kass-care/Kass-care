@@ -10,6 +10,7 @@ class ProviderNote extends Model
         'client_id',
         'visit_id',
         'provider_id',
+        'chief_complaint',
         'note',
         'subjective',
         'objective',
