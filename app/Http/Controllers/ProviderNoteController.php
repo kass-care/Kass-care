@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Alert;
 use App\Models\ProviderNote;
 use App\Models\Visit;
 use Illuminate\Http\Request;
@@ -43,85 +44,24 @@ class ProviderNoteController extends Controller
         $facilityId = session('facility_id') ?? ($user->facility_id ?? null);
 
         $visit = Visit::with(['client', 'caregiver', 'careLogs'])
-            ->when($facilityId, function ($query) use ($facilityId) {
-                $query->where('facility_id', $facilityId);
-            })
+            ->when($facilityId, fn ($query) => $query->where('facility_id', $facilityId))
             ->findOrFail($visitId);
 
         $client = $visit->client;
 
-        $clientName = $client
-            ? trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? ''))
-            : 'Unknown Client';
-
-        if ($client && empty($clientName) && !empty($client->name)) {
-            $clientName = $client->name;
-        }
-
-        $clientDob = $client->date_of_birth ?? $client->dob ?? null;
+        $clientName = $client?->name ?? 'Unknown Client';
+        $clientDob = $client?->date_of_birth ?? null;
 
         $subjective = '';
         $objective = '';
-        $assessment = '';
-        $plan = '';
-
-        $weight = null;
-        $height = null;
-        $bmi = null;
-
-        $latestLog = $visit->careLogs
-            ->sortByDesc('created_at')
-            ->first();
-
-        if ($latestLog) {
-            if (!empty($latestLog->notes)) {
-                $subjective = 'Caregiver reported: ' . $latestLog->notes;
-            }
-
-            if (!empty($latestLog->vitals) && is_array($latestLog->vitals)) {
-                $vitals = $latestLog->vitals;
-
-                $objectiveLines = ['Vitals:'];
-
-                if (!empty($vitals['blood_pressure'])) {
-                    $objectiveLines[] = '- BP: ' . $vitals['blood_pressure'];
-                } elseif (!empty($vitals['bp'])) {
-                    $objectiveLines[] = '- BP: ' . $vitals['bp'];
-                }
-
-                if (!empty($vitals['pulse'])) {
-                    $objectiveLines[] = '- Pulse: ' . $vitals['pulse'];
-                }
-
-                if (!empty($vitals['temperature'])) {
-                    $objectiveLines[] = '- Temp: ' . $vitals['temperature'];
-                } elseif (!empty($vitals['temp'])) {
-                    $objectiveLines[] = '- Temp: ' . $vitals['temp'];
-                }
-
-                if (!empty($vitals['oxygen'])) {
-                    $objectiveLines[] = '- Oxygen: ' . $vitals['oxygen'];
-                } elseif (!empty($vitals['oxygen_saturation'])) {
-                    $objectiveLines[] = '- Oxygen: ' . $vitals['oxygen_saturation'];
-                }
-
-                if (!empty($vitals['weight'])) {
-                    $objectiveLines[] = '- Weight: ' . $vitals['weight'];
-                    $weight = $vitals['weight'];
-                }
-
-                if (!empty($vitals['height'])) {
-                    $objectiveLines[] = '- Height: ' . $vitals['height'];
-                    $height = $vitals['height'];
-                }
-
-                $objective = implode("\n", $objectiveLines);
-            }
-
-            $assessment = 'Patient evaluated based on caregiver observations and recorded vitals.';
-        }
-
+        $assessment = 'Patient evaluated based on caregiver observations and recorded vitals.';
         $plan = 'Continue monitoring. Adjust care plan as clinically indicated.';
+
+        $latestLog = $visit->careLogs->sortByDesc('created_at')->first();
+
+        if ($latestLog && !empty($latestLog->notes)) {
+            $subjective = 'Caregiver reported: ' . $latestLog->notes;
+        }
 
         return view('provider.notes.create', compact(
             'visit',
@@ -130,10 +70,7 @@ class ProviderNoteController extends Controller
             'subjective',
             'objective',
             'assessment',
-            'plan',
-            'weight',
-            'height',
-            'bmi'
+            'plan'
         ));
     }
 
@@ -143,50 +80,75 @@ class ProviderNoteController extends Controller
         abort_if(!$user, 403, 'Unauthorized.');
 
         $validated = $request->validate([
-            'visit_id'    => ['required', 'exists:visits,id'],
-            'subjective'  => ['nullable', 'string'],
-            'objective'   => ['nullable', 'string'],
-            'assessment'  => ['nullable', 'string'],
-            'plan'        => ['nullable', 'string'],
+            'visit_id'          => ['required', 'exists:visits,id'],
+            'subjective'        => ['nullable', 'string'],
+            'objective'         => ['nullable', 'string'],
+            'assessment'        => ['nullable', 'string'],
+            'plan'              => ['nullable', 'string'],
+
+            'weight'            => ['nullable', 'numeric'],
+            'height'            => ['nullable', 'numeric'],
+            'bmi'               => ['nullable', 'numeric'],
+
+            'screening_items'   => ['nullable', 'array'],
+            'screening_items.*' => ['nullable', 'string'],
+            'screening_other'   => ['nullable', 'string'],
         ]);
 
         $facilityId = session('facility_id') ?? ($user->facility_id ?? null);
 
         $visit = Visit::with(['client', 'caregiver'])
-            ->when($facilityId, function ($query) use ($facilityId) {
-                $query->where('facility_id', $facilityId);
-            })
+            ->when($facilityId, fn ($query) => $query->where('facility_id', $facilityId))
             ->findOrFail($validated['visit_id']);
 
         $client = $visit->client;
 
-        $clientName = $client
-            ? trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? ''))
-            : 'Unknown Client';
+        $clientName = $client?->name ?? 'Unknown Client';
+        $clientDob = $client?->date_of_birth ?? null;
 
-        if ($client && empty($clientName) && !empty($client->name)) {
-            $clientName = $client->name;
+        if ($client && (!empty($validated['weight']) || !empty($validated['height']))) {
+            $client->update([
+                'weight' => $validated['weight'] ?? $client->weight,
+                'height' => $validated['height'] ?? $client->height,
+            ]);
         }
 
-        $clientDob = $client->date_of_birth ?? $client->dob ?? null;
+        $screeningItems = $validated['screening_items'] ?? [];
+        $screeningOther = $validated['screening_other'] ?? null;
+
+        $screeningText = '';
+
+        if (!empty($screeningItems) || !empty($screeningOther)) {
+            $screeningText .= "\n\nAdult Screening & Immunization Review:\n";
+
+            foreach ($screeningItems as $item) {
+                $screeningText .= "- {$item}\n";
+            }
+
+            if (!empty($screeningOther)) {
+                $screeningText .= "- Other: {$screeningOther}\n";
+            }
+        }
+
+        $objective = trim(($validated['objective'] ?? '') . $screeningText);
 
         $combinedNote = trim(
             "Client: " . $clientName . "\n" .
             "DOB: " . ($clientDob ?: 'N/A') . "\n\n" .
             "S: " . ($validated['subjective'] ?? '') . "\n\n" .
-            "O: " . ($validated['objective'] ?? '') . "\n\n" .
+            "O: " . $objective . "\n\n" .
             "A: " . ($validated['assessment'] ?? '') . "\n\n" .
             "P: " . ($validated['plan'] ?? '')
         );
 
-        ProviderNote::updateOrCreate(
+        $providerNote = ProviderNote::updateOrCreate(
             ['visit_id' => $visit->id],
             [
                 'client_id'   => $visit->client_id,
                 'visit_id'    => $visit->id,
-                'provider_id' => auth()->id(),
+                'provider_id' => $user->id,
                 'subjective'  => $validated['subjective'] ?? null,
-                'objective'   => $validated['objective'] ?? null,
+                'objective'   => $objective,
                 'assessment'  => $validated['assessment'] ?? null,
                 'plan'        => $validated['plan'] ?? null,
                 'note'        => $combinedNote,
@@ -195,9 +157,61 @@ class ProviderNoteController extends Controller
             ]
         );
 
+        $this->createScreeningAlerts($visit, $providerNote, $screeningItems, $screeningOther);
+
         return redirect()
             ->route('provider.notes.index')
             ->with('success', 'Provider SOAP note saved successfully.');
+    }
+
+    private function createScreeningAlerts(
+        Visit $visit,
+        ProviderNote $providerNote,
+        array $screeningItems,
+        ?string $screeningOther
+    ): void {
+        if (empty($screeningItems) && empty($screeningOther)) {
+            return;
+        }
+
+        Alert::withoutGlobalScopes()
+            ->where('provider_note_id', $providerNote->id)
+            ->where('type', 'preventive_screening')
+            ->delete();
+
+        foreach ($screeningItems as $item) {
+            Alert::create([
+                'organization_id'   => $visit->organization_id ?: 1,
+                'facility_id'       => $visit->facility_id,
+                'client_id'         => $visit->client_id,
+                'visit_id'          => $visit->id,
+                'caregiver_id'      => $visit->caregiver_id,
+                'provider_id'       => $providerNote->provider_id,
+                'provider_note_id'  => $providerNote->id,
+                'type'              => 'preventive_screening',
+                'title'             => $item,
+                'severity'          => 'info',
+                'message'           => 'Preventive screening or immunization item reviewed/flagged: ' . $item,
+                'resolved'          => false,
+            ]);
+        }
+
+        if (!empty($screeningOther)) {
+            Alert::create([
+                'organization_id'   => $visit->organization_id ?: 1,
+                'facility_id'       => $visit->facility_id,
+                'client_id'         => $visit->client_id,
+                'visit_id'          => $visit->id,
+                'caregiver_id'      => $visit->caregiver_id,
+                'provider_id'       => $providerNote->provider_id,
+                'provider_note_id'  => $providerNote->id,
+                'type'              => 'preventive_screening',
+                'title'             => 'Other preventive care note',
+                'severity'          => 'info',
+                'message'           => $screeningOther,
+                'resolved'          => false,
+            ]);
+        }
     }
 
     public function show(ProviderNote $providerNote)
