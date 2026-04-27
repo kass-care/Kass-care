@@ -272,6 +272,8 @@ Route::get('/messages', [ProviderMessageController::class, 'facilityIndex'])
         Route::post('/patients', [PatientController::class, 'store'])->name('patients.store');
         Route::get('/patients/{id}', [PatientController::class, 'show'])->name('patients.show');
         Route::get('/patients/{id}/edit', [PatientController::class, 'edit'])->name('patients.edit');
+        Route::put('/patients/{id}', [\App\Http\Controllers\Facility\PatientController::class, 'update'])
+    ->name('patients.update');
 
         Route::get('/caregivers', [FacilityCaregiverController::class, 'index'])->name('caregivers.index');
         Route::get('/caregivers/create', [FacilityCaregiverController::class, 'create'])->name('caregivers.create');
@@ -287,6 +289,9 @@ Route::get('/messages/create', [ProviderMessageController::class, 'facilityCreat
 Route::post('/messages', [ProviderMessageController::class, 'facilityStore'])
     ->name('messages.store');
 
+Route::middleware(['auth','role:super_admin'])->prefix('admin')->group(function () {
+    Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
+});
         Route::get('/visits', [FacilityVisitController::class, 'index'])->name('visits.index');
         Route::get('/visits/create', [FacilityVisitController::class, 'create'])->name('visits.create');
         Route::post('/visits', [FacilityVisitController::class, 'store'])->name('visits.store');
@@ -303,19 +308,30 @@ Route::post('/messages', [ProviderMessageController::class, 'facilityStore'])
 | Basic visits shortcut by role
 |--------------------------------------------------------------------------
 */
-
 Route::middleware('auth')->group(function () {
     Route::get('/visits', function () {
         $user = auth()->user();
 
         return match ($user->role) {
             'super_admin' => redirect()->route('admin.visits.index'),
-            'caregiver'   => redirect()->route('caregiver.visits'),
+            'admin'       => redirect()->route('facility.visits.index'),
             'provider'    => redirect()->route('provider.dashboard'),
-            'admin'       => redirect()->route('facility.admin.home'),
+            'caregiver'   => redirect()->route('caregiver.visits'),
             default       => redirect()->route('dashboard'),
         };
     })->name('visits.index.redirect');
+
+    Route::get('/dashboard', function () {
+        $user = auth()->user();
+
+        return match ($user->role) {
+            'super_admin' => redirect()->route('admin.dashboard'),
+            'admin'       => redirect()->route('facility.admin.home'),
+            'provider'    => redirect()->route('provider.dashboard'),
+            'caregiver'   => redirect()->route('caregiver.dashboard'),
+            default       => abort(403),
+        };
+    })->name('dashboard');
 });
 
 /*
@@ -348,6 +364,9 @@ Route::middleware(['auth', 'role:provider,super_admin', 'check.subscription'])
 
         Route::get('/patients/{id}/summary', [ProviderPatientController::class, 'summary'])
             ->name('patients.summary');
+Route::middleware(['auth','role:provider'])->prefix('provider')->group(function () {
+    Route::get('/dashboard', [ProviderDashboardController::class, 'index'])->name('provider.dashboard');
+});
  /*
 |--------------------------------------------------------------------------
 | Provider Care Logs
@@ -415,6 +434,12 @@ Route::post('/pharmacy/order/{order}/email', [PharmacyOrderController::class, 'e
 Route::get('/messages', [ProviderMessageController::class, 'providerIndex'])
     ->name('messages.index');
 
+Route::get('/messages/create', [ProviderMessageController::class, 'providerCreate'])
+    ->name('messages.create');
+
+Route::post('/messages', [ProviderMessageController::class, 'providerStore'])
+    ->name('messages.store');
+
 Route::get('/messages/{message}', [ProviderMessageController::class, 'providerShow'])
     ->name('messages.show');
 
@@ -470,7 +495,16 @@ Route::get('/check-out/{visit}', [CaregiverController::class, 'checkOut'])
 
 Route::post('/check-out/{visit}', [CaregiverController::class, 'checkoutSave'])
     ->name('checkout.save');
+
+Route::get('/visits/{visit}/report-issue', [CaregiverController::class, 'reportIssue'])
+    ->name('visits.report-issue');
+
+Route::post('/visits/{visit}/report-issue', [CaregiverController::class, 'storeReportIssue'])
+    ->name('visits.report-issue.store');
     });
+Route::middleware(['auth','role:caregiver'])->prefix('caregiver')->group(function () {
+    Route::get('/dashboard', [CaregiverDashboardController::class, 'index'])->name('caregiver.dashboard');
+});
 /*
 |--------------------------------------------------------------------------
 | Profile + alerts
