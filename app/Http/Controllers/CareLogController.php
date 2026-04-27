@@ -34,19 +34,18 @@ class CareLogController extends Controller
 
         if (Schema::hasColumn('caregivers', 'user_id')) {
             $byUser = (clone $query)->where('user_id', $user->id)->first();
+
             if ($byUser) {
                 return $byUser;
             }
         }
 
-        if (
-            $facilityId &&
-            Schema::hasColumn('caregivers', 'facility_id') &&
-            !empty($user->email) &&
-            Schema::hasColumn('caregivers', 'email')
-        ) {
+        if ($facilityId && !empty($user->email) && Schema::hasColumn('caregivers', 'email')) {
             $byEmail = (clone $query)
-                ->where('facility_id', $facilityId)
+                ->when(
+                    Schema::hasColumn('caregivers', 'facility_id'),
+                    fn ($q) => $q->where('facility_id', $facilityId)
+                )
                 ->where('email', $user->email)
                 ->first();
 
@@ -60,50 +59,40 @@ class CareLogController extends Controller
             }
         }
 
-        if (
-            $facilityId &&
-            Schema::hasColumn('caregivers', 'facility_id') &&
-            Schema::hasColumn('caregivers', 'name')
-        ) {
+        if ($facilityId && Schema::hasColumn('caregivers', 'name')) {
             $byName = (clone $query)
-                ->where('facility_id', $facilityId)
+                ->when(
+                    Schema::hasColumn('caregivers', 'facility_id'),
+                    fn ($q) => $q->where('facility_id', $facilityId)
+                )
                 ->where('name', $user->name)
                 ->first();
 
             if ($byName) {
                 if (Schema::hasColumn('caregivers', 'user_id') && empty($byName->user_id)) {
                     $byName->user_id = $user->id;
+                    $byName->save();
                 }
 
-                if (
-                    Schema::hasColumn('caregivers', 'email') &&
-                    empty($byName->email) &&
-                    !empty($user->email)
-                ) {
-                    $byName->email = $user->email;
-                }
-
-                $byName->save();
-
-                return $byName;
-            }
-        }
-
-        if (!empty($user->email) && Schema::hasColumn('caregivers', 'email')) {
-            $byEmail = (clone $query)->where('email', $user->email)->first();
-            if ($byEmail) {
-                return $byEmail;
-            }
-        }
-
-        if (Schema::hasColumn('caregivers', 'name')) {
-            $byName = (clone $query)->where('name', $user->name)->first();
-            if ($byName) {
                 return $byName;
             }
         }
 
         return null;
+    }
+
+    private function caregiverIds(): array
+    {
+        $user = $this->currentUser();
+        $caregiver = $this->caregiverRecord();
+
+        $ids = [$user->id];
+
+        if ($caregiver) {
+            $ids[] = $caregiver->id;
+        }
+
+        return array_values(array_unique(array_filter($ids)));
     }
 
     private function visitBaseQuery()
@@ -121,20 +110,13 @@ class CareLogController extends Controller
 
     private function caregiverVisitQuery()
     {
-        $caregiver = $this->caregiverRecord();
         $query = $this->visitBaseQuery();
 
-        if (!$caregiver) {
-            return $query->whereRaw('1 = 0');
-        }
-
         if (Schema::hasColumn('visits', 'caregiver_id')) {
-            $query->where('caregiver_id', $caregiver->id);
-        } else {
-            $query->whereRaw('1 = 0');
+            return $query->whereIn('caregiver_id', $this->caregiverIds());
         }
 
-        return $query;
+        return $query->whereRaw('1 = 0');
     }
 
     private function careLogBaseQuery()
@@ -156,10 +138,6 @@ class CareLogController extends Controller
     {
         $user = $this->currentUser();
 
-        if ($user->role === 'caregiver' && view()->exists('caregiver.care-logs.index')) {
-            return 'caregiver.care-logs.index';
-        }
-
         if (in_array($user->role, ['provider', 'super_admin'], true) && view()->exists('provider.care-logs.index')) {
             return 'provider.care-logs.index';
         }
@@ -170,10 +148,6 @@ class CareLogController extends Controller
     private function showView(): string
     {
         $user = $this->currentUser();
-
-        if ($user->role === 'caregiver' && view()->exists('caregiver.care-logs.show')) {
-            return 'caregiver.care-logs.show';
-        }
 
         if (in_array($user->role, ['provider', 'super_admin'], true) && view()->exists('provider.care-logs.show')) {
             return 'provider.care-logs.show';
@@ -198,12 +172,11 @@ class CareLogController extends Controller
         $user = $this->currentUser();
 
         if ($user->role === 'caregiver') {
-            $caregiver = $this->caregiverRecord();
-            abort_if(!$caregiver, 403, 'Caregiver profile not found.');
+            $caregiverIds = $this->caregiverIds();
 
             $careLogs = $this->careLogBaseQuery()
-                ->whereHas('visit', function ($query) use ($caregiver) {
-                    $query->where('caregiver_id', $caregiver->id);
+                ->whereHas('visit', function ($query) use ($caregiverIds) {
+                    $query->whereIn('caregiver_id', $caregiverIds);
                 })
                 ->latest()
                 ->get();
@@ -217,36 +190,36 @@ class CareLogController extends Controller
 
         return view($this->indexView(), compact('careLogs'));
     }
-public function create(Request $request)
-{
-    $user = $this->currentUser();
-    $selectedVisit = null;
 
-    if ($user->role === 'caregiver') {
-        $caregiver = $this->caregiverRecord();
-        abort_if(!$caregiver, 403, 'Caregiver profile not found.');
+    public function create(Request $request)
+    {
+        $user = $this->currentUser();
+        $selectedVisit = null;
 
-        $visits = $this->caregiverVisitQuery()
+        if ($user->role === 'caregiver') {
+            $visits = $this->caregiverVisitQuery()
+                ->orderBy('visit_date')
+                ->latest('id')
+                ->get();
+
+            if ($request->filled('visit_id')) {
+                $selectedVisit = $visits->firstWhere('id', (int) $request->visit_id);
+            }
+
+            return view('caregiver.care-logs.create', compact('visits', 'selectedVisit'));
+        }
+
+        $visits = $this->visitBaseQuery()
             ->orderBy('visit_date')
+            ->latest('id')
             ->get();
 
         if ($request->filled('visit_id')) {
             $selectedVisit = $visits->firstWhere('id', (int) $request->visit_id);
         }
 
-        return view('caregiver.care-logs.create', compact('visits', 'selectedVisit'));
+        return view('provider.care-logs.create', compact('visits', 'selectedVisit'));
     }
-
-    $visits = $this->visitBaseQuery()
-        ->orderBy('visit_date')
-        ->get();
-
-    if ($request->filled('visit_id')) {
-        $selectedVisit = $visits->firstWhere('id', (int) $request->visit_id);
-    }
-
-    return view('provider.care-logs.create', compact('visits', 'selectedVisit'));
-}
 
     public function store(Request $request)
     {
@@ -254,25 +227,25 @@ public function create(Request $request)
         $facilityId = $this->currentFacilityId();
 
         $validated = $request->validate([
-            'visit_id'             => ['required', 'exists:visits,id'],
-            'adl_status'           => ['nullable', 'string'],
-            'bathroom_assistance'  => ['nullable', 'string'],
-            'mobility_support'     => ['nullable', 'string'],
-            'meal_notes'           => ['nullable', 'string'],
-            'medication_notes'     => ['nullable', 'string'],
-            'charting_notes'       => ['nullable', 'string'],
-            'care_notes'           => ['nullable', 'string'],
-            'blood_pressure'       => ['nullable', 'string'],
-            'pulse'                => ['nullable', 'string'],
-            'temperature'          => ['nullable', 'string'],
-            'respiratory_rate'     => ['nullable', 'string'],
-            'oxygen_saturation'    => ['nullable', 'string'],
-            'weight'               => ['nullable', 'string'],
-            'blood_sugar'          => ['nullable', 'string'],
-            'check_in_time'        => ['nullable', 'string'],
-            'check_out_time'       => ['nullable', 'string'],
-            'latitude'             => ['nullable', 'string'],
-            'longitude'            => ['nullable', 'string'],
+            'visit_id' => ['required', 'exists:visits,id'],
+            'adl_status' => ['nullable', 'string'],
+            'bathroom_assistance' => ['nullable', 'string'],
+            'mobility_support' => ['nullable', 'string'],
+            'meal_notes' => ['nullable', 'string'],
+            'medication_notes' => ['nullable', 'string'],
+            'charting_notes' => ['nullable', 'string'],
+            'care_notes' => ['nullable', 'string'],
+            'blood_pressure' => ['nullable', 'string'],
+            'pulse' => ['nullable', 'string'],
+            'temperature' => ['nullable', 'string'],
+            'respiratory_rate' => ['nullable', 'string'],
+            'oxygen_saturation' => ['nullable', 'string'],
+            'weight' => ['nullable', 'string'],
+            'blood_sugar' => ['nullable', 'string'],
+            'check_in_time' => ['nullable', 'string'],
+            'check_out_time' => ['nullable', 'string'],
+            'latitude' => ['nullable', 'string'],
+            'longitude' => ['nullable', 'string'],
         ]);
 
         $visit = Visit::query()->findOrFail($validated['visit_id']);
@@ -282,105 +255,103 @@ public function create(Request $request)
         }
 
         if ($user->role === 'caregiver') {
-            $caregiver = $this->caregiverRecord();
-            abort_if(!$caregiver, 403, 'Caregiver profile not found.');
-            abort_if((int) ($visit->caregiver_id ?? 0) !== (int) $caregiver->id, 403, 'This visit is not assigned to you.');
+            abort_if(
+                !in_array((int) ($visit->caregiver_id ?? 0), array_map('intval', $this->caregiverIds()), true),
+                403,
+                'This visit is not assigned to you.'
+            );
         }
 
         $adlPayload = array_filter([
-            'adl_status'          => $validated['adl_status'] ?? null,
+            'adl_status' => $validated['adl_status'] ?? null,
             'bathroom_assistance' => $validated['bathroom_assistance'] ?? null,
-            'mobility_support'    => $validated['mobility_support'] ?? null,
-            'meal_notes'          => $validated['meal_notes'] ?? null,
-            'medication_notes'    => $validated['medication_notes'] ?? null,
-            'charting_notes'      => $validated['charting_notes'] ?? null,
+            'mobility_support' => $validated['mobility_support'] ?? null,
+            'meal_notes' => $validated['meal_notes'] ?? null,
+            'medication_notes' => $validated['medication_notes'] ?? null,
+            'charting_notes' => $validated['charting_notes'] ?? null,
         ], fn ($value) => !is_null($value) && $value !== '');
 
         $vitalsPayload = array_filter([
-            'blood_pressure'    => $validated['blood_pressure'] ?? null,
-            'pulse'             => $validated['pulse'] ?? null,
-            'temperature'       => $validated['temperature'] ?? null,
-            'respiratory_rate'  => $validated['respiratory_rate'] ?? null,
+            'blood_pressure' => $validated['blood_pressure'] ?? null,
+            'pulse' => $validated['pulse'] ?? null,
+            'temperature' => $validated['temperature'] ?? null,
+            'respiratory_rate' => $validated['respiratory_rate'] ?? null,
             'oxygen_saturation' => $validated['oxygen_saturation'] ?? null,
-            'weight'            => $validated['weight'] ?? null,
-            'blood_sugar'       => $validated['blood_sugar'] ?? null,
+            'weight' => $validated['weight'] ?? null,
+            'blood_sugar' => $validated['blood_sugar'] ?? null,
         ], fn ($value) => !is_null($value) && $value !== '');
 
         $payload = [
             'visit_id' => $visit->id,
-            'notes'    => $validated['care_notes'] ?? null,
-            'adls'     => !empty($adlPayload) ? $adlPayload : null,
-            'vitals'   => !empty($vitalsPayload) ? $vitalsPayload : null,
+            'notes' => $validated['care_notes'] ?? null,
+            'adls' => !empty($adlPayload) ? $adlPayload : null,
+            'vitals' => !empty($vitalsPayload) ? $vitalsPayload : null,
         ];
 
         if (Schema::hasColumn('care_logs', 'caregiver_id')) {
             $caregiver = $this->caregiverRecord();
-            if ($caregiver) {
-                $payload['caregiver_id'] = $caregiver->id;
+            $payload['caregiver_id'] = $caregiver?->id ?? auth()->id();
+        }
+
+        if (Schema::hasColumn('care_logs', 'client_id')) {
+            $payload['client_id'] = $visit->client_id;
+        }
+
+        if (Schema::hasColumn('care_logs', 'facility_id')) {
+            $payload['facility_id'] = $visit->facility_id;
+        }
+
+        CareLog::create($payload);
+
+        if (!empty($validated['check_in_time']) && Schema::hasColumn('visits', 'check_in_time')) {
+            $visit->check_in_time = $validated['check_in_time'];
+        }
+
+        if (!empty($validated['check_out_time']) && Schema::hasColumn('visits', 'check_out_time')) {
+            $visit->check_out_time = $validated['check_out_time'];
+        }
+
+        if (!empty($validated['latitude']) && Schema::hasColumn('visits', 'check_in_latitude')) {
+            $visit->check_in_latitude = $validated['latitude'];
+        }
+
+        if (!empty($validated['longitude']) && Schema::hasColumn('visits', 'check_in_longitude')) {
+            $visit->check_in_longitude = $validated['longitude'];
+        }
+
+        if (!empty($validated['check_in_time']) && empty($validated['check_out_time'])) {
+            if (Schema::hasColumn('visits', 'status')) {
+                $visit->status = 'in_progress';
+            }
+
+            if (Schema::hasColumn('visits', 'visit_started')) {
+                $visit->visit_started = true;
+            }
+
+            if (Schema::hasColumn('visits', 'visit_started_at')) {
+                $visit->visit_started_at = now();
             }
         }
-CareLog::create($payload);
 
-if (!empty($validated['check_in_time']) && Schema::hasColumn('visits', 'check_in_time')) {
-    $visit->check_in_time = $validated['check_in_time'];
-}
+        if (!empty($validated['check_out_time'])) {
+            if (Schema::hasColumn('visits', 'status')) {
+                $visit->status = 'completed';
+            }
 
-if (!empty($validated['check_in_time']) && Schema::hasColumn('visits', 'check_in')) {
-    $visit->check_in = date('Y-m-d H:i:s', strtotime(now()->format('Y-m-d') . ' ' . $validated['check_in_time']));
-}
+            if (Schema::hasColumn('visits', 'visit_completed')) {
+                $visit->visit_completed = true;
+            }
 
-if (!empty($validated['check_out_time']) && Schema::hasColumn('visits', 'check_out_time')) {
-    $visit->check_out_time = $validated['check_out_time'];
-}
+            if (Schema::hasColumn('visits', 'visit_completed_at')) {
+                $visit->visit_completed_at = now();
+            }
+        }
 
-if (!empty($validated['check_out_time']) && Schema::hasColumn('visits', 'check_out')) {
-    $visit->check_out = date('Y-m-d H:i:s', strtotime(now()->format('Y-m-d') . ' ' . $validated['check_out_time']));
-}
+        $visit->save();
 
-if (!empty($validated['latitude']) && Schema::hasColumn('visits', 'check_in_latitude')) {
-    $visit->check_in_latitude = $validated['latitude'];
-}
-
-if (!empty($validated['longitude']) && Schema::hasColumn('visits', 'check_in_longitude')) {
-    $visit->check_in_longitude = $validated['longitude'];
-}
-
-if (!empty($validated['check_in_time']) && empty($validated['check_out_time'])) {
-
-    if (Schema::hasColumn('visits', 'status')) {
-        $visit->status = 'in_progress';
+        return $this->redirectAfterSave()
+            ->with('success', 'Care log saved successfully.');
     }
-
-    if (Schema::hasColumn('visits', 'visit_started')) {
-        $visit->visit_started = true;
-    }
-
-    if (Schema::hasColumn('visits', 'visit_started_at')) {
-        $visit->visit_started_at = now();
-    }
-}
-
-if (!empty($validated['check_out_time'])) {
-
-    if (Schema::hasColumn('visits', 'status')) {
-        $visit->status = 'completed';
-    }
-
-    if (Schema::hasColumn('visits', 'visit_completed')) {
-        $visit->visit_completed = true;
-    }
-
-    if (Schema::hasColumn('visits', 'visit_completed_at')) {
-        $visit->visit_completed_at = now();
-    }
-}
-
-$visit->save();
-
-return $this->redirectAfterSave()
-    ->with('success', 'Care log saved successfully.');
-}
-  
 
     public function show(CareLog $careLog)
     {
@@ -394,10 +365,12 @@ return $this->redirectAfterSave()
         }
 
         if ($user->role === 'caregiver') {
-            $caregiver = $this->caregiverRecord();
-            abort_if(!$caregiver, 403, 'Caregiver profile not found.');
+            $ownsVisit = in_array(
+                (int) ($careLog->visit->caregiver_id ?? 0),
+                array_map('intval', $this->caregiverIds()),
+                true
+            );
 
-            $ownsVisit = (int) ($careLog->visit->caregiver_id ?? 0) === (int) $caregiver->id;
             abort_if(!$ownsVisit, 403, 'Unauthorized.');
         }
 

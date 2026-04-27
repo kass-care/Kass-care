@@ -150,6 +150,10 @@
                                         <span class="inline-flex rounded-full bg-yellow-100 px-4 py-2 text-xs font-bold text-yellow-700">
                                             In Progress
                                         </span>
+                                           <a href="{{ route('caregiver.visits.report-issue', $visit) }}"
+   class="inline-flex items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white shadow hover:bg-red-700">
+    ⚠️ Report Issue
+</a>
                                     @elseif($status === 'missed')
                                         <span class="inline-flex rounded-full bg-red-100 px-4 py-2 text-xs font-bold text-red-700">
                                             Missed
@@ -246,6 +250,7 @@
                                     <p>Lng: {{ $visit->check_out_longitude }}</p>
                                 </div>
                             @endif
+
                         </div>
                     </div>
                 @endforeach

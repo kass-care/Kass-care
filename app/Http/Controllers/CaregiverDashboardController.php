@@ -38,14 +38,9 @@ class CaregiverDashboardController extends Controller
             }
         }
 
-        if (
-            $facilityId &&
-            Schema::hasColumn('caregivers', 'facility_id') &&
-            !empty($user->email) &&
-            Schema::hasColumn('caregivers', 'email')
-        ) {
+        if ($facilityId && !empty($user->email) && Schema::hasColumn('caregivers', 'email')) {
             $byEmail = (clone $query)
-                ->where('facility_id', $facilityId)
+                ->when(Schema::hasColumn('caregivers', 'facility_id'), fn ($q) => $q->where('facility_id', $facilityId))
                 ->where('email', $user->email)
                 ->first();
 
@@ -59,45 +54,18 @@ class CaregiverDashboardController extends Controller
             }
         }
 
-        if (
-            $facilityId &&
-            Schema::hasColumn('caregivers', 'facility_id') &&
-            Schema::hasColumn('caregivers', 'name')
-        ) {
+        if ($facilityId && Schema::hasColumn('caregivers', 'name')) {
             $byName = (clone $query)
-                ->where('facility_id', $facilityId)
+                ->when(Schema::hasColumn('caregivers', 'facility_id'), fn ($q) => $q->where('facility_id', $facilityId))
                 ->where('name', $user->name)
                 ->first();
 
             if ($byName) {
                 if (Schema::hasColumn('caregivers', 'user_id') && empty($byName->user_id)) {
                     $byName->user_id = $user->id;
+                    $byName->save();
                 }
 
-                if (
-                    Schema::hasColumn('caregivers', 'email') &&
-                    empty($byName->email) &&
-                    !empty($user->email)
-                ) {
-                    $byName->email = $user->email;
-                }
-
-                $byName->save();
-
-                return $byName;
-            }
-        }
-
-        if (!empty($user->email) && Schema::hasColumn('caregivers', 'email')) {
-            $byEmail = (clone $query)->where('email', $user->email)->first();
-            if ($byEmail) {
-                return $byEmail;
-            }
-        }
-
-        if (Schema::hasColumn('caregivers', 'name')) {
-            $byName = (clone $query)->where('name', $user->name)->first();
-            if ($byName) {
                 return $byName;
             }
         }
@@ -105,31 +73,28 @@ class CaregiverDashboardController extends Controller
         return null;
     }
 
-        public function index()
-{
-    $caregiver = $this->caregiverRecord();
+    public function index()
+    {
+        $user = $this->currentUser();
+        $caregiver = $this->caregiverRecord();
+        $facilityId = $this->currentFacilityId();
 
-    if (!$caregiver) {
-        return view('caregiver.dashboard', [
-            'visits' => collect(),
-            'todayVisits' => collect(),
-            'activeVisit' => null,
-            'assignedClients' => collect(),
-            'completedVisitsCount' => 0,
-            'pendingVisitsCount' => 0,
-        ]);
-    }
+        $caregiverIds = [$user->id];
 
-    $facilityId = $caregiver->facility_id;
+        if ($caregiver) {
+            $caregiverIds[] = $caregiver->id;
+        }
 
-    $visitsQuery = Visit::with(['client','caregiver']);
-          
+        $caregiverIds = array_unique(array_filter($caregiverIds));
+
+        $visitsQuery = Visit::with(['client', 'caregiver']);
+
         if ($facilityId && Schema::hasColumn('visits', 'facility_id')) {
             $visitsQuery->where('facility_id', $facilityId);
         }
 
         if (Schema::hasColumn('visits', 'caregiver_id')) {
-            $visitsQuery->where('caregiver_id', $caregiver->id);
+            $visitsQuery->whereIn('caregiver_id', $caregiverIds);
         } else {
             $visitsQuery->whereRaw('1 = 0');
         }
@@ -162,17 +127,9 @@ class CaregiverDashboardController extends Controller
                 $latestVisit = $clientVisits->sortByDesc('updated_at')->first();
                 $client = $latestVisit->client;
 
-                $clientName = trim(
-                    (($client->first_name ?? '') . ' ' . ($client->last_name ?? ''))
-                );
-
-                if ($clientName === '') {
-                    $clientName = $client->name ?? 'Unknown Client';
-                }
-
                 return (object) [
                     'id' => $client->id ?? null,
-                    'name' => $clientName,
+                    'name' => $client->name ?? 'Unknown Client',
                     'latest_status' => $latestVisit->status ?? 'N/A',
                     'latest_visit_date' => $latestVisit->visit_date ?? $latestVisit->updated_at,
                     'visit_id' => $latestVisit->id,

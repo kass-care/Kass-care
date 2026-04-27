@@ -4,19 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\CareLog;
 use App\Models\Caregiver;
+use App\Models\ProviderMessage;
+use App\Models\User;
 use App\Models\Visit;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
-use Carbon\Carbon;
 
 class CaregiverController extends Controller
 {
-    /*
-    |--------------------------------------------------------------------------
-    | Helpers
-    |--------------------------------------------------------------------------
-    */
-
     private function currentUser()
     {
         $user = auth()->user();
@@ -46,14 +42,9 @@ class CaregiverController extends Controller
             }
         }
 
-        if (
-            $facilityId &&
-            Schema::hasColumn('caregivers', 'facility_id') &&
-            !empty($user->email) &&
-            Schema::hasColumn('caregivers', 'email')
-        ) {
+        if ($facilityId && !empty($user->email) && Schema::hasColumn('caregivers', 'email')) {
             $byEmail = (clone $query)
-                ->where('facility_id', $facilityId)
+                ->when(Schema::hasColumn('caregivers', 'facility_id'), fn ($q) => $q->where('facility_id', $facilityId))
                 ->where('email', $user->email)
                 ->first();
 
@@ -67,13 +58,9 @@ class CaregiverController extends Controller
             }
         }
 
-        if (
-            $facilityId &&
-            Schema::hasColumn('caregivers', 'facility_id') &&
-            Schema::hasColumn('caregivers', 'name')
-        ) {
+        if ($facilityId && Schema::hasColumn('caregivers', 'name')) {
             $byName = (clone $query)
-                ->where('facility_id', $facilityId)
+                ->when(Schema::hasColumn('caregivers', 'facility_id'), fn ($q) => $q->where('facility_id', $facilityId))
                 ->where('name', $user->name)
                 ->first();
 
@@ -82,11 +69,7 @@ class CaregiverController extends Controller
                     $byName->user_id = $user->id;
                 }
 
-                if (
-                    Schema::hasColumn('caregivers', 'email') &&
-                    empty($byName->email) &&
-                    !empty($user->email)
-                ) {
+                if (Schema::hasColumn('caregivers', 'email') && empty($byName->email)) {
                     $byName->email = $user->email;
                 }
 
@@ -99,36 +82,40 @@ class CaregiverController extends Controller
         return null;
     }
 
-    private function caregiverVisitQuery()
-    {
-        $caregiver = $this->resolveCaregiverRecord();
-        $facilityId = $this->currentFacilityId();
+private function caregiverVisitQuery()
+{
+    $caregiver = $this->resolveCaregiverRecord();
+    $user = auth()->user();
+    $facilityId = $this->currentFacilityId();
 
-        $query = Visit::query();
+    $query = Visit::query();
 
-        if ($facilityId && Schema::hasColumn('visits', 'facility_id')) {
-            $query->where('facility_id', $facilityId);
-        }
-
-        if (!$caregiver) {
-            return $query->whereRaw('1 = 0');
-        }
-
-        return $query->where('caregiver_id', $caregiver->id);
+    if ($facilityId && Schema::hasColumn('visits', 'facility_id')) {
+        $query->where('facility_id', $facilityId);
     }
 
+    $ids = [];
+
+    // user id (THIS is what your visits are using)
+    if ($user) {
+        $ids[] = $user->id;
+    }
+
+    // caregiver profile id (fallback)
+    if ($caregiver) {
+        $ids[] = $caregiver->id;
+    }
+
+    $ids = array_unique(array_filter($ids));
+
+    return $query->whereIn('caregiver_id', $ids);
+}
     private function setVisitValueIfColumnExists(Visit $visit, string $column, $value): void
     {
         if (Schema::hasColumn('visits', $column)) {
             $visit->{$column} = $value;
         }
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Visits Page
-    |--------------------------------------------------------------------------
-    */
 
     public function visits()
     {
@@ -140,12 +127,6 @@ class CaregiverController extends Controller
 
         return view('caregiver.visits', compact('visits'));
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Check In
-    |--------------------------------------------------------------------------
-    */
 
     public function checkIn($id)
     {
@@ -187,31 +168,42 @@ class CaregiverController extends Controller
             ->with('success', 'Visit checked in successfully.');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Check Out
-    |--------------------------------------------------------------------------
-    */
-
     public function checkOut($id)
-    {
-        $visit = $this->caregiverVisitQuery()
-            ->with(['client', 'facility', 'provider'])
-            ->findOrFail($id);
+{
+    $visit = $this->caregiverVisitQuery()
+        ->with(['client', 'facility', 'provider'])
+        ->findOrFail($id);
 
-        return view('caregiver.check-out', compact('visit'));
+    // 🚨 CHECK: must have care log before checkout
+    $hasCareLog = \App\Models\CareLog::where('visit_id', $visit->id)->exists();
+
+    if (!$hasCareLog) {
+        return redirect()
+            ->route('caregiver.care-logs.create', ['visit_id' => $visit->id])
+            ->with('error', 'You must complete a care log before checking out.');
     }
 
+    return view('caregiver.check-out', compact('visit'));
+}
     public function storeCheckOut(Request $request, $id)
     {
+// 🚨 HARD BLOCK
+$hasCareLog = \App\Models\CareLog::where('visit_id', $id)->exists();
+
+if (!$hasCareLog) {
+    return redirect()
+        ->route('caregiver.care-logs.create', ['visit_id' => $id])
+        ->with('error', 'Care log required before checkout.');
+}
+
         $request->validate([
-            'visit_summary'      => ['nullable', 'string'],
-            'client_condition'   => ['nullable', 'string'],
-            'tasks_completed'    => ['nullable', 'string'],
+            'visit_summary' => ['nullable', 'string'],
+            'client_condition' => ['nullable', 'string'],
+            'tasks_completed' => ['nullable', 'string'],
             'follow_up_concerns' => ['nullable', 'string'],
-            'notes'              => ['nullable', 'string'],
-            'latitude'           => ['nullable', 'numeric'],
-            'longitude'          => ['nullable', 'numeric'],
+            'notes' => ['nullable', 'string'],
+            'latitude' => ['nullable', 'numeric'],
+            'longitude' => ['nullable', 'numeric'],
         ]);
 
         $visit = $this->caregiverVisitQuery()->findOrFail($id);
@@ -231,10 +223,9 @@ class CaregiverController extends Controller
         ) {
             try {
                 $checkIn = Carbon::parse($visit->check_in_time);
-                $durationMinutes = (int) round($checkIn->diffInSeconds($now) / 60);
-                $visit->duration_minutes = $durationMinutes;
+                $visit->duration_minutes = (int) round($checkIn->diffInSeconds($now) / 60);
             } catch (\Throwable $e) {
-                // keep going safely
+                //
             }
         }
 
@@ -248,37 +239,82 @@ class CaregiverController extends Controller
 
         $visit->save();
 
-        if (class_exists(CareLog::class)) {
-            $adls = array_filter([
-                'tasks_completed'    => $request->tasks_completed,
-                'client_condition'   => $request->client_condition,
-                'follow_up_concerns' => $request->follow_up_concerns,
-            ], fn ($value) => !is_null($value) && $value !== '');
+        $adls = array_filter([
+            'tasks_completed' => $request->tasks_completed,
+            'client_condition' => $request->client_condition,
+            'follow_up_concerns' => $request->follow_up_concerns,
+        ]);
 
-            $payload = [
-                'visit_id' => $visit->id,
-                'notes'    => $request->notes ?: $request->visit_summary,
-                'adls'     => !empty($adls) ? $adls : null,
-                'vitals'   => null,
-            ];
+        $payload = [
+            'visit_id' => $visit->id,
+            'notes' => $request->notes ?: $request->visit_summary,
+            'adls' => !empty($adls) ? $adls : null,
+            'vitals' => null,
+        ];
 
-            if ($caregiver && Schema::hasColumn('care_logs', 'caregiver_id')) {
-                $payload['caregiver_id'] = $caregiver->id;
-            }
-
-            CareLog::create($payload);
+        if ($caregiver && Schema::hasColumn('care_logs', 'caregiver_id')) {
+            $payload['caregiver_id'] = $caregiver->id;
         }
+
+        if (Schema::hasColumn('care_logs', 'client_id')) {
+            $payload['client_id'] = $visit->client_id;
+        }
+
+        if (Schema::hasColumn('care_logs', 'facility_id')) {
+            $payload['facility_id'] = $visit->facility_id;
+        }
+
+        CareLog::create($payload);
 
         return redirect()
             ->route('caregiver.visits')
             ->with('success', 'Visit completed successfully.');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Care Log Shortcut
-    |--------------------------------------------------------------------------
-    */
+    public function reportIssue(Visit $visit)
+    {
+        $visit = $this->caregiverVisitQuery()
+            ->with(['client', 'facility', 'provider'])
+            ->findOrFail($visit->id);
+
+        return view('caregiver.report-issue', compact('visit'));
+    }
+
+    public function storeReportIssue(Request $request, Visit $visit)
+    {
+        $visit = $this->caregiverVisitQuery()
+            ->with(['client', 'facility', 'provider'])
+            ->findOrFail($visit->id);
+
+        $data = $request->validate([
+            'subject' => ['nullable', 'string', 'max:255'],
+            'message' => ['required', 'string'],
+        ]);
+
+        $providerId = $visit->provider_id
+            ?? $visit->client?->provider_id
+            ?? User::where('role', 'provider')
+                ->where('facility_id', $visit->facility_id)
+                ->value('id');
+
+        if (!$providerId) {
+            return back()->with('error', 'No provider is linked to this patient or facility yet.');
+        }
+
+        ProviderMessage::create([
+            'facility_id' => $visit->facility_id,
+            'client_id' => $visit->client_id,
+            'sender_id' => auth()->id(),
+            'provider_id' => $providerId,
+            'subject' => $data['subject'] ?: 'Caregiver clinical concern',
+            'message' => "Caregiver reported an issue during Visit #{$visit->id}:\n\n" . $data['message'],
+            'priority' => 'urgent',
+        ]);
+
+        return redirect()
+            ->route('caregiver.visits')
+            ->with('success', 'Clinical issue reported to provider successfully.');
+    }
 
     public function showCareLog($visit)
     {
