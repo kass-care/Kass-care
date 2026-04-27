@@ -12,7 +12,7 @@
 
         <div>
             <strong>Name:</strong>
-            {{ $patient->first_name }} {{ $patient->last_name }}
+            {{ $patient->name ?? 'N/A' }}
         </div>
 
         <div>

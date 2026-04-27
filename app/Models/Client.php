@@ -8,8 +8,7 @@ use Illuminate\Support\Facades\Auth;
 class Client extends Model
 {
     protected $fillable = [
-        'first_name',
-        'last_name',
+        'mrn',
         'name',
         'email',
         'phone',
@@ -30,7 +29,6 @@ class Client extends Model
         'family_history',
         'social_history',
         'photo',
-
         'allergies',
         'psychiatrist',
         'cardiologist',
@@ -48,11 +46,26 @@ class Client extends Model
     protected static function booted(): void
     {
         static::creating(function ($client) {
+            // Auto facility
             if (Auth::check() && empty($client->facility_id)) {
                 $client->facility_id = session('facility_id') ?? Auth::user()->facility_id;
             }
+
+            // Auto MRN
+            if (empty($client->mrn)) {
+                $nextId = (int) self::withoutGlobalScopes()->max('id') + 1;
+                $client->mrn = 'KASS-' . str_pad($nextId, 6, '0', STR_PAD_LEFT);
+            }
+
+            // Auto BMI
+            self::calculateBmi($client);
         });
 
+        static::updating(function ($client) {
+            self::calculateBmi($client);
+        });
+
+        // Facility scope
         static::addGlobalScope('facility', function ($query) {
             if (!Auth::check()) {
                 return;
@@ -85,6 +98,21 @@ class Client extends Model
             }
         });
     }
+
+    /**
+     * Auto BMI calculator (lbs + inches)
+     */
+    private static function calculateBmi(Client $client): void
+    {
+        $height = (float) ($client->height ?? 0); // inches
+        $weight = (float) ($client->weight ?? 0); // pounds
+
+        if ($height > 0 && $weight > 0) {
+            $client->bmi = round(($weight / ($height * $height)) * 703, 1);
+        }
+    }
+
+    // ================= RELATIONSHIPS =================
 
     public function facility()
     {
@@ -125,6 +153,8 @@ class Client extends Model
     {
         return $this->hasMany(PatientDocument::class, 'patient_id', 'id');
     }
+
+    // ================= HELPERS =================
 
     public function getPhotoUrlAttribute()
     {
