@@ -6,6 +6,10 @@
         <h1 class="text-3xl font-black text-slate-900">Provider Messages</h1>
         <p class="text-sm text-gray-500">Messages from facilities and nurses.</p>
     </div>
+<a href="{{ route('provider.messages.create') }}"
+   class="bg-indigo-600 text-white px-4 py-2 rounded-lg">
+   + New Message
+</a>
 
     <div class="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
         @forelse($messages as $message)

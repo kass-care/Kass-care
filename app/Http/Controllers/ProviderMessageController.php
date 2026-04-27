@@ -116,4 +116,30 @@ abort_if(
             ->route('provider.messages.show', $message)
             ->with('success', 'Reply sent successfully.');
     }
+         public function providerCreate()
+{
+    $facilities = \App\Models\Facility::query()
+        ->orderBy('name')
+        ->get();
+
+    return view('provider.messages.create', compact('facilities'));
+}
+public function providerStore(Request $request)
+{
+    $request->validate([
+        'facility_id' => ['required', 'exists:facilities,id'],
+        'message' => ['required', 'string'],
+    ]);
+
+    \App\Models\ProviderMessage::create([
+        'facility_id' => $request->facility_id,
+        'provider_id' => auth()->id(),
+        'message' => $request->message,
+        'sender_type' => 'provider',
+    ]);
+
+    return redirect()
+        ->route('provider.messages.index')
+        ->with('success', 'Message sent successfully.');
+}
 }
