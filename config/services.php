@@ -39,5 +39,8 @@ return [
     'secret' => env('STRIPE_SECRET'),
     'webhook' => env('STRIPE_WEBHOOK_SECRET'),
 ],
+'resend' => [
+    'key' => env('RESEND_KEY'),
+],
 
 ];
