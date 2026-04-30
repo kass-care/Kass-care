@@ -13,7 +13,7 @@
                 </div>
 
                 <a href="{{ route('provider.notes.index') }}"
-                   class="inline-flex items-center justify-center rounded-xl bg-white px-5 py-3 text-sm font-semibold text-indigo-700 hover:bg-indigo-50">
+                   class="inline-flex items-center justify-center rounded-xl bg-white px-5 py-3 text-sm font-semibold text-indigo-800 shadow hover:bg-indigo-50">
                     Back to Notes
                 </a>
             </div>
@@ -113,6 +113,7 @@
                     <h3 class="text-xl font-bold text-slate-900 mb-2">
                         Adult Screening & Immunization Review
                     </h3>
+
                     <p class="text-sm text-slate-600 mb-5">
                         Select items reviewed or needed. Add anything not listed below.
                     </p>
@@ -151,7 +152,7 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         @foreach($screeningOptions as $option)
-                            <label class="flex items-center gap-3 rounded-xl bg-white border border-purple-100 px-4 py-3 text-sm font-semibold text-slate-700">
+                            <label class="flex items-center gap-3 rounded-xl bg-white border border-purple-100 px-4 py-3 text-sm text-slate-700">
                                 <input type="checkbox"
                                        name="screening_items[]"
                                        value="{{ $option }}"
@@ -185,36 +186,39 @@
                               class="w-full rounded-xl border border-gray-300 px-4 py-3"
                               placeholder="Care observations, ADLs, appetite, mood, pain, caregiver concerns..."></textarea>
                 </div>
-                        <div>
-    <label class="block text-sm font-semibold text-gray-700 mb-2">
-        Chief Complaint
-    </label>
-    <textarea name="chief_complaint" rows="3"
-              class="w-full rounded-xl border border-gray-300 px-4 py-3"
-              placeholder="Why is the patient being seen today?">{{ old('chief_complaint') }}</textarea>
-</div>
+
+                {{-- SOAP Sections --}}
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        Chief Complaint
+                    </label>
+                    <textarea name="chief_complaint" rows="3"
+                              class="w-full rounded-xl border border-gray-300 px-4 py-3"
+                              placeholder="Why is the patient being seen today?">{{ old('chief_complaint') }}</textarea>
+                </div>
+
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Subjective</label>
                     <textarea name="subjective" rows="5"
-                              class="w-full rounded-xl border border-gray-300 px-4 py-3">{{ old('subjective') }}</textarea>
+                              class="w-full rounded-xl border border-gray-300 px-4 py-3">{{ old('subjective', $subjective ?? '') }}</textarea>
                 </div>
 
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Objective</label>
                     <textarea name="objective" rows="6"
-                              class="w-full rounded-xl border border-gray-300 px-4 py-3">{{ old('objective') }}</textarea>
+                              class="w-full rounded-xl border border-gray-300 px-4 py-3">{{ old('objective', $objective ?? '') }}</textarea>
                 </div>
 
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Assessment</label>
                     <textarea name="assessment" rows="5"
-                              class="w-full rounded-xl border border-gray-300 px-4 py-3">{{ old('assessment') }}</textarea>
+                              class="w-full rounded-xl border border-gray-300 px-4 py-3">{{ old('assessment', $assessment ?? '') }}</textarea>
                 </div>
 
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Plan</label>
                     <textarea name="plan" rows="5"
-                              class="w-full rounded-xl border border-gray-300 px-4 py-3">{{ old('plan') }}</textarea>
+                              class="w-full rounded-xl border border-gray-300 px-4 py-3">{{ old('plan', $plan ?? '') }}</textarea>
                 </div>
 
                 <button type="submit"
@@ -266,6 +270,8 @@ function calculateBMI() {
 
 function buildObjective() {
     const objective = document.querySelector('[name="objective"]');
+
+    if (!objective) return;
 
     const bp = getValue('blood_pressure');
     const pulse = getValue('pulse');

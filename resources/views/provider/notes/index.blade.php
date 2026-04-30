@@ -68,31 +68,46 @@
                             <th class="px-6 py-4">Action</th>
                         </tr>
                     </thead>
+
                     <tbody class="divide-y divide-gray-200">
                         @forelse($notes as $note)
                             <tr class="hover:bg-gray-50">
                                 <td class="px-6 py-4 font-medium text-gray-900">
-                                    #{{ $note->visit->id ?? 'N/A' }}
+                                    #{{ $note->visit?->id ?? 'N/A' }}
                                 </td>
+
                                 <td class="px-6 py-4">
-                                    {{ $note->visit->client->full_name ?? 'N/A' }}
+                                    {{ $note->visit?->client?->name ?? 'N/A' }}
                                 </td>
+
                                 <td class="px-6 py-4">
-                                    {{ $note->visit->caregiver->full_name ?? 'N/A' }}
+                                    {{ $note->visit?->caregiver?->name ?? 'N/A' }}
                                 </td>
+
                                 <td class="px-6 py-4">
-                                    {{ $note->visit->visit_date ?? 'N/A' }}
+                                    {{ $note->visit?->visit_date ?? 'N/A' }}
                                 </td>
+
                                 <td class="px-6 py-4 max-w-sm">
                                     <div class="truncate text-gray-700">
-                                        {{ $note->note }}
+                                        {{ $note->note ?? 'N/A' }}
                                     </div>
                                 </td>
+
                                 <td class="px-6 py-4">
-                                    <a href="{{ route('provider.notes.show', $note->id) }}"
-                                       class="inline-flex items-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition">
-                                        View Note
-                                    </a>
+                                    <div class="flex gap-2">
+                                        <a href="{{ route('provider.notes.show', $note->id) }}"
+                                           class="inline-flex items-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition">
+                                            View
+                                        </a>
+
+                                        @if(Route::has('provider.notes.edit'))
+                                            <a href="{{ route('provider.notes.edit', $note->id) }}"
+                                               class="inline-flex items-center rounded-lg bg-yellow-400 px-4 py-2 text-sm font-bold text-slate-900 hover:bg-yellow-500 transition">
+                                                Edit
+                                            </a>
+                                        @endif
+                                    </div>
                                 </td>
                             </tr>
                         @empty

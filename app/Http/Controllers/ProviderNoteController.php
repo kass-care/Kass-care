@@ -216,6 +216,63 @@ class ProviderNoteController extends Controller
         }
     }
 
+ public function edit(ProviderNote $providerNote)
+{
+    $user = auth()->user();
+    abort_if(!$user, 403, 'Unauthorized.');
+
+    $providerNote->load(['visit.client', 'visit.caregiver']);
+
+    $facilityId = session('facility_id') ?? ($user->facility_id ?? null);
+
+    if ($facilityId && (int) ($providerNote->visit->facility_id ?? 0) !== (int) $facilityId) {
+        abort(403, 'Unauthorized.');
+    }
+
+    return view('provider.notes.edit', compact('providerNote'));
+}
+
+public function update(Request $request, ProviderNote $providerNote)
+{
+    $user = auth()->user();
+    abort_if(!$user, 403, 'Unauthorized.');
+
+    $providerNote->load(['visit.client']);
+
+    $validated = $request->validate([
+        'chief_complaint' => ['nullable', 'string'],
+        'subjective' => ['nullable', 'string'],
+        'objective' => ['nullable', 'string'],
+        'assessment' => ['nullable', 'string'],
+        'plan' => ['nullable', 'string'],
+    ]);
+
+    $client = $providerNote->visit?->client;
+
+    $clientName = $client?->name ?? 'Unknown Client';
+    $clientDob = $client?->date_of_birth ?? 'N/A';
+
+    $combinedNote = trim(
+        "Client: " . $clientName . "\n" .
+        "DOB: " . $clientDob . "\n\n" .
+        "S: " . ($validated['subjective'] ?? '') . "\n\n" .
+        "O: " . ($validated['objective'] ?? '') . "\n\n" .
+        "A: " . ($validated['assessment'] ?? '') . "\n\n" .
+        "P: " . ($validated['plan'] ?? '')
+    );
+
+$providerNote->update([
+    'chief_complaint' => $validated['chief_complaint'] ?? null,
+    'subjective' => $validated['subjective'] ?? null,
+    'objective' => $validated['objective'] ?? null,
+    'assessment' => $validated['assessment'] ?? null,
+    'plan' => $validated['plan'] ?? null,
+    'note' => $combinedNote,
+]);
+    return redirect()
+        ->route('provider.notes.show', $providerNote->id)
+        ->with('success', 'Note updated successfully.');
+}
     public function show(ProviderNote $providerNote)
     {
         $user = auth()->user();
