@@ -412,11 +412,15 @@ Route::post('/messages/{message}/reply', [ProviderMessageController::class, 'rep
 
         Route::get('/patients/{id}/summary', [ProviderPatientController::class, 'summary'])
             ->name('patients.summary');
+ Route::get('/notes', [ProviderNoteController::class, 'index'])->name('notes.index');
+Route::get('/notes/create', [ProviderNoteController::class, 'create'])->name('notes.create');
+ Route::post('/notes', [ProviderNoteController::class, 'store'])->name('notes.store');
+ Route::get('/notes/{providerNote}', [ProviderNoteController::class, 'show'])->name('notes.show');
+Route::get('/notes/{providerNote}/edit', [ProviderNoteController::class, 'edit'])
+    ->name('notes.edit');
 
-        Route::get('/notes', [ProviderNoteController::class, 'index'])->name('notes.index');
-        Route::get('/notes/create', [ProviderNoteController::class, 'create'])->name('notes.create');
-        Route::post('/notes', [ProviderNoteController::class, 'store'])->name('notes.store');
-        Route::get('/notes/{providerNote}', [ProviderNoteController::class, 'show'])->name('notes.show');
+Route::put('/notes/{providerNote}', [ProviderNoteController::class, 'update'])
+    ->name('notes.update');
 
         Route::get('/pharmacy', [PharmacyOrderController::class, 'index'])->name('pharmacy.index');
         Route::get('/pharmacy/create', [PharmacyOrderController::class, 'create'])->name('pharmacy.create');
@@ -426,10 +430,44 @@ Route::post('/messages/{message}/reply', [ProviderMessageController::class, 'rep
         Route::post('/pharmacy/{order}/email', [PharmacyOrderController::class, 'emailPrescription'])->name('pharmacy.email');
 
         Route::get('/diagnoses', [DiagnosisController::class, 'index'])->name('diagnosis.index');
+       Route::post('claims/generate/{note}', [\App\Http\Controllers\ClaimController::class, 'store'])
+    ->name('claims.generate');
+       Route::get('claims', [\App\Http\Controllers\ClaimController::class, 'index'])
+    ->name('claims.index');
 
         Route::get('/messages', [ProviderMessageController::class, 'index'])->name('messages.index');
         Route::get('/messages/create', [ProviderMessageController::class, 'create'])->name('messages.create');
         Route::post('/messages', [ProviderMessageController::class, 'store'])->name('messages.store');
+
+Route::get('claims/{claim}', [\App\Http\Controllers\ClaimController::class, 'show'])
+    ->name('claims.show');
+
+Route::post('claims/{claim}/submit', [\App\Http\Controllers\ClaimController::class, 'submit'])
+    ->name('claims.submit');
+
+Route::get('coding-assistant/{note}', function ($noteId) {
+
+    $note = \App\Models\ProviderNote::with('visit.client')->findOrFail($noteId);
+
+    $text = strtolower($note->note);
+
+    $icdSuggestions = [];
+
+    if (str_contains($text, 'abdominal pain')) {
+        $icdSuggestions[] = ['code' => 'R10.9', 'label' => 'Unspecified abdominal pain'];
+    }
+
+    if (str_contains($text, 'appendicitis')) {
+        $icdSuggestions[] = ['code' => 'K37', 'label' => 'Unspecified appendicitis'];
+    }
+
+    $cpt = '99214';
+    $pos = '12';
+
+    return view('provider.coding-assistant', compact('note', 'icdSuggestions', 'cpt', 'pos'));
+
+})->name('coding.assistant');
+
     });
  /*
 |--------------------------------------------------------------------------
@@ -474,6 +512,9 @@ Route::get('/care-logs/{careLog}', [CareLogController::class, 'show'])
         Route::get('/notes/create', [ProviderNoteController::class, 'create'])->name('notes.create');
         Route::post('/notes', [ProviderNoteController::class, 'store'])->name('notes.store');
         Route::get('/notes/{providerNote}', [ProviderNoteController::class, 'show'])->name('notes.show');
+
+Route::get('/notes/{providerNote}/edit', [ProviderNoteController::class, 'edit'])->name('notes.edit');
+Route::put('/notes/{providerNote}', [ProviderNoteController::class, 'update'])->name('notes.update');
 
         Route::get('/care-logs', [CareLogController::class, 'index'])->name('care-logs.index');
         Route::get('/care-logs/create', [CareLogController::class, 'create'])->name('care-logs.create');

@@ -32,7 +32,13 @@
             @auth
                 <div class="flex items-center gap-4 text-sm font-semibold">
                     <a href="{{ route('dashboard') }}" class="text-gray-700 hover:text-indigo-700">Dashboard</a>
-
+                                       
+@if($role === 'provider' && Route::has('coding.assistant'))
+    <a href="{{ route('coding.assistant') }}"
+       class="px-3 py-2 text-sm font-semibold text-gray-700 rounded-lg hover:bg-indigo-50 hover:text-indigo-700">
+        🧠 Coding Assistant
+    </a>
+@endif
                     @if(Route::has('alerts.index'))
                         <a href="{{ route('alerts.index') }}" class="text-gray-700 hover:text-indigo-700">Alerts</a>
                     @endif
@@ -44,6 +50,12 @@
                     @if($role === 'provider' && Route::has('provider.compliance'))
                         <a href="{{ route('provider.compliance') }}" class="text-gray-700 hover:text-indigo-700">Compliance</a>
                     @endif
+                     @if($role === 'provider' && Route::has('provider.claims.index'))
+    <a href="{{ route('provider.claims.index') }}"
+       class="px-3 py-2 text-sm font-semibold text-gray-700 rounded-lg hover:bg-indigo-50 hover:text-indigo-700">
+        Claims
+    </a>
+@endif
 
                     <span class="text-gray-600">{{ auth()->user()->name ?? 'User' }}</span>
 

@@ -1,0 +1,161 @@
+[90m= [39m[34;4mApp\Models\ProviderNote[39;24m {#6945
+    [34mid[39m: [35m16[39m,
+    [34mclient_id[39m: [35m29[39m,
+    [34mnote[39m: """
+      [32mClient: Sarah Doe[39m\n
+      [32mDOB: 1926-04-07 00:00:00[39m\n
+      \n
+      [32mS: 35-year-old female presents with sharp abdominal pain for 3 days. Pain is located in the right lower quadrant, rated 7/10, constant, and worsens with movement. Reports nausea and decreased appetite. Denies vomiting, diarrhea, or urinary symptoms.[39m\r\n
+      [32mPMH: No significant medical history[39m\r\n
+      [32mMedications: None[39m\r\n
+      [32mAllergies: NKDA[39m\r\n
+      [32mROS: Positive for abdominal pain and nausea; negative for fever, chills, chest pain[39m\n
+      \n
+      [32mO: Vital Signs:[39m\r\n
+      [32mBP 120/78, HR 88, Temp 99.1°F, RR 18[39m\r\n
+      [32mPhysical Exam:[39m\r\n
+      [32mAbdomen: Tenderness in RLQ, mild guarding[39m\r\n
+      [32mBowel sounds present[39m\r\n
+      [32mNo rebound tenderness[39m\r\n
+      [32mLabs/Tests:[39m\r\n
+      [32mCBC pending[39m\r\n
+      [32mUrinalysis negative[39m\n
+      \n
+      [32mAdult Screening & Immunization Review:[39m\n
+      [32m- Cholesterol screening[39m\n
+      [32m- MMR / Varicella immunity[39m\n
+      [32m- RSV vaccine review[39m\n
+      \n
+      [32mA: Primary Diagnosis: Suspected appendicitis[39m\r\n
+      [32mDifferential Diagnoses:[39m\r\n
+      [32mGastroenteritis[39m\r\n
+      [32mOvarian cyst[39m\r\n
+      [32mUrinary tract infection[39m\n
+      \n
+      [32mP: Order abdominal ultrasound or CT scan[39m\r\n
+      [32mStart IV fluids[39m\r\n
+      [32mAdminister pain control (e.g., acetaminophen)[39m\r\n
+      [32mNPO (nothing by mouth)[39m\r\n
+      [32mSurgical consult if appendicitis confirmed[39m\r\n
+      [32mEducate patient on worsening symptoms (fever, severe pain)[39m\r\n
+      [32mFollow-up in 24 hours or sooner if symptoms worse[39m
+      """,
+    [34mcreated_at[39m: "[32m2026-04-29 02:40:20[39m",
+    [34mupdated_at[39m: "[32m2026-04-29 02:40:20[39m",
+    [34mvisit_id[39m: [35m82[39m,
+    [34mprovider_id[39m: [35m52[39m,
+    [34msubjective[39m: """
+      [32m35-year-old female presents with sharp abdominal pain for 3 days. Pain is located in the right lower quadrant, rated 7/10, constant, and worsens with movement. Reports nausea and decreased appetite. Denies vomiting, diarrhea, or urinary symptoms.[39m\r\n
+      [32mPMH: No significant medical history[39m\r\n
+      [32mMedications: None[39m\r\n
+      [32mAllergies: NKDA[39m\r\n
+      [32mROS: Positive for abdominal pain and nausea; negative for fever, chills, chest pain[39m
+      """,
+    [34mobjective[39m: """
+      [32mVital Signs:[39m\r\n
+      [32mBP 120/78, HR 88, Temp 99.1°F, RR 18[39m\r\n
+      [32mPhysical Exam:[39m\r\n
+      [32mAbdomen: Tenderness in RLQ, mild guarding[39m\r\n
+      [32mBowel sounds present[39m\r\n
+      [32mNo rebound tenderness[39m\r\n
+      [32mLabs/Tests:[39m\r\n
+      [32mCBC pending[39m\r\n
+      [32mUrinalysis negative[39m\n
+      \n
+      [32mAdult Screening & Immunization Review:[39m\n
+      [32m- Cholesterol screening[39m\n
+      [32m- MMR / Varicella immunity[39m\n
+      [32m- RSV vaccine review[39m
+      """,
+    [34massessment[39m: """
+      [32mPrimary Diagnosis: Suspected appendicitis[39m\r\n
+      [32mDifferential Diagnoses:[39m\r\n
+      [32mGastroenteritis[39m\r\n
+      [32mOvarian cyst[39m\r\n
+      [32mUrinary tract infection[39m
+      """,
+    [34mplan[39m: """
+      [32mOrder abdominal ultrasound or CT scan[39m\r\n
+      [32mStart IV fluids[39m\r\n
+      [32mAdminister pain control (e.g., acetaminophen)[39m\r\n
+      [32mNPO (nothing by mouth)[39m\r\n
+      [32mSurgical consult if appendicitis confirmed[39m\r\n
+      [32mEducate patient on worsening symptoms (fever, severe pain)[39m\r\n
+      [32mFollow-up in 24 hours or sooner if symptoms worse[39m
+      """,
+    [34mfollow_up[39m: [36mnull[39m,
+    [34msigned_at[39m: "[32m2026-04-29 02:40:20[39m",
+    [34mstatus[39m: "[32msigned[39m",
+    [34mchief_complaint[39m: "[32mabd pain[39m",
+    [34mvisit[39m: [34;4mApp\Models\Visit[39;24m {#6542
+      [34mid[39m: [35m82[39m,
+      [34morganization_id[39m: [35m1[39m,
+      [34mclient_id[39m: [35m29[39m,
+      [34mcaregiver_id[39m: [35m53[39m,
+      [34mvisit_date[39m: "[32m2026-04-28[39m",
+      [34mstart_time[39m: [36mnull[39m,
+      [34mend_time[39m: [36mnull[39m,
+      [34mcheck_in_time[39m: [36mnull[39m,
+      [34mcheck_out_time[39m: [36mnull[39m,
+      [34mcheck_in_latitude[39m: [36mnull[39m,
+      [34mcheck_in_longitude[39m: [36mnull[39m,
+      [34mcheck_out_latitude[39m: [36mnull[39m,
+      [34mcheck_out_longitude[39m: [36mnull[39m,
+      [34mstatus[39m: "[32mscheduled[39m",
+      [34mcreated_at[39m: "[32m2026-04-27 06:58:22[39m",
+      [34mupdated_at[39m: "[32m2026-04-27 06:58:22[39m",
+      [34mstarted_at[39m: [36mnull[39m,
+      [34mended_at[39m: [36mnull[39m,
+      [34mvisit_started[39m: [36mfalse[39m,
+      [34mvisit_completed[39m: [36mfalse[39m,
+      [34mactivity[39m: "[32mVisit[39m",
+      [34mnotes[39m: [36mnull[39m,
+      [34mvisit_started_at[39m: [36mnull[39m,
+      [34mvisit_completed_at[39m: [36mnull[39m,
+      [34mvisit_time[39m: [36mnull[39m,
+      [34mduration_minutes[39m: [36mnull[39m,
+      [34mfacility_id[39m: [35m19[39m,
+      [34madls[39m: [36mnull[39m,
+      [34mvitals[39m: [36mnull[39m,
+      [34mcheck_in[39m: [36mnull[39m,
+      [34mcheck_out[39m: [36mnull[39m,
+      [34mprovider_id[39m: [35m52[39m,
+      [34mis_rounded[39m: [36mfalse[39m,
+      [34mrounded_at[39m: [36mnull[39m,
+      [34mclient[39m: [34;4mApp\Models\Client[39;24m {#7004
+        [34mid[39m: [35m29[39m,
+        [34morganization_id[39m: [36mnull[39m,
+        [34mname[39m: "[32mSarah Doe[39m",
+        [34mage[39m: [36mnull[39m,
+        [34mroom[39m: "[32m324[39m",
+        [34mnotes[39m: [36mnull[39m,
+        [34mcreated_at[39m: "[32m2026-04-27 05:28:49[39m",
+        [34mupdated_at[39m: "[32m2026-04-27 05:28:49[39m",
+        [34mcaregiver_id[39m: [36mnull[39m,
+        [34mphone[39m: [36mnull[39m,
+        [34memail[39m: [36mnull[39m,
+        [34maddress[39m: [36mnull[39m,
+        [34mdate_of_birth[39m: "[32m1926-04-07[39m",
+        [34mdiagnosis[39m: [36mnull[39m,
+        [34mfacility_id[39m: [35m19[39m,
+        [34mprovider_id[39m: [36mnull[39m,
+        [34muuid[39m: [36mnull[39m,
+        [34mgender[39m: "[32mFemale[39m",
+        [34mheight[39m: [36mnull[39m,
+        [34mweight[39m: [36mnull[39m,
+        [34mbmi[39m: [36mnull[39m,
+        [34mchief_complaint[39m: [36mnull[39m,
+        [34mmedical_history[39m: [36mnull[39m,
+        [34mfamily_history[39m: [36mnull[39m,
+        [34msocial_history[39m: [36mnull[39m,
+        [34mphoto[39m: "[32mclients/Ab0KD2ImfRhn60MeMss5xcQI2zzyVFkz38V7bKJ1.jpg[39m",
+        [34mallergies[39m: "[32mPeanuts[39m",
+        [34mpsychiatrist[39m: "[32mtest[39m",
+        [34mcardiologist[39m: "[32mtest[39m",
+        [34mprimary_care_provider[39m: "[32mtest[39m",
+        [34mpharmacy[39m: "[32mtest[39m",
+        [34mmrn[39m: "[32mKASS-000029[39m",
+      },
+    },
+  }
+

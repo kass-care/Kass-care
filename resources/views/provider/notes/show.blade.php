@@ -51,6 +51,10 @@
                         ✏️ Edit Note
                     </a>
                 @endif
+                 <a href="{{ route('provider.coding.assistant', $providerNote->id) }}"
+   class="inline-flex items-center rounded-lg bg-purple-600 px-4 py-2 text-sm font-bold text-white hover:bg-purple-700 transition">
+    🧠 Coding Assistant
+</a>
 
                 <a href="{{ route('provider.notes.index') }}"
                    class="rounded-xl bg-white border border-slate-200 px-5 py-3 text-sm font-bold text-slate-700 hover:bg-slate-100">
