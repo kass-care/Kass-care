@@ -19,10 +19,24 @@ class ProviderDashboardController extends Controller
 
         $patients = $this->buildRecentPatients($facilityId);
         $dashboard = $this->alertDashboardData($facilityId);
+$claims = \App\Models\Claim::where('provider_id', $user->id)->get();
 
-        return view('provider.dashboard', array_merge($dashboard, [
-            'patients' => $patients,
-        ]));
+$totalClaims = $claims->count();
+$submittedClaims = $claims->where('status', 'submitted')->count();
+$paidClaims = $claims->where('status', 'paid')->count();
+$deniedClaims = $claims->where('status', 'denied')->count();
+
+$totalRevenue = $claims->where('status', 'paid')->sum('estimated_amount');
+
+return view('provider.dashboard', array_merge($dashboard, [
+    'patients' => $patients,
+    'totalClaims' => $totalClaims,
+    'submittedClaims' => $submittedClaims,
+    'paidClaims' => $paidClaims,
+    'deniedClaims' => $deniedClaims,
+    'totalRevenue' => $totalRevenue,
+]));
+
     }
 
     public function alerts(Request $request)

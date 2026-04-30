@@ -54,7 +54,7 @@ class ProviderNoteController extends Controller
 
         $subjective = '';
         $objective = '';
-        $assessment = 'Patient evaluated based on caregiver observations and recorded vitals.';
+        $assessment = 'Patient evaluated based on caregiver observations, clinical measurements, and provider assessment.';
         $plan = 'Continue monitoring. Adjust care plan as clinically indicated.';
 
         $latestLog = $visit->careLogs->sortByDesc('created_at')->first();
@@ -78,23 +78,23 @@ class ProviderNoteController extends Controller
     {
         $user = auth()->user();
         abort_if(!$user, 403, 'Unauthorized.');
-        
+
         $validated = $request->validate([
-    'visit_id'          => ['required', 'exists:visits,id'],
-    'chief_complaint'   => ['nullable', 'string'], // ✅ ADD THIS
-    'subjective'        => ['nullable', 'string'],
-    'objective'         => ['nullable', 'string'],
-    'assessment'        => ['nullable', 'string'],
-    'plan'              => ['nullable', 'string'],
+            'visit_id' => ['required', 'exists:visits,id'],
+            'chief_complaint' => ['nullable', 'string'],
+            'subjective' => ['nullable', 'string'],
+            'objective' => ['nullable', 'string'],
+            'assessment' => ['nullable', 'string'],
+            'plan' => ['nullable', 'string'],
 
-    'weight'            => ['nullable', 'numeric'],
-    'height'            => ['nullable', 'numeric'],
-    'bmi'               => ['nullable', 'numeric'],
+            'weight' => ['nullable', 'numeric'],
+            'height' => ['nullable', 'numeric'],
+            'bmi' => ['nullable', 'numeric'],
 
-    'screening_items'   => ['nullable', 'array'],
-    'screening_items.*' => ['nullable', 'string'],
-    'screening_other'   => ['nullable', 'string'],
-]);
+            'screening_items' => ['nullable', 'array'],
+            'screening_items.*' => ['nullable', 'string'],
+            'screening_other' => ['nullable', 'string'],
+        ]);
 
         $facilityId = session('facility_id') ?? ($user->facility_id ?? null);
 
@@ -104,9 +104,6 @@ class ProviderNoteController extends Controller
 
         $client = $visit->client;
 
-        $clientName = $client?->name ?? 'Unknown Client';
-        $clientDob = $client?->date_of_birth ?? null;
-
         if ($client && (!empty($validated['weight']) || !empty($validated['height']))) {
             $client->update([
                 'weight' => $validated['weight'] ?? $client->weight,
@@ -114,56 +111,121 @@ class ProviderNoteController extends Controller
             ]);
         }
 
+        $clientName = $client?->name ?? 'Unknown Client';
+        $clientDob = $client?->date_of_birth ?? null;
+
         $screeningItems = $validated['screening_items'] ?? [];
         $screeningOther = $validated['screening_other'] ?? null;
-
-        $screeningText = '';
-
-        if (!empty($screeningItems) || !empty($screeningOther)) {
-            $screeningText .= "\n\nAdult Screening & Immunization Review:\n";
-
-            foreach ($screeningItems as $item) {
-                $screeningText .= "- {$item}\n";
-            }
-
-            if (!empty($screeningOther)) {
-                $screeningText .= "- Other: {$screeningOther}\n";
-            }
-        }
-
-        $objective = trim(($validated['objective'] ?? '') . $screeningText);
+    $objective = trim($validated['objective'] ?? '');
 
         $combinedNote = trim(
             "Client: " . $clientName . "\n" .
             "DOB: " . ($clientDob ?: 'N/A') . "\n\n" .
+            "Chief Complaint: " . ($validated['chief_complaint'] ?? '') . "\n\n" .
             "S: " . ($validated['subjective'] ?? '') . "\n\n" .
             "O: " . $objective . "\n\n" .
             "A: " . ($validated['assessment'] ?? '') . "\n\n" .
             "P: " . ($validated['plan'] ?? '')
         );
 
- $providerNote = ProviderNote::updateOrCreate(
-    ['visit_id' => $visit->id],
-    [
-        'client_id'        => $visit->client_id,
-        'visit_id'         => $visit->id,
-        'provider_id'      => $user->id,
-        'chief_complaint'  => $validated['chief_complaint'] ?? null, // ✅ ADD
-        'subjective'       => $validated['subjective'] ?? null,
-        'objective'        => $objective,
-        'assessment'       => $validated['assessment'] ?? null,
-        'plan'             => $validated['plan'] ?? null,
-        'note'             => $combinedNote,
-        'status'           => 'signed',
-        'signed_at'        => now(),
-    ]
-);        
+        $providerNote = ProviderNote::updateOrCreate(
+            ['visit_id' => $visit->id],
+            [
+                'client_id' => $visit->client_id,
+                'visit_id' => $visit->id,
+                'provider_id' => $user->id,
+                'chief_complaint' => $validated['chief_complaint'] ?? null,
+                'subjective' => $validated['subjective'] ?? null,
+                'objective' => $objective,
+                'assessment' => $validated['assessment'] ?? null,
+                'plan' => $validated['plan'] ?? null,
+                'note' => $combinedNote,
+                'status' => 'signed',
+                'signed_at' => now(),
+            ]
+        );
 
         $this->createScreeningAlerts($visit, $providerNote, $screeningItems, $screeningOther);
 
         return redirect()
             ->route('provider.notes.index')
             ->with('success', 'Provider SOAP note saved successfully.');
+    }
+
+    public function show(ProviderNote $providerNote)
+    {
+        $user = auth()->user();
+        abort_if(!$user, 403, 'Unauthorized.');
+
+        $providerNote->load(['visit.client', 'visit.caregiver']);
+
+        $facilityId = session('facility_id') ?? ($user->facility_id ?? null);
+
+        if ($facilityId && (int) ($providerNote->visit->facility_id ?? 0) !== (int) $facilityId) {
+            abort(403, 'Unauthorized.');
+        }
+
+        return view('provider.notes.show', compact('providerNote'));
+    }
+
+    public function edit(ProviderNote $providerNote)
+    {
+        $user = auth()->user();
+        abort_if(!$user, 403, 'Unauthorized.');
+
+        $providerNote->load(['visit.client', 'visit.caregiver']);
+
+        $facilityId = session('facility_id') ?? ($user->facility_id ?? null);
+
+        if ($facilityId && (int) ($providerNote->visit->facility_id ?? 0) !== (int) $facilityId) {
+            abort(403, 'Unauthorized.');
+        }
+
+        return view('provider.notes.edit', compact('providerNote'));
+    }
+
+    public function update(Request $request, ProviderNote $providerNote)
+    {
+        $user = auth()->user();
+        abort_if(!$user, 403, 'Unauthorized.');
+
+        $providerNote->load(['visit.client']);
+
+        $validated = $request->validate([
+            'chief_complaint' => ['nullable', 'string'],
+            'subjective' => ['nullable', 'string'],
+            'objective' => ['nullable', 'string'],
+            'assessment' => ['nullable', 'string'],
+            'plan' => ['nullable', 'string'],
+        ]);
+
+        $client = $providerNote->visit?->client;
+
+        $clientName = $client?->name ?? 'Unknown Client';
+        $clientDob = $client?->date_of_birth ?? 'N/A';
+
+        $combinedNote = trim(
+            "Client: " . $clientName . "\n" .
+            "DOB: " . $clientDob . "\n\n" .
+            "Chief Complaint: " . ($validated['chief_complaint'] ?? '') . "\n\n" .
+            "S: " . ($validated['subjective'] ?? '') . "\n\n" .
+            "O: " . ($validated['objective'] ?? '') . "\n\n" .
+            "A: " . ($validated['assessment'] ?? '') . "\n\n" .
+            "P: " . ($validated['plan'] ?? '')
+        );
+
+        $providerNote->update([
+            'chief_complaint' => $validated['chief_complaint'] ?? null,
+            'subjective' => $validated['subjective'] ?? null,
+            'objective' => $validated['objective'] ?? null,
+            'assessment' => $validated['assessment'] ?? null,
+            'plan' => $validated['plan'] ?? null,
+            'note' => $combinedNote,
+        ]);
+
+        return redirect()
+            ->route('provider.notes.show', $providerNote->id)
+            ->with('success', 'Note updated successfully.');
     }
 
     private function createScreeningAlerts(
@@ -183,109 +245,36 @@ class ProviderNoteController extends Controller
 
         foreach ($screeningItems as $item) {
             Alert::create([
-                'organization_id'   => $visit->organization_id ?: 1,
-                'facility_id'       => $visit->facility_id,
-                'client_id'         => $visit->client_id,
-                'visit_id'          => $visit->id,
-                'caregiver_id'      => $visit->caregiver_id,
-                'provider_id'       => $providerNote->provider_id,
-                'provider_note_id'  => $providerNote->id,
-                'type'              => 'preventive_screening',
-                'title'             => $item,
-                'severity'          => 'info',
-                'message'           => 'Preventive screening or immunization item reviewed/flagged: ' . $item,
-                'resolved'          => false,
+                'organization_id' => $visit->organization_id ?: 1,
+                'facility_id' => $visit->facility_id,
+                'client_id' => $visit->client_id,
+                'visit_id' => $visit->id,
+                'caregiver_id' => $visit->caregiver_id,
+                'provider_id' => $providerNote->provider_id,
+                'provider_note_id' => $providerNote->id,
+                'type' => 'preventive_screening',
+                'title' => $item,
+                'severity' => 'info',
+                'message' => 'Preventive screening or immunization item reviewed/flagged: ' . $item,
+                'resolved' => false,
             ]);
         }
 
         if (!empty($screeningOther)) {
             Alert::create([
-                'organization_id'   => $visit->organization_id ?: 1,
-                'facility_id'       => $visit->facility_id,
-                'client_id'         => $visit->client_id,
-                'visit_id'          => $visit->id,
-                'caregiver_id'      => $visit->caregiver_id,
-                'provider_id'       => $providerNote->provider_id,
-                'provider_note_id'  => $providerNote->id,
-                'type'              => 'preventive_screening',
-                'title'             => 'Other preventive care note',
-                'severity'          => 'info',
-                'message'           => $screeningOther,
-                'resolved'          => false,
+                'organization_id' => $visit->organization_id ?: 1,
+                'facility_id' => $visit->facility_id,
+                'client_id' => $visit->client_id,
+                'visit_id' => $visit->id,
+                'caregiver_id' => $visit->caregiver_id,
+                'provider_id' => $providerNote->provider_id,
+                'provider_note_id' => $providerNote->id,
+                'type' => 'preventive_screening',
+                'title' => 'Other preventive care note',
+                'severity' => 'info',
+                'message' => $screeningOther,
+                'resolved' => false,
             ]);
         }
-    }
-
- public function edit(ProviderNote $providerNote)
-{
-    $user = auth()->user();
-    abort_if(!$user, 403, 'Unauthorized.');
-
-    $providerNote->load(['visit.client', 'visit.caregiver']);
-
-    $facilityId = session('facility_id') ?? ($user->facility_id ?? null);
-
-    if ($facilityId && (int) ($providerNote->visit->facility_id ?? 0) !== (int) $facilityId) {
-        abort(403, 'Unauthorized.');
-    }
-
-    return view('provider.notes.edit', compact('providerNote'));
-}
-
-public function update(Request $request, ProviderNote $providerNote)
-{
-    $user = auth()->user();
-    abort_if(!$user, 403, 'Unauthorized.');
-
-    $providerNote->load(['visit.client']);
-
-    $validated = $request->validate([
-        'chief_complaint' => ['nullable', 'string'],
-        'subjective' => ['nullable', 'string'],
-        'objective' => ['nullable', 'string'],
-        'assessment' => ['nullable', 'string'],
-        'plan' => ['nullable', 'string'],
-    ]);
-
-    $client = $providerNote->visit?->client;
-
-    $clientName = $client?->name ?? 'Unknown Client';
-    $clientDob = $client?->date_of_birth ?? 'N/A';
-
-    $combinedNote = trim(
-        "Client: " . $clientName . "\n" .
-        "DOB: " . $clientDob . "\n\n" .
-        "S: " . ($validated['subjective'] ?? '') . "\n\n" .
-        "O: " . ($validated['objective'] ?? '') . "\n\n" .
-        "A: " . ($validated['assessment'] ?? '') . "\n\n" .
-        "P: " . ($validated['plan'] ?? '')
-    );
-
-$providerNote->update([
-    'chief_complaint' => $validated['chief_complaint'] ?? null,
-    'subjective' => $validated['subjective'] ?? null,
-    'objective' => $validated['objective'] ?? null,
-    'assessment' => $validated['assessment'] ?? null,
-    'plan' => $validated['plan'] ?? null,
-    'note' => $combinedNote,
-]);
-    return redirect()
-        ->route('provider.notes.show', $providerNote->id)
-        ->with('success', 'Note updated successfully.');
-}
-    public function show(ProviderNote $providerNote)
-    {
-        $user = auth()->user();
-        abort_if(!$user, 403, 'Unauthorized.');
-
-        $providerNote->load(['visit.client', 'visit.caregiver']);
-
-        $facilityId = session('facility_id') ?? ($user->facility_id ?? null);
-
-        if ($facilityId && (int) ($providerNote->visit->facility_id ?? 0) !== (int) $facilityId) {
-            abort(403, 'Unauthorized.');
-        }
-
-        return view('provider.notes.show', compact('providerNote'));
     }
 }

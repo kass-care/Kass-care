@@ -33,6 +33,8 @@
         'Primary Care' => $patient->primary_care_provider ?? null,
         'Pharmacy' => $patient->pharmacy ?? null,
     ];
+
+    $latestProviderNote = $providerNotes->sortByDesc('created_at')->first();
 @endphp
 
 <div class="max-w-7xl mx-auto py-8 px-4">
@@ -42,7 +44,7 @@
             <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
                 <div class="flex-1">
                     <div class="flex items-center gap-3 mb-3">
-                        <div class="h-14 w-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-white font-black text-xl">
+                        <div class="h-14 w-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-white text-2xl font-black">
                             {{ strtoupper(substr($patient->name ?? 'P', 0, 1)) }}
                         </div>
 
@@ -93,12 +95,12 @@
 
                 <div class="flex flex-col sm:flex-row lg:flex-col gap-3 lg:min-w-[220px]">
                     <a href="{{ route('provider.patients.workspace', $patient->id) }}"
-                       class="inline-flex items-center justify-center rounded-2xl bg-white text-indigo-800 px-5 py-3 text-sm font-bold shadow hover:bg-indigo-50">
+                       class="inline-flex items-center justify-center rounded-2xl bg-white text-indigo-800 px-5 py-3 text-sm font-bold shadow">
                         Open My Workspace
                     </a>
 
                     <a href="{{ route('dashboard') }}"
-                       class="inline-flex items-center justify-center rounded-2xl bg-white/10 border border-white/15 px-5 py-3 text-sm font-bold text-white hover:bg-white/15">
+                       class="inline-flex items-center justify-center rounded-2xl bg-white/10 border border-white/15 px-5 py-3 text-sm font-bold text-white">
                         Back to Dashboard
                     </a>
                 </div>
@@ -183,6 +185,56 @@
                 </div>
             @endif
         </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-bold text-gray-900">Latest Clinical Note</h2>
+
+            @if($latestProviderNote)
+                <span class="text-sm text-gray-500">
+                    {{ $latestProviderNote->created_at ? \Carbon\Carbon::parse($latestProviderNote->created_at)->format('M d, Y h:i A') : 'N/A' }}
+                </span>
+            @endif
+        </div>
+
+        @if($latestProviderNote)
+            <div class="rounded-2xl bg-indigo-50 border border-indigo-100 p-5">
+                @if(!empty($latestProviderNote->chief_complaint))
+                    <div class="mb-4">
+                        <div class="text-xs uppercase font-bold text-indigo-600">Chief Complaint</div>
+                        <div class="mt-1 text-gray-900 font-semibold">{{ $latestProviderNote->chief_complaint }}</div>
+                    </div>
+                @endif
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <div class="text-xs uppercase font-bold text-gray-500">Assessment</div>
+                        <div class="mt-1 text-gray-800 whitespace-pre-line">
+                            {{ $latestProviderNote->assessment ?: 'No assessment documented.' }}
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="text-xs uppercase font-bold text-gray-500">Plan</div>
+                        <div class="mt-1 text-gray-800 whitespace-pre-line">
+                            {{ $latestProviderNote->plan ?: 'No plan documented.' }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <a href="{{ route('provider.notes.show', $latestProviderNote->id) }}"
+                       class="inline-flex items-center rounded-xl bg-indigo-600 px-4 py-2 text-white text-sm font-bold hover:bg-indigo-700">
+                        Open Full Note
+                    </a>
+                </div>
+            </div>
+        @else
+            <div class="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 py-6 text-sm text-gray-500">
+                No provider clinical note yet.
+            </div>
+        @endif
     </div>
 
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
@@ -276,7 +328,7 @@
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 py-4 border-b border-gray-100 last:border-b-0">
                 <div>
                     <div class="font-semibold text-gray-900">
-                        {{ !empty($visit->visit_date) ? \Carbon\Carbon::parse($visit->visit_date)->format('M d, Y') : 'N/A' }}
+                        {{ !empty($visit->visit_date) ? \Carbon\Carbon::parse($visit->visit_date)->format('M d, Y') : 'No date' }}
                     </div>
                     <div class="text-sm text-gray-600">
                         {{ ucfirst($visit->status ?? 'scheduled') }}
@@ -295,7 +347,7 @@
     </div>
 
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-        <h2 class="text-xl font-bold text-gray-900 mb-4">Provider Notes</h2>
+        <h2 class="text-xl font-bold text-gray-900 mb-4">Provider Notes History</h2>
 
         @forelse($providerNotes->take(5) as $note)
             <div class="py-4 border-b border-gray-100 last:border-b-0">
@@ -309,9 +361,20 @@
                     </div>
                 </div>
 
-                <div class="text-sm text-gray-700">
+                @if(!empty($note->chief_complaint))
+                    <div class="text-sm font-semibold text-indigo-700 mb-1">
+                        CC: {{ $note->chief_complaint }}
+                    </div>
+                @endif
+
+                <div class="text-sm text-gray-700 mb-3">
                     {{ \Illuminate\Support\Str::limit($note->note ?? 'No note text available.', 220) }}
                 </div>
+
+                <a href="{{ route('provider.notes.show', $note->id) }}"
+                   class="inline-flex items-center rounded-lg bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200">
+                    View Note
+                </a>
             </div>
         @empty
             <div class="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 py-6 text-sm text-gray-500">

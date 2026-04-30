@@ -2,18 +2,18 @@
 
 @section('content')
 <div class="min-h-screen bg-gray-100 py-10">
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
 
         <div class="bg-indigo-800 rounded-3xl shadow-2xl p-8 mb-8 border border-indigo-900">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
                 <div>
                     <p class="text-xs uppercase tracking-widest text-indigo-200 font-bold mb-2">KASS CARE</p>
                     <h1 class="text-3xl font-extrabold text-white">Visit Clinical Note</h1>
-                    <p class="text-indigo-100 mt-2">Add provider documentation for this visit.</p>
+                    <p class="text-indigo-100 mt-2">Create provider documentation for this visit.</p>
                 </div>
 
                 <a href="{{ route('provider.notes.index') }}"
-                   class="inline-flex items-center justify-center rounded-xl bg-white px-5 py-3 text-sm font-semibold text-indigo-800 shadow hover:bg-indigo-50">
+                   class="inline-flex items-center justify-center rounded-xl bg-white px-5 py-3 text-sm font-semibold text-indigo-800 shadow">
                     Back to Notes
                 </a>
             </div>
@@ -34,7 +34,7 @@
                     <p><strong>Caregiver:</strong> {{ $visit->caregiver->name ?? 'N/A' }}</p>
                     <p>
                         <strong>Date:</strong>
-                        {{ $visit->visit_date ? \Carbon\Carbon::parse($visit->visit_date)->format('m/d/Y') : 'N/A' }}
+                        {{ !empty($visit->visit_date) ? \Carbon\Carbon::parse($visit->visit_date)->format('m/d/Y') : 'N/A' }}
                     </p>
                     <p><strong>MRN:</strong> {{ $visit->client->mrn ?? 'N/A' }}</p>
                 </div>
@@ -45,7 +45,6 @@
 
                 <input type="hidden" name="visit_id" value="{{ $visit->id }}">
 
-                {{-- Clinical Measurements --}}
                 <div class="bg-indigo-50 rounded-2xl border border-indigo-200 p-6">
                     <h3 class="text-xl font-bold text-slate-900 mb-2">Clinical Measurements</h3>
                     <p class="text-sm text-slate-600 mb-6">
@@ -108,7 +107,6 @@
                     </p>
                 </div>
 
-                {{-- Adult Screening --}}
                 <div class="bg-purple-50 rounded-2xl border border-purple-200 p-6">
                     <h3 class="text-xl font-bold text-slate-900 mb-2">
                         Adult Screening & Immunization Review
@@ -152,7 +150,7 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         @foreach($screeningOptions as $option)
-                            <label class="flex items-center gap-3 rounded-xl bg-white border border-purple-100 px-4 py-3 text-sm text-slate-700">
+                            <label class="flex items-center gap-3 rounded-xl bg-white border border-purple-100 px-4 py-3 text-sm font-medium text-slate-700">
                                 <input type="checkbox"
                                        name="screening_items[]"
                                        value="{{ $option }}"
@@ -170,11 +168,10 @@
                                   id="screening_other"
                                   rows="4"
                                   class="w-full rounded-xl border border-purple-200 px-4 py-3"
-                                  placeholder="Write any additional screening, vaccine, risk factor, or provider note here...">{{ old('screening_other') }}</textarea>
+                                  placeholder="Write any additional screening, vaccine, risk factor, or provider note here..."></textarea>
                     </div>
                 </div>
 
-                {{-- Care Logs --}}
                 <div class="bg-emerald-50 rounded-2xl border border-emerald-200 p-6">
                     <h3 class="text-xl font-bold text-slate-900 mb-2">Care Logs / Visit Observations</h3>
                     <p class="text-sm text-slate-600 mb-6">
@@ -187,7 +184,6 @@
                               placeholder="Care observations, ADLs, appetite, mood, pain, caregiver concerns..."></textarea>
                 </div>
 
-                {{-- SOAP Sections --}}
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">
                         Chief Complaint
@@ -205,7 +201,7 @@
 
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Objective</label>
-                    <textarea name="objective" rows="6"
+                    <textarea name="objective" rows="7"
                               class="w-full rounded-xl border border-gray-300 px-4 py-3">{{ old('objective', $objective ?? '') }}</textarea>
                 </div>
 
@@ -315,6 +311,7 @@ function buildObjective() {
 
 ['blood_pressure', 'pulse', 'oxygen', 'temperature', 'weight', 'height', 'care_logs', 'screening_other'].forEach(function(id) {
     const el = document.getElementById(id);
+
     if (el) {
         el.addEventListener('input', calculateBMI);
     }

@@ -10,8 +10,13 @@
         $highBpCount      = $highBpCount ?? 0;
         $lowOxygenCount   = $lowOxygenCount ?? 0;
         $feverCount       = $feverCount ?? 0;
-        $pulseIssueCount  = $pulseIssueCount ?? 0;
         $screeningCount   = $screeningCount ?? ($preventiveScreeningCount ?? 0);
+
+        $totalClaims      = $totalClaims ?? 0;
+        $submittedClaims  = $submittedClaims ?? 0;
+        $paidClaims       = $paidClaims ?? 0;
+        $deniedClaims     = $deniedClaims ?? 0;
+        $totalRevenue     = $totalRevenue ?? 0;
 
         $recentPatients = collect();
 
@@ -23,8 +28,10 @@
     @endphp
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
         <div class="lg:col-span-2 space-y-6">
 
+            {{-- Hero --}}
             <div class="rounded-3xl bg-gradient-to-r from-indigo-700 via-indigo-600 to-blue-500 text-white p-8 shadow-sm">
                 <p class="text-xs uppercase tracking-[0.35em] font-semibold text-indigo-100">KASS CARE</p>
 
@@ -65,9 +72,70 @@
                             ✅ Compliance
                         </a>
                     @endif
+
+                    @if(Route::has('provider.claims.index'))
+                        <a href="{{ route('provider.claims.index') }}"
+                           class="inline-flex items-center rounded-2xl bg-yellow-400 px-5 py-3 font-bold text-slate-900 hover:bg-yellow-300">
+                            💰 Claims
+                        </a>
+                    @endif
                 </div>
             </div>
 
+            {{-- Revenue Snapshot --}}
+            <div class="rounded-3xl border border-emerald-200 bg-gradient-to-r from-emerald-50 via-white to-indigo-50 p-6 shadow-sm">
+                <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div>
+                        <p class="text-xs uppercase tracking-[0.35em] font-bold text-emerald-700">
+                            Revenue Snapshot
+                        </p>
+                        <h2 class="mt-2 text-2xl font-black text-slate-900">
+                            Claims & Billing Overview
+                        </h2>
+                        <p class="mt-1 text-sm text-slate-500">
+                            Track clinical work converting into claim revenue.
+                        </p>
+                    </div>
+
+                    @if(Route::has('provider.claims.index'))
+                        <a href="{{ route('provider.claims.index') }}"
+                           class="rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow hover:bg-emerald-700">
+                            💰 View Claims
+                        </a>
+                    @endif
+                </div>
+
+                <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                    <div class="rounded-2xl bg-white p-5 shadow-sm border border-slate-100">
+                        <p class="text-xs uppercase tracking-widest text-slate-500 font-bold">Total Claims</p>
+                        <p class="mt-3 text-4xl font-black text-slate-900">{{ $totalClaims }}</p>
+                    </div>
+
+                    <div class="rounded-2xl bg-yellow-50 p-5 shadow-sm border border-yellow-100">
+                        <p class="text-xs uppercase tracking-widest text-yellow-700 font-bold">Submitted</p>
+                        <p class="mt-3 text-4xl font-black text-yellow-700">{{ $submittedClaims }}</p>
+                    </div>
+
+                    <div class="rounded-2xl bg-emerald-50 p-5 shadow-sm border border-emerald-100">
+                        <p class="text-xs uppercase tracking-widest text-emerald-700 font-bold">Paid</p>
+                        <p class="mt-3 text-4xl font-black text-emerald-700">{{ $paidClaims }}</p>
+                    </div>
+
+                    <div class="rounded-2xl bg-red-50 p-5 shadow-sm border border-red-100">
+                        <p class="text-xs uppercase tracking-widest text-red-700 font-bold">Denied</p>
+                        <p class="mt-3 text-4xl font-black text-red-700">{{ $deniedClaims }}</p>
+                    </div>
+
+                    <div class="rounded-2xl bg-indigo-700 p-5 shadow-sm">
+                        <p class="text-xs uppercase tracking-widest text-indigo-100 font-bold">Revenue</p>
+                        <p class="mt-3 text-4xl font-black text-white">
+                            ${{ number_format($totalRevenue, 2) }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Clinical Metrics --}}
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
                     <p class="text-xs uppercase tracking-[0.25em] text-gray-500 font-semibold">Scheduled</p>
@@ -84,7 +152,7 @@
                     <p class="mt-3 text-4xl font-bold text-gray-900">{{ $inProgressCount }}</p>
                 </div>
 
-                <a href="{{ Route::has('provider.alerts.index') ? route('provider.alerts', ['type' => 'all']) : '#' }}"
+                <a href="{{ Route::has('provider.alerts.index') ? route('provider.alerts.index', ['type' => 'all']) : '#' }}"
                    class="rounded-2xl border border-red-100 bg-red-50 p-5 shadow-sm hover:shadow-md transition">
                     <p class="text-xs uppercase tracking-[0.25em] text-red-500 font-semibold">Flagged</p>
                     <p class="mt-3 text-4xl font-bold text-red-700">{{ $flaggedCount }}</p>
@@ -96,25 +164,26 @@
                     <p class="mt-3 text-4xl font-bold text-red-700">{{ $highBpCount }}</p>
                 </a>
 
-                <a href="{{ Route::has('provider.alerts') ? route('provider.alerts.index', ['type' => 'low_oxygen']) : '#' }}"
+                <a href="{{ Route::has('provider.alerts.index') ? route('provider.alerts.index', ['type' => 'low_oxygen']) : '#' }}"
                    class="rounded-2xl border border-orange-100 bg-white p-5 shadow-sm hover:shadow-md transition">
                     <p class="text-xs uppercase tracking-[0.25em] text-orange-500 font-semibold">Low Oxygen</p>
                     <p class="mt-3 text-4xl font-bold text-orange-700">{{ $lowOxygenCount }}</p>
                 </a>
 
-                <a href="{{ Route::has('provider.alerts') ? route('provider.alerts.index', ['type' => 'fever']) : '#' }}"
+                <a href="{{ Route::has('provider.alerts.index') ? route('provider.alerts.index', ['type' => 'fever']) : '#' }}"
                    class="rounded-2xl border border-yellow-100 bg-white p-5 shadow-sm hover:shadow-md transition">
                     <p class="text-xs uppercase tracking-[0.25em] text-yellow-600 font-semibold">Fever / Temp</p>
                     <p class="mt-3 text-4xl font-bold text-yellow-700">{{ $feverCount }}</p>
                 </a>
 
-                <a href="{{ Route::has('provider.alerts') ? route('provider.alerts.index', ['type' => 'preventive_screening']) : '#' }}"
+                <a href="{{ Route::has('provider.alerts.index') ? route('provider.alerts.index', ['type' => 'preventive_screening']) : '#' }}"
                    class="rounded-2xl border border-purple-100 bg-purple-50 p-5 shadow-sm hover:shadow-md transition">
                     <p class="text-xs uppercase tracking-[0.25em] text-purple-600 font-semibold">Screenings</p>
                     <p class="mt-3 text-4xl font-bold text-purple-700">{{ $screeningCount }}</p>
                 </a>
             </div>
 
+            {{-- Current Patients --}}
             <div class="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
                 <h2 class="text-2xl font-bold text-gray-900">Current Patients</h2>
                 <p class="mt-1 text-sm text-gray-500">
@@ -223,6 +292,7 @@
             </div>
         </div>
 
+        {{-- Sidebar --}}
         <div class="space-y-6">
             <div class="rounded-3xl border border-gray-200 bg-white shadow-sm p-6">
                 <h2 class="text-2xl font-bold text-gray-900 mb-5">Quick Access</h2>
@@ -272,6 +342,14 @@
                         <a href="{{ route('provider.notes.index') }}"
                            class="flex items-center justify-between rounded-2xl bg-green-50 px-5 py-4 transition hover:bg-green-100">
                             <span class="font-semibold text-green-700">📝 Provider Notes</span>
+                            <span>↗️</span>
+                        </a>
+                    @endif
+
+                    @if(Route::has('provider.claims.index'))
+                        <a href="{{ route('provider.claims.index') }}"
+                           class="flex items-center justify-between rounded-2xl bg-emerald-50 px-5 py-4 transition hover:bg-emerald-100">
+                            <span class="font-semibold text-emerald-700">💰 Claims</span>
                             <span>↗️</span>
                         </a>
                     @endif
