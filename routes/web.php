@@ -266,19 +266,24 @@ Route::middleware(['auth', 'role:admin,super_admin'])
     ->name('facility.')
     ->group(function () {
 
-        // ========================
-        // MESSAGES (Facility → Provider)
-        // ========================
-        Route::get('/messages', [ProviderMessageController::class, 'facilityIndex'])
-            ->name('messages.index');
-      Route::get('/messages/{message}', [ProviderMessageController::class, 'show'])->name('messages.show');
-Route::post('/messages/{message}/reply', [ProviderMessageController::class, 'reply'])->name('messages.reply');
+// =========================
+// MESSAGES (Facility → Provider)
+// =========================
 
-        Route::get('/messages/create', [ProviderMessageController::class, 'facilityCreate'])
-            ->name('messages.create');
+Route::get('/messages', [ProviderMessageController::class, 'facilityIndex'])
+    ->name('messages.index');
 
-        Route::post('/messages', [ProviderMessageController::class, 'facilityStore'])
-            ->name('messages.store');
+Route::get('/messages/create', [ProviderMessageController::class, 'facilityCreate'])
+    ->name('messages.create');
+
+Route::post('/messages', [ProviderMessageController::class, 'facilityStore'])
+    ->name('messages.store');
+
+Route::get('/messages/{message}', [ProviderMessageController::class, 'show'])
+    ->name('messages.show');
+
+Route::post('/messages/{message}/reply', [ProviderMessageController::class, 'reply'])
+    ->name('messages.reply');
 
         // ========================
         // PATIENTS
@@ -320,6 +325,10 @@ Route::middleware(['auth', 'role:super_admin'])
 Route::get('/visits', [FacilityVisitController::class, 'index'])->name('visits.index');
 Route::get('/visits/create', [FacilityVisitController::class, 'create'])->name('visits.create');
 Route::post('/visits', [FacilityVisitController::class, 'store'])->name('visits.store');
+Route::get('/facility/visits/create', [FacilityVisitController::class, 'create'])
+    ->name('facility.visits.create');
+Route::post('/facility/visits', [FacilityVisitController::class, 'store'])
+    ->name('facility.visits.store');
 Route::get('/facility/visits/{visit}', [FacilityVisitController::class, 'show'])->name('facility.visits.show');
 Route::get('/facility/visits', [FacilityVisitController::class, 'index'])
     ->name('facility.visits.index');

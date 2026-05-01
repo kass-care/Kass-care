@@ -80,7 +80,7 @@
                     Link an existing provider to this facility.
                 </p>
 
-                <form method="POST" action="{{ route('facility.providers.store') }}" class="space-y-4">
+                <form method="POST" action="{{ route('providers.store') }}" class="space-y-4">
                     @csrf
 
                     <div>

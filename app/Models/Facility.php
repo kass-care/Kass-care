@@ -42,4 +42,9 @@ class Facility extends Model
     {
         return $this->hasMany(Visit::class);
     }
+public function providers()
+{
+    return $this->belongsToMany(User::class, 'facility_provider', 'facility_id', 'provider_id')
+        ->withTimestamps();
+}
 }

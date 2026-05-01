@@ -41,7 +41,12 @@ class ClaimController extends Controller
         $visit = $note->visit;
         $client = $visit?->client;
         $coding = $this->suggestCodingFromNote($note);
+    $selectedIcdCodes = request('icd_codes')
+    ? array_values(array_filter(array_map('trim', explode(',', request('icd_codes')))))
+    : $coding['icd_codes'];
 
+$selectedCptCode = request('cpt_code') ?: $coding['cpt_code'];
+$selectedPosCode = request('pos_code') ?: $coding['pos_code'];
         Claim::create([
             'client_id' => $client?->id,
             'visit_id' => $visit?->id,
@@ -50,9 +55,9 @@ class ClaimController extends Controller
             'facility_id' => $visit?->facility_id,
             'claim_number' => 'CLM-' . strtoupper(Str::random(8)),
             'status' => 'draft',
-            'icd_codes' => $coding['icd_codes'],
-            'cpt_code' => $coding['cpt_code'],
-            'pos_code' => $coding['pos_code'],
+             'icd_codes' => $selectedIcdCodes,
+'cpt_code' => $selectedCptCode,
+'pos_code' => $selectedPosCode,
             'billing_notes' => $coding['billing_notes'],
             'estimated_amount' => $coding['estimated_amount'],
         ]);

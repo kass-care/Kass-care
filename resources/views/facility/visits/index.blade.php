@@ -82,7 +82,7 @@
 
                     <td class="py-3">
 
-                        <a href="{{ route('facility.facility.visits.show', $visit->id) }}"
+                        <a href="{{ route('facility.visits.show', $visit->id) }}"
                            class="bg-indigo-600 hover:bg-indigo-700 px-3 py-1 rounded-lg text-xs font-semibold">
 
                            Open Visit

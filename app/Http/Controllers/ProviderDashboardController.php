@@ -16,6 +16,13 @@ class ProviderDashboardController extends Controller
         abort_if(!$user, 403, 'Unauthorized.');
 
         $facilityId = session('facility_id') ?? $user->facility_id;
+$providerFacilities = $user->providerFacilities()
+    ->orderBy('name')
+    ->get();
+
+$selectedFacility = $facilityId
+    ? $providerFacilities->firstWhere('id', (int) $facilityId)
+    : null;  
 
         $patients = $this->buildRecentPatients($facilityId);
         $dashboard = $this->alertDashboardData($facilityId);
@@ -35,6 +42,9 @@ return view('provider.dashboard', array_merge($dashboard, [
     'paidClaims' => $paidClaims,
     'deniedClaims' => $deniedClaims,
     'totalRevenue' => $totalRevenue,
+   'providerFacilities' => $providerFacilities,
+'selectedFacility' => $selectedFacility,
+'facilityId' => $facilityId,
 ]));
 
     }

@@ -40,7 +40,45 @@
                     </h1>
                       <form method="POST" action="{{ route('provider.claims.generate', $note->id) }}">
     @csrf
-    <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl shadow">
+
+        <form method="POST" action="{{ route('provider.claims.generate', $note->id) }}"
+      class="mt-4 rounded-2xl bg-white/10 border border-white/20 p-4">
+    @csrf
+
+    <p class="text-sm font-bold text-white mb-3">
+        Provider Final Coding Selection
+    </p>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div>
+            <label class="block text-xs font-bold text-indigo-100 mb-1">ICD-10 Codes</label>
+            <input type="text"
+                   name="icd_codes"
+                   value="{{ collect($icdSuggestions)->pluck('code')->implode(', ') }}"
+                   class="w-full rounded-xl border-0 px-3 py-2 text-sm text-slate-900"
+                   placeholder="Example: R06.02, J44.9">
+        </div>
+
+        <div>
+            <label class="block text-xs font-bold text-indigo-100 mb-1">CPT Code</label>
+            <input type="text"
+                   name="cpt_code"
+                   value="{{ $cpt }}"
+                   class="w-full rounded-xl border-0 px-3 py-2 text-sm text-slate-900"
+                   placeholder="99214">
+        </div>
+
+        <div>
+            <label class="block text-xs font-bold text-indigo-100 mb-1">POS</label>
+            <input type="text"
+                   name="pos_code"
+                   value="{{ $pos }}"
+                   class="w-full rounded-xl border-0 px-3 py-2 text-sm text-slate-900"
+                   placeholder="12">
+        </div>
+    </div>
+
+    <button class="mt-4 rounded-xl bg-emerald-500 px-5 py-3 text-sm font-bold text-white hover:bg-emerald-600">
         💰 Generate Claim
     </button>
 </form>

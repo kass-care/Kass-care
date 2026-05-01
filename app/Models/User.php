@@ -77,4 +77,9 @@ class User extends Authenticatable
     {
         return $this->belongsTo(\App\Models\Facility::class);
     }
+public function providerFacilities()
+{
+    return $this->belongsToMany(\App\Models\Facility::class, 'facility_provider', 'provider_id', 'facility_id')
+        ->withTimestamps();
+}
 }

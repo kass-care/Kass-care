@@ -1,0 +1,33 @@
+[90m= [39m[34;4mIlluminate\Support\Collection[39;24m {#6521
+    [34mall[39m: [
+      {#6547
+        +"[1mid[22m": [35m1[39m,
+        +"[1mfacility_id[22m": [35m15[39m,
+        +"[1mprovider_id[22m": [35m6[39m,
+        +"[1mcreated_at[22m": [36mnull[39m,
+        +"[1mupdated_at[22m": [36mnull[39m,
+      },
+      {#6549
+        +"[1mid[22m": [35m2[39m,
+        +"[1mfacility_id[22m": [35m15[39m,
+        +"[1mprovider_id[22m": [35m7[39m,
+        +"[1mcreated_at[22m": [36mnull[39m,
+        +"[1mupdated_at[22m": [36mnull[39m,
+      },
+      {#6551
+        +"[1mid[22m": [35m3[39m,
+        +"[1mfacility_id[22m": [35m22[39m,
+        +"[1mprovider_id[22m": [35m6[39m,
+        +"[1mcreated_at[22m": "[32m2026-04-24 22:51:26[39m",
+        +"[1mupdated_at[22m": "[32m2026-04-24 22:51:26[39m",
+      },
+      {#6552
+        +"[1mid[22m": [35m4[39m,
+        +"[1mfacility_id[22m": [35m19[39m,
+        +"[1mprovider_id[22m": [35m52[39m,
+        +"[1mcreated_at[22m": "[32m2026-05-01 02:32:34[39m",
+        +"[1mupdated_at[22m": "[32m2026-05-01 02:32:34[39m",
+      },
+    ],
+  }
+
