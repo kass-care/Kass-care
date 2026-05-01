@@ -43,7 +43,45 @@
                     Monitor clinical alerts, review patient activity, communicate with facilities,
                     and move quickly across notes, pharmacy, compliance, and patient workspaces.
                 </p>
+                    @if(isset($providerFacilities) && $providerFacilities->count() > 0)
+    <div class="mt-6 rounded-2xl border border-white/20 bg-white/10 p-4">
+        <p class="text-xs uppercase tracking-[0.25em] font-bold text-indigo-100">
+            Facility Context
+        </p>
 
+        <div class="mt-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+                <p class="text-sm text-indigo-100">Currently viewing</p>
+                <p class="text-xl font-black text-white">
+                    {{ $selectedFacility?->name ?? 'All assigned facilities' }}
+                </p>
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+                @foreach($providerFacilities as $facility)
+                    <form method="POST" action="{{ route('select.facility', $facility->id) }}">
+                        @csrf
+                        <button type="submit"
+                                class="rounded-xl px-4 py-2 text-sm font-bold transition
+                                {{ (int)($facilityId ?? 0) === (int)$facility->id
+                                    ? 'bg-yellow-400 text-slate-900'
+                                    : 'bg-white text-indigo-700 hover:bg-indigo-50' }}">
+                            {{ $facility->name }}
+                        </button>
+                    </form>
+                @endforeach
+
+                <form method="POST" action="{{ route('clear.facility') }}">
+                    @csrf
+                    <button type="submit"
+                            class="rounded-xl bg-white/20 px-4 py-2 text-sm font-bold text-white hover:bg-white/30">
+                        All Facilities
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+@endif
                 <div class="mt-6 flex flex-wrap gap-3">
                     @if(Route::has('provider.messages.create'))
                         <a href="{{ route('provider.messages.create') }}"
