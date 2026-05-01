@@ -79,7 +79,9 @@ class ProviderNoteController extends Controller
         $user = auth()->user();
         abort_if(!$user, 403, 'Unauthorized.');
 
-        $validated = $request->validate([
+          $validated = $request->validate([
+    // validation rules...
+
             'visit_id' => ['required', 'exists:visits,id'],
             'chief_complaint' => ['nullable', 'string'],
             'subjective' => ['nullable', 'string'],
@@ -113,10 +115,24 @@ class ProviderNoteController extends Controller
 
         $clientName = $client?->name ?? 'Unknown Client';
         $clientDob = $client?->date_of_birth ?? null;
+    $screeningItems = $validated['screening_items'] ?? [];
+$screeningOther = $validated['screening_other'] ?? null;
+$objective = trim($validated['objective'] ?? '');
 
-        $screeningItems = $validated['screening_items'] ?? [];
-        $screeningOther = $validated['screening_other'] ?? null;
-    $objective = trim($validated['objective'] ?? '');
+// Build clean screening notes
+$screeningNotes = '';
+
+if (!empty($screeningItems) || !empty($screeningOther)) {
+    $screeningNotes .= "Adult Screening & Immunization Review:\n";
+
+    foreach ($screeningItems as $item) {
+        $screeningNotes .= "- " . $item . "\n";
+    }
+
+    if (!empty($screeningOther)) {
+        $screeningNotes .= "- Other: " . $screeningOther . "\n";
+    }
+}
 
         $combinedNote = trim(
             "Client: " . $clientName . "\n" .
@@ -137,6 +153,7 @@ class ProviderNoteController extends Controller
                 'chief_complaint' => $validated['chief_complaint'] ?? null,
                 'subjective' => $validated['subjective'] ?? null,
                 'objective' => $objective,
+               'screening_notes' => $screeningNotes,
                 'assessment' => $validated['assessment'] ?? null,
                 'plan' => $validated['plan'] ?? null,
                 'note' => $combinedNote,

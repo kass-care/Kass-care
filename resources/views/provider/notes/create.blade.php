@@ -170,6 +170,21 @@
                                   class="w-full rounded-xl border border-purple-200 px-4 py-3"
                                   placeholder="Write any additional screening, vaccine, risk factor, or provider note here..."></textarea>
                     </div>
+<div class="mt-4">
+    <label class="block text-sm font-semibold text-indigo-700">
+        Auto-generated Screening & Immunization Review
+    </label>
+
+    <textarea 
+        id="screening_preview"
+        class="w-full rounded-xl border border-indigo-300 bg-indigo-50 p-3 text-sm mt-2"
+        rows="4"
+        readonly
+        placeholder="Selected screenings will appear here automatically..."
+    ></textarea>
+</div>
+
+<input type="hidden" name="screening_notes" id="screening_notes">
                 </div>
 
                 <div class="bg-emerald-50 rounded-2xl border border-emerald-200 p-6">
@@ -226,99 +241,123 @@
     </div>
 </div>
 
+@push('scripts')
 <script>
-function getValue(id) {
-    const el = document.getElementById(id);
-    return el ? el.value : '';
-}
-
-function getBmiStatus(bmi) {
-    if (bmi < 18.5) return 'Underweight';
-    if (bmi < 25) return 'Normal';
-    if (bmi < 30) return 'Overweight';
-    return 'Obese';
-}
-
-function getSelectedScreenings() {
-    const items = document.querySelectorAll('.screening-item:checked');
-    return Array.from(items).map(item => item.value);
-}
-
-function calculateBMI() {
-    const weight = parseFloat(getValue('weight'));
-    const height = parseFloat(getValue('height'));
-    const bmiInput = document.getElementById('bmi');
-    const status = document.getElementById('bmiStatus');
-
-    if (weight > 0 && height > 0) {
-        const bmi = ((weight / (height * height)) * 703).toFixed(1);
-        const label = getBmiStatus(parseFloat(bmi));
-
-        bmiInput.value = bmi;
-        status.innerHTML = 'BMI: ' + bmi + ' (' + label + ')';
-    } else {
-        bmiInput.value = '';
-        status.innerHTML = 'BMI status will appear here';
+document.addEventListener('DOMContentLoaded', function () {
+    function getValue(id) {
+        const el = document.getElementById(id);
+        return el ? el.value : '';
     }
 
-    buildObjective();
-}
+    function getBmiStatus(bmi) {
+        if (bmi < 18.5) return 'Underweight';
+        if (bmi < 25) return 'Normal';
+        if (bmi < 30) return 'Overweight';
+        return 'Obese';
+    }
 
-function buildObjective() {
-    const objective = document.querySelector('[name="objective"]');
+    function calculateBMI() {
+        const weight = parseFloat(getValue('weight'));
+        const height = parseFloat(getValue('height'));
+        const bmiInput = document.getElementById('bmi');
+        const status = document.getElementById('bmiStatus');
 
-    if (!objective) return;
+        if (!bmiInput || !status) return;
 
-    const bp = getValue('blood_pressure');
-    const pulse = getValue('pulse');
-    const oxygen = getValue('oxygen');
-    const temp = getValue('temperature');
-    const weight = getValue('weight');
-    const height = getValue('height');
-    const bmi = getValue('bmi');
-    const careLogs = getValue('care_logs');
-    const screeningOther = getValue('screening_other');
-    const screenings = getSelectedScreenings();
-
-    let text = "Clinical Measurements:\n";
-
-    if (bp) text += "- BP: " + bp + "\n";
-    if (pulse) text += "- Pulse: " + pulse + "\n";
-    if (oxygen) text += "- Oxygen: " + oxygen + "%\n";
-    if (temp) text += "- Temperature: " + temp + "\n";
-    if (weight) text += "- Weight: " + weight + " lb\n";
-    if (height) text += "- Height: " + height + " inches\n";
-    if (bmi) text += "- BMI: " + bmi + " (" + getBmiStatus(parseFloat(bmi)) + ")\n";
-
-    if (screenings.length > 0 || screeningOther) {
-        text += "\nAdult Screening & Immunization Review:\n";
-
-        screenings.forEach(function(item) {
-            text += "- " + item + "\n";
-        });
-
-        if (screeningOther) {
-            text += "- Other: " + screeningOther + "\n";
+        if (weight > 0 && height > 0) {
+            const bmi = ((weight / (height * height)) * 703).toFixed(1);
+            const label = getBmiStatus(parseFloat(bmi));
+            bmiInput.value = bmi;
+            status.innerHTML = 'BMI: ' + bmi + ' (' + label + ')';
+        } else {
+            bmiInput.value = '';
+            status.innerHTML = 'BMI status will appear here';
         }
     }
 
-    if (careLogs) {
-        text += "\nCare Logs / Visit Observations:\n" + careLogs + "\n";
+    function buildObjective() {
+        const objective = document.querySelector('[name="objective"]');
+        if (!objective) return;
+
+        const bp = getValue('blood_pressure');
+        const pulse = getValue('pulse');
+        const oxygen = getValue('oxygen');
+        const temp = getValue('temperature');
+        const weight = getValue('weight');
+        const height = getValue('height');
+        const bmi = getValue('bmi');
+        const careLogs = getValue('care_logs');
+
+        let text = "Clinical Measurements:\n";
+
+        if (bp) text += "- BP: " + bp + "\n";
+        if (pulse) text += "- Pulse: " + pulse + "\n";
+        if (oxygen) text += "- Oxygen: " + oxygen + "%\n";
+        if (temp) text += "- Temperature: " + temp + "\n";
+        if (weight) text += "- Weight: " + weight + " lb\n";
+        if (height) text += "- Height: " + height + " inches\n";
+        if (bmi) text += "- BMI: " + bmi + " (" + getBmiStatus(parseFloat(bmi)) + ")\n";
+
+        if (careLogs) {
+            text += "\nCare Logs / Visit Observations:\n" + careLogs + "\n";
+        }
+
+        objective.value = text;
     }
 
-    objective.value = text;
-}
-
-['blood_pressure', 'pulse', 'oxygen', 'temperature', 'weight', 'height', 'care_logs', 'screening_other'].forEach(function(id) {
-    const el = document.getElementById(id);
-
-    if (el) {
-        el.addEventListener('input', calculateBMI);
+    function getSelectedScreenings() {
+        return Array.from(document.querySelectorAll('.screening-item:checked'))
+            .map(item => item.value);
     }
-});
 
-document.querySelectorAll('.screening-item').forEach(function(item) {
-    item.addEventListener('change', buildObjective);
+    function buildScreeningNotes() {
+        const screenings = getSelectedScreenings();
+        const other = getValue('screening_other');
+        const preview = document.getElementById('screening_preview');
+        const hidden = document.getElementById('screening_notes');
+
+        let text = '';
+
+        if (screenings.length || other) {
+            text += "Adult Screening & Immunization Review:\n";
+
+            screenings.forEach(function(item) {
+                text += "- " + item + "\n";
+            });
+
+            if (other) {
+                text += "- Other: " + other + "\n";
+            }
+        }
+
+        if (preview) preview.value = text;
+        if (hidden) hidden.value = text;
+    }
+
+    ['blood_pressure', 'pulse', 'oxygen', 'temperature', 'weight', 'height', 'care_logs'].forEach(function(id) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('input', function () {
+                calculateBMI();
+                buildObjective();
+            });
+        }
+    });
+
+    document.querySelectorAll('.screening-item').forEach(function(item) {
+        item.addEventListener('change', buildScreeningNotes);
+    });
+
+    const screeningOther = document.getElementById('screening_other');
+    if (screeningOther) {
+        screeningOther.addEventListener('input', buildScreeningNotes);
+    }
+
+    calculateBMI();
+    buildObjective();
+    buildScreeningNotes();
 });
 </script>
+@endpush
+
 @endsection

@@ -94,56 +94,132 @@
         <div class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
             <div class="flex items-center justify-between">
                 <div>
-                    <h2 class="text-xl font-bold text-slate-900">Clinical Snapshot</h2>
-                    <p class="mt-1 text-sm text-slate-500">Most recent vitals, diagnosis, and care documentation.</p>
-                </div>
+                      {{-- 🧠 Enhanced Clinical Snapshot --}}
+<div class="rounded-3xl border border-indigo-100 bg-gradient-to-r from-indigo-50 via-white to-indigo-50 p-6 shadow-sm">
 
-                @if($alertCount > 0)
-                    <span class="rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">
-                        {{ $alertCount }} alert{{ $alertCount > 1 ? 's' : '' }}
-                    </span>
-                @else
-                    <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-                        Stable
-                    </span>
-                @endif
-            </div>
+    <div class="flex items-center justify-between mb-4">
+        <div>
+            <h2 class="text-2xl font-black text-indigo-900">Clinical Snapshot</h2>
+            <p class="text-sm text-slate-500">Real-time patient intelligence</p>
+        </div>
 
-            <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                <div class="rounded-2xl bg-slate-50 p-4">
-                    <div class="text-xs uppercase tracking-wide text-slate-500">Blood Pressure</div>
-                    <div class="mt-2 text-xl font-bold text-slate-900">{{ $latestVitals['blood_pressure'] ?? $latestVitals['bp'] ?? 'N/A' }}</div>
-                </div>
+        <span class="px-4 py-2 rounded-full text-xs font-bold
+            @if($patient->allergies) bg-red-100 text-red-700
+            @else bg-emerald-100 text-emerald-700
+            @endif">
+            {{ $patient->allergies ? '⚠️ Allergy Risk' : 'Stable' }}
+        </span>
+    </div>
 
-                <div class="rounded-2xl bg-slate-50 p-4">
-                    <div class="text-xs uppercase tracking-wide text-slate-500">Pulse</div>
-                    <div class="mt-2 text-xl font-bold text-slate-900">{{ $latestVitals['pulse'] ?? 'N/A' }}</div>
-                </div>
+    {{-- 🧬 Core Info --}}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
 
-                <div class="rounded-2xl bg-slate-50 p-4">
-                    <div class="text-xs uppercase tracking-wide text-slate-500">Temperature</div>
-                    <div class="mt-2 text-xl font-bold text-slate-900">{{ $latestVitals['temperature'] ?? $latestVitals['temp'] ?? 'N/A' }}</div>
-                </div>
+        <div class="bg-white p-4 rounded-2xl border">
+            <p class="text-xs uppercase text-slate-400">Allergies</p>
+            <p class="font-bold text-red-600">
+                {{ $patient->allergies ?: 'None recorded' }}
+            </p>
+        </div>
 
-                <div class="rounded-2xl bg-slate-50 p-4">
-                    <div class="text-xs uppercase tracking-wide text-slate-500">Respiratory Rate</div>
-                    <div class="mt-2 text-xl font-bold text-slate-900">{{ $latestVitals['respiratory_rate'] ?? 'N/A' }}</div>
-                </div>
+        <div class="bg-white p-4 rounded-2xl border">
+            <p class="text-xs uppercase text-slate-400">Primary Provider</p>
+            <p class="font-semibold text-slate-800">
+                {{ $patient->primary_care_provider ?: 'Not assigned' }}
+            </p>
+        </div>
 
-                <div class="rounded-2xl bg-slate-50 p-4">
-                    <div class="text-xs uppercase tracking-wide text-slate-500">Oxygen Saturation</div>
-                    <div class="mt-2 text-xl font-bold text-slate-900">{{ $latestVitals['oxygen_saturation'] ?? $latestVitals['oxygen'] ?? 'N/A' }}</div>
-                </div>
+        <div class="bg-white p-4 rounded-2xl border">
+            <p class="text-xs uppercase text-slate-400">Pharmacy</p>
+            <p class="font-semibold text-slate-800">
+                {{ $patient->pharmacy ?: 'Not set' }}
+            </p>
+        </div>
 
-                <div class="rounded-2xl bg-slate-50 p-4">
-                    <div class="text-xs uppercase tracking-wide text-slate-500">Weight (lb)</div>
-                    <div class="mt-2 text-xl font-bold text-slate-900">{{ $latestVitals['weight'] ?? $patient->weight ?? 'N/A' }}</div>
-                </div>
-            </div>
+    </div>
 
-            <div class="mt-6 rounded-2xl border border-indigo-100 bg-indigo-50 p-5">
-                <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4">
-                    <div>
+    {{-- 👨‍⚕️ Care Team --}}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+
+        <div class="bg-indigo-50 p-4 rounded-2xl">
+            <p class="text-xs uppercase text-indigo-400">Psychiatrist</p>
+            <p class="font-bold text-indigo-800">
+                {{ $patient->psychiatrist ?: '—' }}
+            </p>
+        </div>
+
+        <div class="bg-indigo-50 p-4 rounded-2xl">
+            <p class="text-xs uppercase text-indigo-400">Cardiologist</p>
+            <p class="font-bold text-indigo-800">
+                {{ $patient->cardiologist ?: '—' }}
+            </p>
+        </div>
+
+        <div class="bg-indigo-50 p-4 rounded-2xl">
+            <p class="text-xs uppercase text-indigo-400">Care Team Status</p>
+            <p class="font-bold text-indigo-800">
+                Active
+            </p>
+        </div>
+
+    </div>
+
+ {{-- 📊 Vitals Intelligence --}}
+@php
+    $bp = $latestVitals['bp'] ?? $latestVitals['blood_pressure'] ?? null;
+    $pulse = $latestVitals['pulse'] ?? null;
+    $oxygen = $latestVitals['oxygen'] ?? $latestVitals['oxygen_saturation'] ?? null;
+    $temp = $latestVitals['temp'] ?? $latestVitals['temperature'] ?? null;
+
+    $bpNumber = null;
+    if ($bp && preg_match('/(\d{2,3})/', (string) $bp, $matches)) {
+        $bpNumber = (int) $matches[1];
+    }
+
+    $oxygenNumber = is_numeric($oxygen) ? (float) $oxygen : null;
+    $tempNumber = is_numeric($temp) ? (float) $temp : null;
+    $pulseNumber = is_numeric($pulse) ? (int) $pulse : null;
+
+    $bpStatus = $bpNumber && $bpNumber >= 140 ? 'High' : 'Stable';
+    $oxygenStatus = $oxygenNumber && $oxygenNumber < 92 ? 'Low' : 'Stable';
+    $tempStatus = $tempNumber && $tempNumber >= 100.4 ? 'Fever' : 'Stable';
+    $pulseStatus = $pulseNumber && ($pulseNumber < 50 || $pulseNumber > 110) ? 'Abnormal' : 'Stable';
+@endphp
+
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+    <div class="bg-white p-4 rounded-2xl border">
+        <p class="text-xs text-slate-400">BP</p>
+        <p class="font-bold text-lg">{{ $bp ?: 'N/A' }}</p>
+        <span class="mt-2 inline-flex rounded-full px-3 py-1 text-xs font-bold {{ $bpStatus === 'High' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700' }}">
+            {{ $bpStatus }}
+        </span>
+    </div>
+
+    <div class="bg-white p-4 rounded-2xl border">
+        <p class="text-xs text-slate-400">Pulse</p>
+        <p class="font-bold text-lg">{{ $pulse ?: 'N/A' }}</p>
+        <span class="mt-2 inline-flex rounded-full px-3 py-1 text-xs font-bold {{ $pulseStatus === 'Abnormal' ? 'bg-yellow-100 text-yellow-700' : 'bg-emerald-100 text-emerald-700' }}">
+            {{ $pulseStatus }}
+        </span>
+    </div>
+
+    <div class="bg-white p-4 rounded-2xl border">
+        <p class="text-xs text-slate-400">Oxygen</p>
+        <p class="font-bold text-lg">{{ $oxygen ?: 'N/A' }}</p>
+        <span class="mt-2 inline-flex rounded-full px-3 py-1 text-xs font-bold {{ $oxygenStatus === 'Low' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700' }}">
+            {{ $oxygenStatus }}
+        </span>
+    </div>
+
+    <div class="bg-white p-4 rounded-2xl border">
+        <p class="text-xs text-slate-400">Temp</p>
+        <p class="font-bold text-lg">{{ $temp ?: 'N/A' }}</p>
+        <span class="mt-2 inline-flex rounded-full px-3 py-1 text-xs font-bold {{ $tempStatus === 'Fever' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700' }}">
+            {{ $tempStatus }}
+        </span>
+    </div>
+
+</div>
                         <h3 class="text-lg font-bold text-slate-900">Active ICD Diagnoses</h3>
                         <p class="text-sm text-slate-600">
                             Updates automatically when provider or assistant adds/updates diagnosis.
