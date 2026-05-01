@@ -127,7 +127,7 @@
                         Open Visits
                     </a>
 
-                    <a href="{{ route('facility.providers.index') }}"
+                    <a href="{{ route('providers.index') }}"
                        class="block w-full text-center px-4 py-4 rounded-2xl border border-slate-700 text-slate-300 font-semibold hover:bg-slate-800">
                         Open Providers
                     </a>

@@ -321,7 +321,8 @@ Route::get('/visits', [FacilityVisitController::class, 'index'])->name('visits.i
 Route::get('/visits/create', [FacilityVisitController::class, 'create'])->name('visits.create');
 Route::post('/visits', [FacilityVisitController::class, 'store'])->name('visits.store');
 Route::get('/facility/visits/{visit}', [FacilityVisitController::class, 'show'])->name('facility.visits.show');
-
+Route::get('/facility/visits', [FacilityVisitController::class, 'index'])
+    ->name('facility.visits.index');
 
 // ========================
 // PROVIDERS (Facility Assignments)
