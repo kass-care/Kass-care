@@ -56,29 +56,29 @@
                     {{ $selectedFacility?->name ?? 'All assigned facilities' }}
                 </p>
             </div>
+       <div class="w-full md:w-80">
+    <form method="POST" action="{{ route('select.facility', 0) }}">
+        @csrf
 
-            <div class="flex flex-wrap gap-2">
-                @foreach($providerFacilities as $facility)
-                    <form method="POST" action="{{ route('select.facility', $facility->id) }}">
-                        @csrf
-                        <button type="submit"
-                                class="rounded-xl px-4 py-2 text-sm font-bold transition
-                                {{ (int)($facilityId ?? 0) === (int)$facility->id
-                                    ? 'bg-yellow-400 text-slate-900'
-                                    : 'bg-white text-indigo-700 hover:bg-indigo-50' }}">
-                            {{ $facility->name }}
-                        </button>
-                    </form>
-                @endforeach
+        <label class="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-indigo-100">
+            Select Facility
+        </label>
 
-                <form method="POST" action="{{ route('clear.facility') }}">
-                    @csrf
-                    <button type="submit"
-                            class="rounded-xl bg-white/20 px-4 py-2 text-sm font-bold text-white hover:bg-white/30">
-                        All Facilities
-                    </button>
-                </form>
-            </div>
+        <select name="facility_id"
+                onchange="this.form.action='/select-facility/' + (this.value || 0); this.form.submit();"
+                class="w-full rounded-xl border border-white/20 bg-white px-4 py-3 text-sm font-bold text-slate-900 shadow">
+            <option value="">All Facilities</option>
+
+            @foreach($providerFacilities as $facility)
+                <option value="{{ $facility->id }}"
+                    {{ (int)($facilityId ?? 0) === (int)$facility->id ? 'selected' : '' }}>
+                    {{ $facility->name }}
+                </option>
+            @endforeach
+        </select>
+    </form>
+</div>
+
         </div>
     </div>
 @endif

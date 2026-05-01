@@ -14,16 +14,40 @@ class ProviderDashboardController extends Controller
     {
         $user = auth()->user();
         abort_if(!$user, 403, 'Unauthorized.');
+       $providerFacilities = $user->providerFacilities()->get();
 
-        $facilityId = session('facility_id') ?? $user->facility_id;
-$providerFacilities = $user->providerFacilities()
-    ->orderBy('name')
-    ->get();
+$facilityId = session('facility_id');
+
+if (!$facilityId && $providerFacilities->count() === 1) {
+    // Auto-select if only one facility
+    $facilityId = $providerFacilities->first()->id;
+    session(['facility_id' => $facilityId]);
+}
 
 $selectedFacility = $facilityId
     ? $providerFacilities->firstWhere('id', (int) $facilityId)
-    : null;  
-
+    : null;
+      if (!$facilityId) {
+    return view('provider.dashboard', [
+        'providerFacilities' => $providerFacilities,
+        'selectedFacility' => null,
+        'facilityId' => null,
+        'patients' => collect(),
+        'scheduledCount' => 0,
+        'completedCount' => 0,
+        'inProgressCount' => 0,
+        'flaggedCount' => 0,
+        'highBpCount' => 0,
+        'lowOxygenCount' => 0,
+        'feverCount' => 0,
+        'pulseIssueCount' => 0,
+        'totalClaims' => 0,
+        'submittedClaims' => 0,
+        'paidClaims' => 0,
+        'deniedClaims' => 0,
+        'totalRevenue' => 0,
+    ]);
+}
         $patients = $this->buildRecentPatients($facilityId);
         $dashboard = $this->alertDashboardData($facilityId);
 $claims = \App\Models\Claim::where('provider_id', $user->id)->get();
