@@ -14,18 +14,45 @@ class ProviderAlertController extends Controller
         $user = auth()->user();
         abort_if(!$user, 403, 'Unauthorized.');
 
-        $type = $request->get('type');
+        $type = $request->get('type', 'all');
+
+        $providerFacilities = method_exists($user, 'providerFacilities')
+            ? $user->providerFacilities()->orderBy('name')->get()
+            : collect();
+
+        $facilityId = session('facility_id');
+
+        if (!$facilityId && $providerFacilities->count() === 1) {
+            $facilityId = $providerFacilities->first()->id;
+            session(['facility_id' => $facilityId]);
+        }
+
+        if (!$facilityId) {
+            return view('provider.alerts.index', [
+                'latestPatientAlerts' => collect(),
+                'totalActiveAlerts' => 0,
+                'criticalAlerts' => 0,
+                'highAlerts' => 0,
+                'mediumAlerts' => 0,
+                'alertTypeSummary' => collect(),
+                'type' => $type,
+            ]);
+        }
 
         $alertsQuery = Alert::with(['visit.client.facility', 'visit.caregiver', 'visit.provider'])
-            ->where('resolved', false);
+            ->where('resolved', false)
+            ->where(function ($query) use ($facilityId) {
+                $query->where('facility_id', $facilityId)
+                    ->orWhereHas('visit', function ($visitQuery) use ($facilityId) {
+                        $visitQuery->where('facility_id', $facilityId);
+                    });
+            });
 
         if ($type && $type !== 'all') {
             $alertsQuery->where('type', $type);
         }
 
-        $alerts = $alertsQuery
-            ->latest('id')
-            ->get();
+        $alerts = $alertsQuery->latest('id')->get();
 
         $alertRows = $alerts->map(function (Alert $alert) {
             $visit = $alert->visit;
@@ -50,39 +77,31 @@ class ProviderAlertController extends Controller
         $latestPatientAlerts = $alertRows
             ->sortByDesc('flagged_at')
             ->groupBy('client_id')
-            ->map(function (Collection $items) {
-                return $items->sortByDesc('flagged_at')->first();
-            })
+            ->map(fn (Collection $items) => $items->sortByDesc('flagged_at')->first())
             ->values()
             ->sortByDesc('flagged_at');
 
-        $totalActiveAlerts = $alertRows->count();
-        $criticalAlerts = $alertRows->where('severity', 'critical')->count();
-        $highAlerts = $alertRows->where('severity', 'high')->count();
-        $mediumAlerts = $alertRows->where('severity', 'medium')->count();
-
-        $alertTypeSummary = $alertRows
-            ->groupBy('raw_type')
-            ->map(function (Collection $items, $type) {
-                return [
-                    'type' => ucwords(str_replace('_', ' ', $type)),
-                    'raw_type' => $type,
-                    'count' => $items->count(),
-                    'critical_count' => $items->where('severity', 'critical')->count(),
-                    'high_count' => $items->where('severity', 'high')->count(),
-                    'medium_count' => $items->where('severity', 'medium')->count(),
-                ];
-            })
-            ->sortByDesc('count')
-            ->values();
-
         return view('provider.alerts.index', [
             'latestPatientAlerts' => $latestPatientAlerts,
-            'totalActiveAlerts' => $totalActiveAlerts,
-            'criticalAlerts' => $criticalAlerts,
-            'highAlerts' => $highAlerts,
-            'mediumAlerts' => $mediumAlerts,
-            'alertTypeSummary' => $alertTypeSummary,
+            'totalActiveAlerts' => $alertRows->count(),
+            'criticalAlerts' => $alertRows->where('severity', 'critical')->count(),
+            'highAlerts' => $alertRows->where('severity', 'high')->count(),
+            'mediumAlerts' => $alertRows->where('severity', 'medium')->count(),
+            'alertTypeSummary' => $alertRows
+                ->groupBy('raw_type')
+                ->map(function (Collection $items, $type) {
+                    return [
+                        'type' => ucwords(str_replace('_', ' ', $type)),
+                        'raw_type' => $type,
+                        'count' => $items->count(),
+                        'critical_count' => $items->where('severity', 'critical')->count(),
+                        'high_count' => $items->where('severity', 'high')->count(),
+                        'medium_count' => $items->where('severity', 'medium')->count(),
+                    ];
+                })
+                ->sortByDesc('count')
+                ->values(),
+            'type' => $type,
         ]);
     }
 
@@ -106,7 +125,7 @@ class ProviderAlertController extends Controller
         $user = auth()->user();
         abort_if(!$user, 403, 'Unauthorized.');
 
-        $facilityId = session('facility_id') ?? ($user->facility_id ?? null);
+        $facilityId = session('facility_id');
 
         if ($user->role !== 'super_admin' && $facilityId) {
             abort_if((int) $alert->facility_id !== (int) $facilityId, 403, 'Unauthorized alert review.');
