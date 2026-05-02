@@ -86,7 +86,8 @@ class ProviderNoteController extends Controller
             'chief_complaint' => ['nullable', 'string'],
             'subjective' => ['nullable', 'string'],
             'objective' => ['nullable', 'string'],
-            'assessment' => ['nullable', 'string'],
+$screeningNotes = $request->input('screening_notes'),            
+'assessment' => ['nullable', 'string'],
             'plan' => ['nullable', 'string'],
 
             'weight' => ['nullable', 'numeric'],
@@ -208,38 +209,44 @@ if (!empty($screeningItems) || !empty($screeningOther)) {
 
         $providerNote->load(['visit.client']);
 
-        $validated = $request->validate([
-            'chief_complaint' => ['nullable', 'string'],
-            'subjective' => ['nullable', 'string'],
-            'objective' => ['nullable', 'string'],
-            'assessment' => ['nullable', 'string'],
-            'plan' => ['nullable', 'string'],
-        ]);
+$validated = $request->validate([
+    'chief_complaint' => ['nullable', 'string'],
+    'subjective' => ['nullable', 'string'],
+    'objective' => ['nullable', 'string'],
+    'screening_notes' => ['nullable', 'string'],
+    'assessment' => ['nullable', 'string'],
+    'plan' => ['nullable', 'string'],
+]);
 
-        $client = $providerNote->visit?->client;
+$client = $providerNote->visit?->client;
 
-        $clientName = $client?->name ?? 'Unknown Client';
-        $clientDob = $client?->date_of_birth ?? 'N/A';
+$clientName = $client?->name ?? 'Unknown Client';
+$clientDob = $client?->date_of_birth ?? 'N/A';
 
-        $combinedNote = trim(
-            "Client: " . $clientName . "\n" .
-            "DOB: " . $clientDob . "\n\n" .
-            "Chief Complaint: " . ($validated['chief_complaint'] ?? '') . "\n\n" .
-            "S: " . ($validated['subjective'] ?? '') . "\n\n" .
-            "O: " . ($validated['objective'] ?? '') . "\n\n" .
-            "A: " . ($validated['assessment'] ?? '') . "\n\n" .
-            "P: " . ($validated['plan'] ?? '')
-        );
+$screeningNotes = $validated['screening_notes']
+    ?? $providerNote->screening_notes
+    ?? null;
 
-        $providerNote->update([
-            'chief_complaint' => $validated['chief_complaint'] ?? null,
-            'subjective' => $validated['subjective'] ?? null,
-            'objective' => $validated['objective'] ?? null,
-            'assessment' => $validated['assessment'] ?? null,
-            'plan' => $validated['plan'] ?? null,
-            'note' => $combinedNote,
-        ]);
+$combinedNote = trim(
+    "Client: " . $clientName . "\n" .
+    "DOB: " . $clientDob . "\n\n" .
+    "Chief Complaint: " . ($validated['chief_complaint'] ?? '') . "\n\n" .
+    "S: " . ($validated['subjective'] ?? '') . "\n\n" .
+    "O: " . ($validated['objective'] ?? '') . "\n\n" .
+    "Screening & Immunization Review:\n" . ($screeningNotes ?: 'N/A') . "\n\n" .
+    "A: " . ($validated['assessment'] ?? '') . "\n\n" .
+    "P: " . ($validated['plan'] ?? '')
+);
 
+$providerNote->update([
+    'chief_complaint' => $validated['chief_complaint'] ?? null,
+    'subjective' => $validated['subjective'] ?? null,
+    'objective' => $validated['objective'] ?? null,
+    'screening_notes' => $screeningNotes,
+    'assessment' => $validated['assessment'] ?? null,
+    'plan' => $validated['plan'] ?? null,
+    'note' => $combinedNote,
+]);
         return redirect()
             ->route('provider.notes.show', $providerNote->id)
             ->with('success', 'Note updated successfully.');

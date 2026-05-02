@@ -122,12 +122,16 @@
                         {{ $providerNote->objective ?? 'N/A' }}
                     </p>
                 </div>
+
                      @if($providerNote->screening_notes)
-<div class="mt-6">
-    <h3 class="font-bold text-purple-800">Screening & Immunization Review</h3>
-    <div class="bg-purple-50 border border-purple-200 rounded-xl p-4 text-sm whitespace-pre-line">
-        {{ $providerNote->screening_notes }}
-    </div>
+<div class="rounded-2xl border border-purple-200 bg-purple-50 p-5 mt-6">
+    <h3 class="font-bold text-purple-800">
+        Screening & Immunization Review
+    </h3>
+
+    <p class="mt-2 text-sm whitespace-pre-line text-gray-800">
+        {!! nl2br(e($providerNote->screening_notes)) !!}
+    </p>
 </div>
 @endif
                 <div class="rounded-2xl border border-purple-200 bg-purple-50 p-5">
