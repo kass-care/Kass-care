@@ -6,6 +6,7 @@ use App\Models\Alert;
 use App\Models\ProviderNote;
 use App\Models\Visit;
 use Illuminate\Http\Request;
+use App\Services\ClinicalCodingService;
 
 class ProviderNoteController extends Controller
 {
@@ -170,38 +171,59 @@ if (!empty($screeningItems) || !empty($screeningOther)) {
             ->with('success', 'Provider SOAP note saved successfully.');
     }
 
-    public function show(ProviderNote $providerNote)
-    {
-        $user = auth()->user();
-        abort_if(!$user, 403, 'Unauthorized.');
+public function show(ProviderNote $providerNote)
+{
+    $user = auth()->user();
+    abort_if(!$user, 403, 'Unauthorized.');
 
-        $providerNote->load(['visit.client', 'visit.caregiver']);
+    $providerNote->load(['visit.client', 'visit.caregiver']);
 
-        $facilityId = session('facility_id') ?? ($user->facility_id ?? null);
+    $facilityId = session('facility_id') ?? ($user->facility_id ?? null);
 
-        if ($facilityId && (int) ($providerNote->visit->facility_id ?? 0) !== (int) $facilityId) {
-            abort(403, 'Unauthorized.');
-        }
-
-        return view('provider.notes.show', compact('providerNote'));
+    if ($facilityId && (int) ($providerNote->visit->facility_id ?? 0) !== (int) $facilityId) {
+        abort(403, 'Unauthorized.');
     }
 
-    public function edit(ProviderNote $providerNote)
-    {
-        $user = auth()->user();
-        abort_if(!$user, 403, 'Unauthorized.');
+    preg_match('/BMI:\s*(\d+\.?\d*)/', $providerNote->note ?? '', $matches);
+    $bmi = $matches[1] ?? null;
 
-        $providerNote->load(['visit.client', 'visit.caregiver']);
+    $screenings = [];
 
-        $facilityId = session('facility_id') ?? ($user->facility_id ?? null);
+    if (!empty($providerNote->screening_notes)) {
+        $lines = explode("\n", $providerNote->screening_notes);
 
-        if ($facilityId && (int) ($providerNote->visit->facility_id ?? 0) !== (int) $facilityId) {
-            abort(403, 'Unauthorized.');
+        foreach ($lines as $line) {
+            $line = trim($line);
+
+            if (str_starts_with($line, '-')) {
+                $screenings[] = trim(str_replace('-', '', $line));
+            }
         }
-
-        return view('provider.notes.edit', compact('providerNote'));
     }
 
+    $codes = \App\Services\ClinicalCodingService::suggestCodes(
+        $providerNote->note ?? '',
+        $bmi,
+        $screenings
+    );
+
+    return view('provider.notes.show', compact('providerNote', 'codes'));
+}
+public function edit(ProviderNote $providerNote)
+{
+    $user = auth()->user();
+    abort_if(!$user, 403, 'Unauthorized.');
+
+    $providerNote->load(['visit.client', 'visit.caregiver']);
+
+    $facilityId = session('facility_id') ?? ($user->facility_id ?? null);
+
+    if ($facilityId && (int) ($providerNote->visit->facility_id ?? 0) !== (int) $facilityId) {
+        abort(403, 'Unauthorized.');
+    }
+
+    return view('provider.notes.edit', compact('providerNote'));
+}
     public function update(Request $request, ProviderNote $providerNote)
     {
         $user = auth()->user();

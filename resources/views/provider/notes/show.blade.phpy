@@ -79,10 +79,7 @@
             </p>
         </div>
     </div>
-      <div class="mb-4">
-    <h3 class="font-bold text-slate-900 mb-2">Selected Codes</h3>
-    <div id="selected-codes" class="flex flex-wrap gap-2"></div>
-</div>
+
     <div class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
         <div class="rounded-2xl bg-white border border-purple-100 p-5">
             <h3 class="font-bold text-purple-800 mb-3">ICD Suggestions</h3>
@@ -224,32 +221,4 @@
         </div>
     </div>
 </div>
-<script>
-let selectedCodes = {
-    icd: [],
-    cpt: []
-};
-
-function addCode(type, code) {
-    if (!selectedCodes[type].includes(code)) {
-        selectedCodes[type].push(code);
-        renderSelectedCodes();
-    }
-}
-
-function renderSelectedCodes() {
-    const container = document.getElementById('selected-codes');
-    container.innerHTML = '';
-
-    Object.keys(selectedCodes).forEach(type => {
-        selectedCodes[type].forEach(code => {
-            container.innerHTML += `
-                <div class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded text-xs mr-2 mb-2 inline-block">
-                    ${type.toUpperCase()}: ${code}
-                </div>
-            `;
-        });
-    });
-}
-</script>
 @endsection
