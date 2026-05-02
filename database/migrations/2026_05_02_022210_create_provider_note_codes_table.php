@@ -6,20 +6,20 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
         Schema::create('provider_note_codes', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('provider_note_id')->constrained()->cascadeOnDelete();
-            $table->string('type'); // icd or cpt
-            $table->string('code');
-            $table->string('label')->nullable();
             $table->timestamps();
-
-            $table->unique(['provider_note_id', 'type', 'code']);
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
         Schema::dropIfExists('provider_note_codes');

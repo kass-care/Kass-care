@@ -30,4 +30,8 @@ class ProviderNote extends Model
     {
         return $this->belongsTo(Visit::class);
     }
+public function codes()
+{
+    return $this->hasMany(ProviderNoteCode::class);
+}
 }
