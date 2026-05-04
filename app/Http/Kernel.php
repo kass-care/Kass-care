@@ -48,10 +48,11 @@ protected $middlewareAliases = [
     'auth' => \App\Http\Middleware\Authenticate::class,
 'facility.context' => \App\Http\Middleware\EnsureFacilityContext::class,    
 'check.subscription' => \App\Http\Middleware\CheckSubscription::class,
+'check.plan' => \App\Http\Middleware\CheckPlan::class,
     'role' => \App\Http\Middleware\RoleMiddleware::class,
     'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
     'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
-
+   'check.plan' => \App\Http\Middleware\CheckPlan::class,
     'superadmin' => \App\Http\Middleware\SuperAdminMiddleware::class,
 ];
 

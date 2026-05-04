@@ -33,6 +33,40 @@
                     <p class="text-sm text-slate-500">Status</p>
                     <p class="font-bold uppercase">{{ $claim->status }}</p>
                 </div>
+<div class="mt-4 flex gap-3">
+@if(auth()->user()->role === 'super_admin' || auth()->user()->plan === 'provider_pro')
+
+    @if($claim->status === 'draft')
+        <form method="POST" action="{{ route('provider.claims.submit', $claim->id) }}">
+            @csrf
+            <button class="px-4 py-2 bg-blue-600 text-white rounded-lg font-bold">
+                🚀 Submit Claim
+            </button>
+        </form>
+    @endif
+
+    @if($claim->status === 'submitted')
+        <form method="POST" action="{{ route('provider.claims.markPaid', $claim->id) }}">
+            @csrf
+            <button class="px-4 py-2 bg-green-600 text-white rounded-lg font-bold">
+                💰 Mark Paid
+            </button>
+        </form>
+
+        <form method="POST" action="{{ route('provider.claims.markDenied', $claim->id) }}">
+            @csrf
+            <button class="px-4 py-2 bg-red-600 text-white rounded-lg font-bold">
+                ❌ Mark Denied
+            </button>
+        </form>
+    @endif
+@else
+    <div class="mt-4 rounded-xl bg-yellow-50 border border-yellow-200 px-4 py-3 text-sm text-yellow-800">
+        🚫 Claim actions are locked on your plan.
+        Upgrade to <strong>Provider Pro</strong> to submit, mark paid, and manage revenue.
+    </div>
+@endif
+</div>
 
                 <div>
                     <p class="text-sm text-slate-500">Amount</p>

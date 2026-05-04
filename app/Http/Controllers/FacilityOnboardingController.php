@@ -13,56 +13,45 @@ class FacilityOnboardingController extends Controller
 {
     public function create()
     {
-        $plans = [
-            'starter' => [
-                'name' => 'Starter',
-                'price_label' => '$49/month',
-                'facility_limit' => 1,
-            ],
-            'growth' => [
-                'name' => 'Growth',
-                'price_label' => '$99/month',
-                'facility_limit' => 3,
-            ],
-            'enterprise' => [
-                'name' => 'Enterprise',
-                'price_label' => '$199/month',
-                'facility_limit' => 10,
-            ],
-            'monthly' => [
-                'name' => 'KASSCare Monthly',
-                'price_label' => '$29/month',
-                'facility_limit' => 1,
-            ],
-        ];
+       $plans = [
+    'facility' => [
+        'name' => 'Facility',
+        'facility_limit' => 1,
+    ],
 
+    'provider_solo' => [
+        'name' => 'Provider Solo',
+        'facility_limit' => 1,
+    ],
+
+    'provider_pro' => [
+        'name' => 'Provider Pro',
+        'facility_limit' => 10,
+    ],
+];
         return view('auth.register-facility', compact('plans'));
     }
 
     public function store(Request $request)
     {
-        $plans = [
-            'starter' => [
-                'facility_limit' => 1,
-            ],
-            'growth' => [
-                'facility_limit' => 3,
-            ],
-            'enterprise' => [
-                'facility_limit' => 10,
-            ],
-            'monthly' => [
-                'facility_limit' => 1,
-            ],
-        ];
-
+$plans = [
+    'facility' => [
+        'facility_limit' => 1,
+    ],
+    'provider_solo' => [
+        'facility_limit' => 1,
+    ],
+    'provider_pro' => [
+        'facility_limit' => 10,
+    ],
+];
         $request->validate([
             'facility_name' => 'required|string|max:255',
             'facility_email' => 'nullable|email|max:255',
             'admin_name' => 'required|string|max:255',
             'admin_email' => 'required|email|max:255|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
-            'plan' => 'required|string|in:starter,growth,enterprise,monthly',
+            'plan' => 'required|string|in:facility,provider_solo,provider_pro',
             'accept_terms' => 'accepted',
         ]);
 

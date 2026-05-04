@@ -215,6 +215,7 @@ Route::middleware(['auth', 'role:super_admin'])
         });
 
         Route::get('/tasks', [TaskController::class, 'index'])->name('tasks.index');
+
         Route::get('/activity', [AdminActivityController::class, 'index'])->name('activity.index');
     });
 
@@ -260,8 +261,7 @@ Route::get('/pharmacy/{order}', [PharmacyOrderController::class, 'show'])
 | Facility routes — Admin
 |--------------------------------------------------------------------------
 */
-
-Route::middleware(['auth', 'role:admin,super_admin'])
+Route::middleware(['auth', 'role:admin,super_admin', 'check.subscription', 'check.plan:facility'])
     ->prefix('facility')
     ->name('facility.')
     ->group(function () {
@@ -374,8 +374,7 @@ Route::middleware('auth')->group(function () {
 | Provider
 |--------------------------------------------------------------------------
 */
-
-Route::middleware(['auth', 'role:provider,super_admin', 'check.subscription'])
+Route::middleware(['auth', 'role:provider,super_admin', 'check.subscription', 'check.plan:provider_solo,provider_pro'])
     ->prefix('provider')
     ->name('provider.')
     ->group(function () {
@@ -440,21 +439,42 @@ Route::put('/notes/{providerNote}', [ProviderNoteController::class, 'update'])
         Route::post('/pharmacy/{order}/email', [PharmacyOrderController::class, 'emailPrescription'])->name('pharmacy.email');
 
         Route::get('/diagnoses', [DiagnosisController::class, 'index'])->name('diagnosis.index');
-       Route::post('claims/generate/{note}', [\App\Http\Controllers\ClaimController::class, 'store'])
-    ->name('claims.generate');
-       Route::get('claims', [\App\Http\Controllers\ClaimController::class, 'index'])
-    ->name('claims.index');
 
-        Route::get('/messages', [ProviderMessageController::class, 'index'])->name('messages.index');
-        Route::get('/messages/create', [ProviderMessageController::class, 'create'])->name('messages.create');
-        Route::post('/messages', [ProviderMessageController::class, 'store'])->name('messages.store');
+/*
+|--------------------------------------------------------------------------
+| CLAIMS - VIEW (Solo + Pro)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('check.plan:provider_solo,provider_pro')->group(function () {
 
-Route::get('claims/{claim}', [\App\Http\Controllers\ClaimController::class, 'show'])
-    ->name('claims.show');
+    Route::get('claims', [\App\Http\Controllers\ClaimController::class, 'index'])
+        ->name('claims.index');
 
-Route::post('claims/{claim}/submit', [\App\Http\Controllers\ClaimController::class, 'submit'])
-    ->name('claims.submit');
+    Route::get('claims/{claim}', [\App\Http\Controllers\ClaimController::class, 'show'])
+        ->name('claims.show');
 
+});
+
+/*
+|--------------------------------------------------------------------------
+| CLAIMS - BILLING ACTIONS (Pro ONLY)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('check.plan:provider_pro')->group(function () {
+
+    Route::post('claims/generate/{note}', [\App\Http\Controllers\ClaimController::class, 'store'])
+        ->name('claims.generate');
+
+    Route::post('claims/{claim}/submit', [\App\Http\Controllers\ClaimController::class, 'submit'])
+        ->name('claims.submit');
+
+    Route::post('claims/{claim}/paid', [\App\Http\Controllers\ClaimController::class, 'markPaid'])
+        ->name('claims.markPaid');
+
+    Route::post('claims/{claim}/denied', [\App\Http\Controllers\ClaimController::class, 'markDenied'])
+        ->name('claims.markDenied');
+
+});
 Route::get('coding-assistant/{note}', function ($noteId) {
 
     $note = \App\Models\ProviderNote::with('visit.client')->findOrFail($noteId);
@@ -478,8 +498,9 @@ Route::get('coding-assistant/{note}', function ($noteId) {
 
 })->name('coding.assistant');
 
-    });
- /*
+Route::post('/notes/{providerNote}/codes', [\App\Http\Controllers\ProviderNoteController::class, 'saveCodes'])
+    ->name('notes.codes.save');
+/*
 |--------------------------------------------------------------------------
 | Provider Care Logs
 |--------------------------------------------------------------------------
@@ -564,7 +585,7 @@ Route::post('/messages/{message}/reply', [ProviderMessageController::class, 'pro
 Route::post('/pharmacy/{id}/status', [PharmacyOrderController::class, 'updateStatus'])
     ->name('pharmacy.status');
         Route::get('/tasks', [TaskController::class, 'index'])->name('tasks.index');
-    
+}); 
 /*
 |--------------------------------------------------------------------------
 | Caregiver
