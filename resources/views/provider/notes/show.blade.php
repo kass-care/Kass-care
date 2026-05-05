@@ -82,8 +82,14 @@
       <div class="mb-4">
     <h3 class="font-bold text-slate-900 mb-2">Selected Codes</h3>
     <div id="selected-codes" class="flex flex-wrap gap-2"></div>
+<button type="button"
+    onclick="saveCodes()"
+    style="background:#6d28d9;color:white;width:100%;padding:14px 20px;border-radius:14px;font-weight:800;margin-top:16px;box-shadow:0 10px 20px rgba(0,0,0,.15);">
+    💾 Save Selected Codes
+</button>
 </div>
-    <div class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+
+<div class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
         <div class="rounded-2xl bg-white border border-purple-100 p-5">
             <h3 class="font-bold text-purple-800 mb-3">ICD Suggestions</h3>
 
@@ -218,7 +224,29 @@
                         {{ $providerNote->plan ?? 'N/A' }}
                     </p>
                 </div>
+                   @if($savedCodes->count())
+<div class="mt-6 rounded-2xl border border-indigo-200 bg-indigo-50 p-5">
+    <h3 class="font-bold text-indigo-900 mb-3">Clinical Codes</h3>
 
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        <div>
+            <p class="font-semibold text-indigo-800 mb-1">ICD Codes</p>
+            @foreach($savedCodes->where('type','icd') as $code)
+                <div class="text-sm text-slate-700">• {{ $code->code }}</div>
+            @endforeach
+        </div>
+
+        <div>
+            <p class="font-semibold text-indigo-800 mb-1">CPT Codes</p>
+            @foreach($savedCodes->where('type','cpt') as $code)
+                <div class="text-sm text-slate-700">• {{ $code->code }}</div>
+            @endforeach
+        </div>
+
+    </div>
+</div>
+@endif
             </div>
 
         </div>
@@ -230,6 +258,18 @@ let selectedCodes = {
     cpt: []
 };
 
+// load saved codes from backend
+let savedCodes = @json($savedCodes ?? []);
+
+savedCodes.forEach(function(item) {
+    if (item.type === 'icd') {
+        selectedCodes.icd.push(item.code);
+    }
+    if (item.type === 'cpt') {
+        selectedCodes.cpt.push(item.code);
+    }
+});
+renderSelectedCodes();
 function addCode(type, code) {
     if (!selectedCodes[type].includes(code)) {
         selectedCodes[type].push(code);
@@ -239,16 +279,45 @@ function addCode(type, code) {
 
 function renderSelectedCodes() {
     const container = document.getElementById('selected-codes');
+    if (!container) return;
+
     container.innerHTML = '';
 
-    Object.keys(selectedCodes).forEach(type => {
-        selectedCodes[type].forEach(code => {
-            container.innerHTML += `
-                <div class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded text-xs mr-2 mb-2 inline-block">
-                    ${type.toUpperCase()}: ${code}
-                </div>
-            `;
+    Object.keys(selectedCodes).forEach(function(type) {
+        selectedCodes[type].forEach(function(code) {
+            const div = document.createElement('div');
+            div.className = 'px-3 py-1 bg-indigo-100 text-indigo-800 rounded text-xs mr-2 mb-2 inline-block';
+            div.innerText = type.toUpperCase() + ': ' + code;
+            container.appendChild(div);
         });
+    });
+}
+
+function saveCodes() {
+    
+    fetch("{{ route('provider.notes.codes.save', $providerNote->id) }}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-TOKEN": "{{ csrf_token() }}",
+            "Accept": "application/json"
+        },
+        body: JSON.stringify({
+            icd: selectedCodes.icd,
+            cpt: selectedCodes.cpt
+        })
+    })
+    .then(function(res) {
+        console.log("Status:", res.status);
+        return res.json();
+    })
+    .then(function(data) {
+        console.log("Saved:", data);
+        alert("Codes saved successfully");
+    })
+    .catch(function(err) {
+        console.error("Error:", err);
+        alert("Save failed");
     });
 }
 </script>

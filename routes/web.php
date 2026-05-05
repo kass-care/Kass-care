@@ -192,6 +192,10 @@ Route::middleware(['auth', 'role:admin'])->get('/facility-admin/home', function 
         'providersCount' => $providersCount,
     ]);
 })->name('facility.admin.home');
+
+Route::get('/facility/revenue', [\App\Http\Controllers\AdminDashboardController::class, 'revenue'])
+    ->middleware(['auth'])
+    ->name('facility.revenue');
 /*
 |--------------------------------------------------------------------------
 | Admin platform routes - Super Admin only
@@ -775,3 +779,9 @@ Route::post('/clear-facility-context', function () {
     session()->forget('facility_id');
     return redirect()->back();
 })->name('clear.facility');
+Route::get('/register-provider', function () {
+    return view('auth.register-provider');
+})->name('register-provider');
+
+Route::post('/register-provider', [\App\Http\Controllers\Auth\ProviderRegisterController::class, 'store'])
+    ->name('register-provider.store');

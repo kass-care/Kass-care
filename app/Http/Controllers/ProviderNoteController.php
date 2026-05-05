@@ -206,8 +206,9 @@ public function show(ProviderNote $providerNote)
         $bmi,
         $screenings
     );
+$savedCodes = $providerNote->codes()->get();
 
-    return view('provider.notes.show', compact('providerNote', 'codes'));
+return view('provider.notes.show', compact('providerNote', 'codes', 'savedCodes'));
 }
 public function edit(ProviderNote $providerNote)
 {
@@ -323,4 +324,34 @@ $providerNote->update([
             ]);
         }
     }
+public function saveCodes(Request $request, \App\Models\ProviderNote $providerNote)
+{
+    $data = $request->validate([
+        'icd' => ['nullable', 'array'],
+        'icd.*' => ['string'],
+        'cpt' => ['nullable', 'array'],
+        'cpt.*' => ['string'],
+    ]);
+
+    $providerNote->codes()->delete();
+
+    foreach (($data['icd'] ?? []) as $code) {
+        $providerNote->codes()->create([
+            'type' => 'icd',
+            'code' => $code,
+        ]);
+    }
+
+    foreach (($data['cpt'] ?? []) as $code) {
+        $providerNote->codes()->create([
+            'type' => 'cpt',
+            'code' => $code,
+        ]);
+    }
+
+    return response()->json([
+        'success' => true,
+        'saved' => $providerNote->codes()->count(),
+    ]);
+}
 }

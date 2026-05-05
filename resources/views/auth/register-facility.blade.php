@@ -6,33 +6,43 @@
     <title>Register Facility | KASSCare</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="min-h-screen bg-slate-950 text-white">
 
+<body class="min-h-screen bg-slate-950 text-white">
 <div class="min-h-screen flex items-center justify-center px-4 py-10">
-    <div class="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 overflow-hidden rounded-3xl shadow-2xl border">
+    <div class="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 overflow-hidden rounded-3xl shadow-2xl border border-white/10">
 
         {{-- LEFT --}}
         <div class="bg-gradient-to-tr from-slate-950 via-indigo-950 to-cyan-950 p-10">
-            <p class="text-xs uppercase tracking-[0.35em] text-cyan-300 font-bold">KASS CARE SAAS</p>
+            <p class="text-xs uppercase tracking-[0.35em] text-cyan-300 font-bold">
+                KASS CARE SAAS
+            </p>
 
             <h1 class="mt-4 text-4xl font-black leading-tight">
                 Register Your Facility
             </h1>
 
             <p class="mt-5 text-sm text-slate-300 leading-7">
-                Launch your facility on KASSCare and unlock clean operations for patients, caregivers,
-                providers, visits, charting, and subscription-based growth.
+                Launch your facility on KASSCare and unlock clean operations for patients,
+                caregivers, visits, charting, facility messaging, and subscription-based growth.
             </p>
 
             <div class="mt-8 space-y-4">
                 <div class="rounded-2xl bg-white/5 border border-white/10 p-4">
                     <h3 class="text-lg font-bold text-white">What happens next</h3>
                     <ul class="mt-3 space-y-2 text-sm text-slate-300">
-                        <li>• Facility created</li>
-                        <li>• Admin account created</li>
-                        <li>• Auto login</li>
-                        <li>• Redirect to billing</li>
+                        <li>• Facility profile is created</li>
+                        <li>• Facility admin account is created</li>
+                        <li>• You are logged in automatically</li>
+                        <li>• You continue to Facility billing</li>
                     </ul>
+                </div>
+
+                <div class="rounded-2xl bg-cyan-500/10 border border-cyan-400/20 p-4">
+                    <h3 class="text-lg font-bold text-cyan-200">Facility Plan</h3>
+                    <p class="mt-2 text-sm text-cyan-100/90">
+                        Facility onboarding uses the Facility subscription only.
+                        Provider plans are handled separately through provider onboarding.
+                    </p>
                 </div>
             </div>
         </div>
@@ -41,9 +51,8 @@
         <div class="bg-slate-900 p-8">
             <h2 class="text-2xl font-black mb-6">Facility Onboarding</h2>
 
-            {{-- ERROR DISPLAY --}}
             @if ($errors->any())
-                <div class="mb-4 bg-red-500 text-white p-3 rounded">
+                <div class="mb-4 rounded-2xl border border-red-300/20 bg-red-500/10 px-4 py-3 text-sm text-red-100">
                     {{ $errors->first() }}
                 </div>
             @endif
@@ -51,39 +60,76 @@
             <form method="POST" action="{{ route('register-facility.store') }}" class="space-y-4">
                 @csrf
 
-                {{-- Required because controller expects it --}}
                 <input type="hidden" name="accept_terms" value="1">
+                <input type="hidden" name="plan" value="facility">
 
-                <input type="text" name="facility_name" placeholder="Facility Name"
-                       class="w-full rounded-2xl bg-slate-800 px-4 py-3" required>
+                <input
+                    type="text"
+                    name="facility_name"
+                    value="{{ old('facility_name') }}"
+                    placeholder="Facility Name"
+                    class="w-full rounded-2xl border border-slate-700 bg-slate-800 px-4 py-3 text-white placeholder:text-slate-400"
+                    required
+                >
 
-                <input type="email" name="facility_email" placeholder="Facility Email"
-                       class="w-full rounded-2xl bg-slate-800 px-4 py-3">
+                <input
+                    type="email"
+                    name="facility_email"
+                    value="{{ old('facility_email') }}"
+                    placeholder="Facility Email"
+                    class="w-full rounded-2xl border border-slate-700 bg-slate-800 px-4 py-3 text-white placeholder:text-slate-400"
+                >
 
-                <input type="text" name="admin_name" placeholder="Admin Name"
-                       class="w-full rounded-2xl bg-slate-800 px-4 py-3" required>
+                <input
+                    type="text"
+                    name="admin_name"
+                    value="{{ old('admin_name') }}"
+                    placeholder="Admin Name"
+                    class="w-full rounded-2xl border border-slate-700 bg-slate-800 px-4 py-3 text-white placeholder:text-slate-400"
+                    required
+                >
 
-                <input type="email" name="admin_email" placeholder="Admin Email"
-                       class="w-full rounded-2xl bg-slate-800 px-4 py-3" required>
+                <input
+                    type="email"
+                    name="admin_email"
+                    value="{{ old('admin_email') }}"
+                    placeholder="Admin Email"
+                    class="w-full rounded-2xl border border-slate-700 bg-slate-800 px-4 py-3 text-white placeholder:text-slate-400"
+                    required
+                >
 
-                {{-- NEW PLAN STRUCTURE --}}
-                <select name="plan"
-                        class="w-full rounded-2xl bg-slate-800 px-4 py-3"
-                        required>
-                    <option value="">Select a plan</option>
-                    <option value="facility">Facility — $79/month</option>
-                    <option value="provider_solo">Provider Solo — $99/month</option>
-                    <option value="provider_pro">Provider Pro — $199/month</option>
-                </select>
+                <div class="rounded-2xl border border-indigo-400/20 bg-indigo-500/10 px-4 py-4">
+                    <p class="text-xs uppercase tracking-[0.25em] text-indigo-200 font-bold">
+                        Selected Plan
+                    </p>
+                    <p class="mt-2 text-2xl font-black text-white">
+                        Facility — $79/month
+                    </p>
+                    <p class="mt-1 text-sm text-slate-300">
+                        Includes clients, caregivers, visits, care logs, messaging, and facility dashboard access.
+                    </p>
+                </div>
 
-                <input type="password" name="password" placeholder="Password"
-                       class="w-full rounded-2xl bg-slate-800 px-4 py-3" required>
+                <input
+                    type="password"
+                    name="password"
+                    placeholder="Password"
+                    class="w-full rounded-2xl border border-slate-700 bg-slate-800 px-4 py-3 text-white placeholder:text-slate-400"
+                    required
+                >
 
-                <input type="password" name="password_confirmation" placeholder="Confirm Password"
-                       class="w-full rounded-2xl bg-slate-800 px-4 py-3" required>
+                <input
+                    type="password"
+                    name="password_confirmation"
+                    placeholder="Confirm Password"
+                    class="w-full rounded-2xl border border-slate-700 bg-slate-800 px-4 py-3 text-white placeholder:text-slate-400"
+                    required
+                >
 
-                <button type="submit"
-                        class="w-full bg-indigo-600 py-3 rounded-2xl font-bold hover:bg-indigo-700 transition">
+                <button
+                    type="submit"
+                    class="w-full rounded-2xl bg-indigo-600 py-3.5 font-bold text-white transition hover:bg-indigo-700"
+                >
                     Create Facility & Continue
                 </button>
             </form>
@@ -91,6 +137,5 @@
 
     </div>
 </div>
-
 </body>
 </html>

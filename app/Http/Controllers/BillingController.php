@@ -13,54 +13,42 @@ class BillingController extends Controller
     protected function plans(): array
     {
         return [
-            'starter' => [
-                'name' => 'Starter',
-                'price_id' => 'price_1TDStlIdKc8nV1Tpg4nYJbwe',
-                'price_label' => '$49/month',
+            'facility' => [
+                'name' => 'Facility',
+                'price_id' => 'price_1TTFIfIdKc8nV1TpsNGfOAKh',
+                'price_label' => '$79/month',
                 'facility_limit' => 1,
                 'features' => [
-                    '1 facility',
-                    'Patient management',
+                    'Clients and caregivers',
                     'Visits and care logs',
-                    'Basic alerts',
+                    'Alerts and compliance',
+                    'Facility dashboard',
                 ],
             ],
 
-            'growth' => [
-                'name' => 'Growth',
-                'price_id' => 'price_1TDSw5IdKc8nV1TpLHFNmDDE',
+            'provider_solo' => [
+                'name' => 'Provider Solo',
+                'price_id' => 'price_1TTFIfIdKc8nV1TpsNGfOAKh',
                 'price_label' => '$99/month',
-                'facility_limit' => 3,
+                'facility_limit' => 1,
                 'features' => [
-                    'Up to 3 facilities',
-                    'Provider workspace',
-                    'Alerts engine',
-                    'Compliance tools',
+                    'Provider notes',
+                    'Clinical coding assistant',
+                    'Claims generation',
+                    'Provider dashboard',
                 ],
             ],
 
-            'enterprise' => [
-                'name' => 'Enterprise',
-                'price_id' => 'price_1TDSxJIdKc8nV1TpMwhISvKk',
+            'provider_pro' => [
+                'name' => 'Provider Pro',
+                'price_id' => 'price_1TTFEDIdKc8nV1TpHdWm4TPr',
                 'price_label' => '$199/month',
                 'facility_limit' => 10,
                 'features' => [
-                    'Up to 10 facilities',
-                    'Global patient command center',
-                    'Rounds planner',
-                    'Advanced SaaS controls',
-                ],
-            ],
-
-            'monthly' => [
-                'name' => 'KASSCare Monthly',
-                'price_id' => 'price_1TDwRrIdKc8nV1TpxXO5SDqV',
-                'price_label' => '$29/month',
-                'facility_limit' => 1,
-                'features' => [
-                    'Simple subscription',
-                    'Core access',
-                    'Basic billing setup',
+                    'Everything in Provider Solo',
+                    'Claims intelligence',
+                    'Revenue dashboard',
+                    'Multi-facility provider workflow',
                 ],
             ],
         ];
@@ -91,7 +79,7 @@ class BillingController extends Controller
         $plans = $this->plans();
 
         $request->validate([
-            'plan' => 'required|string|in:starter,growth,enterprise,monthly',
+            'plan' => 'required|string|in:facility,provider_solo,provider_pro',
         ]);
 
         $selectedPlan = $request->plan;
@@ -100,7 +88,6 @@ class BillingController extends Controller
         $priceId = $selectedPlanConfig['price_id'];
         $facilityLimit = $selectedPlanConfig['facility_limit'];
 
-        // Save intended subscription locally before Stripe checkout
         $user->update([
             'plan' => $selectedPlan,
             'facility_limit' => $facilityLimit,
@@ -120,53 +107,53 @@ class BillingController extends Controller
     /**
      * After successful payment
      */
-      public function success(Request $request)
-{
-    $user = Auth::user();
+    public function success(Request $request)
+    {
+        $user = Auth::user();
 
-    $plans = $this->plans();
-    $plan = $request->get('plan', $user->plan ?? 'starter');
+        $plans = $this->plans();
+        $plan = $request->get('plan', $user->plan ?? 'facility');
 
-    if (! array_key_exists($plan, $plans)) {
-        $plan = 'starter';
-    }
+        if (! array_key_exists($plan, $plans)) {
+            $plan = 'facility';
+        }
 
-    $facilityLimit = $plans[$plan]['facility_limit'];
+        $facilityLimit = $plans[$plan]['facility_limit'];
 
-    $user->update([
-        'plan' => $plan,
-        'subscription_status' => 'active',
-        'subscription_starts_at' => now(),
-        'subscription_ends_at' => now()->addMonth(),
-        'facility_limit' => $facilityLimit,
-    ]);
+        $user->update([
+            'plan' => $plan,
+            'subscription_status' => 'active',
+            'subscription_starts_at' => now(),
+            'subscription_ends_at' => now()->addMonth(),
+            'facility_limit' => $facilityLimit,
+        ]);
 
-    if ($user->role === 'admin') {
-        if (! session()->has('facility_id') && ! empty($user->facility_id)) {
-            session(['facility_id' => $user->facility_id]);
+        if ($user->role === 'admin') {
+            if (! session()->has('facility_id') && ! empty($user->facility_id)) {
+                session(['facility_id' => $user->facility_id]);
+            }
+
+            return redirect()
+                ->route('facility.admin.home')
+                ->with('success', '🎉 Subscription successful! Your facility is now active.');
+        }
+
+        if ($user->role === 'provider') {
+            return redirect()
+                ->route('provider.dashboard')
+                ->with('success', '🎉 Subscription successful! Your plan is now active.');
+        }
+
+        if ($user->role === 'caregiver') {
+            return redirect()
+                ->route('caregiver.dashboard')
+                ->with('success', '🎉 Subscription successful! Your plan is now active.');
         }
 
         return redirect()
             ->route('facility.admin.home')
-            ->with('success', '🎉 Subscription successful! Your facility is now active.');
-    }
-
-    if ($user->role === 'provider') {
-        return redirect()
-            ->route('provider.dashboard')
             ->with('success', '🎉 Subscription successful! Your plan is now active.');
     }
-
-    if ($user->role === 'caregiver') {
-        return redirect()
-            ->route('caregiver.dashboard')
-            ->with('success', '🎉 Subscription successful! Your plan is now active.');
-    }
-
-    return redirect()
-        ->route('facility.admin.home')
-        ->with('success', '🎉 Subscription successful! Your plan is now active.');
-}
 
     /**
      * Billing notice page for inactive subscriptions

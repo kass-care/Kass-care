@@ -22,6 +22,7 @@ class Claim extends Model
         'submitted_at',
         'paid_at',
         'denied_at',
+        'external_id',
     ];
 
     protected $casts = [

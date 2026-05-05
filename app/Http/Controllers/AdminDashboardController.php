@@ -218,3 +218,33 @@ class AdminDashboardController extends Controller
         ]);
     }
 }
+public function revenue()
+{
+    $facilityId = session('facility_id');
+
+    abort_if(!$facilityId, 403, 'No facility selected.');
+
+    $totalPaid = \App\Models\Claim::where('facility_id', $facilityId)
+        ->where('status', 'paid')
+        ->sum('estimated_amount');
+
+    $totalPending = \App\Models\Claim::where('facility_id', $facilityId)
+        ->where('status', 'submitted')
+        ->sum('estimated_amount');
+
+    $totalDenied = \App\Models\Claim::where('facility_id', $facilityId)
+        ->where('status', 'denied')
+        ->sum('estimated_amount');
+
+    $claims = \App\Models\Claim::with(['client','provider'])
+        ->where('facility_id', $facilityId)
+        ->latest()
+        ->get();
+
+    return view('facility.revenue.index', compact(
+        'totalPaid',
+        'totalPending',
+        'totalDenied',
+        'claims'
+    ));
+}

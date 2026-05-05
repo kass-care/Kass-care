@@ -8,18 +8,27 @@ use Illuminate\Support\Str;
 
 class ClaimController extends Controller
 {
-    public function index()
-    {
-        $user = auth()->user();
-        abort_if(!$user, 403, 'Unauthorized.');
+public function index()
+{
+    $user = auth()->user();
+    abort_if(!$user, 403, 'Unauthorized.');
 
-        $claims = Claim::with(['client', 'visit', 'providerNote', 'facility'])
-            ->latest()
-            ->get();
+    $claims = Claim::with(['client', 'visit', 'providerNote', 'facility'])
+        ->latest()
+        ->get();
 
-        return view('provider.claims.index', compact('claims'));
-    }
+    // 🔥 Revenue calculations
+    $totalPaid = Claim::where('status', 'paid')->sum('estimated_amount');
+    $totalPending = Claim::where('status', 'submitted')->sum('estimated_amount');
+    $totalDenied = Claim::where('status', 'denied')->sum('estimated_amount');
 
+    return view('provider.claims.index', compact(
+        'claims',
+        'totalPaid',
+        'totalPending',
+        'totalDenied'
+    ));
+}
     public function show($id)
     {
         $user = auth()->user();
@@ -41,11 +50,25 @@ class ClaimController extends Controller
         $visit = $note->visit;
         $client = $visit?->client;
         $coding = $this->suggestCodingFromNote($note);
-    $selectedIcdCodes = request('icd_codes')
-    ? array_values(array_filter(array_map('trim', explode(',', request('icd_codes')))))
-    : $coding['icd_codes'];
+  $savedIcdCodes = $note->codes()
+    ->where('type', 'icd')
+    ->pluck('code')
+    ->values()
+    ->all();
 
-$selectedCptCode = request('cpt_code') ?: $coding['cpt_code'];
+$savedCptCodes = $note->codes()
+    ->where('type', 'cpt')
+    ->pluck('code')
+    ->values()
+    ->all();    
+
+$selectedIcdCodes = request('icd_codes')
+    ? array_values(array_filter(array_map('trim', explode(',', request('icd_codes')))))
+    : (!empty($savedIcdCodes) ? $savedIcdCodes : $coding['icd_codes']);
+
+$selectedCptCode = !empty($savedCptCodes)
+    ? implode(', ', $savedCptCodes)
+    : (request('cpt_code') ?: $coding['cpt_code']);
 $selectedPosCode = request('pos_code') ?: $coding['pos_code'];
         Claim::create([
             'client_id' => $client?->id,
@@ -64,25 +87,46 @@ $selectedPosCode = request('pos_code') ?: $coding['pos_code'];
 
         return back()->with('success', 'Claim generated successfully (Draft).');
     }
+public function submit($id)
+{
+    $user = auth()->user();
+    abort_if(!$user, 403, 'Unauthorized.');
 
-    public function submit($id)
-    {
-        $user = auth()->user();
-        abort_if(!$user, 403, 'Unauthorized.');
+    $claim = Claim::findOrFail($id);
 
-        $claim = Claim::findOrFail($id);
-
-        if ($claim->status !== 'draft') {
-            return back()->with('error', 'Only draft claims can be submitted.');
-        }
-
-        $claim->update([
-            'status' => 'submitted',
-            'submitted_at' => now(),
-        ]);
-
-        return back()->with('success', 'Claim submitted successfully.');
+    if ($claim->status !== 'draft') {
+        return back()->with('error', 'Only draft claims can be submitted.');
     }
+
+    // 🔥 Send to clearinghouse (mock for now)
+    $service = app(\App\Services\ClearinghouseService::class);
+
+    $externalId = $service->submit($claim);
+
+    // mark as submitted
+    $claim->update([
+        'status' => 'submitted',
+        'submitted_at' => now(),
+        'external_id' => $externalId,
+    ]);
+
+    // 🔥 simulate clearinghouse response (for now)
+    $result = $service->simulateDecision();
+
+    if ($result['status'] === 'paid') {
+        $claim->update([
+            'status' => 'paid',
+            'paid_at' => now(),
+        ]);
+    } else {
+        $claim->update([
+            'status' => 'denied',
+            'denied_at' => now(),
+        ]);
+    }
+
+    return back()->with('success', 'Claim submitted via clearinghouse.');
+}
 
     public function markPaid($id)
     {

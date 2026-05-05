@@ -60,32 +60,71 @@ class FacilityProviderController extends Controller
 
         $facility = Facility::findOrFail($facilityId);
 
-        $validated = $request->validate(
-            [
+        /*
+        |--------------------------------------------------------------------------
+        | Option 1: Assign existing provider from dropdown
+        |--------------------------------------------------------------------------
+        */
+        if ($request->filled('provider_id')) {
+            $request->validate([
                 'provider_id' => ['required', 'exists:users,id'],
-            ],
-            [
-                'provider_id.required' => 'Please select a provider.',
-                'provider_id.exists' => 'The selected provider is invalid.',
-            ]
-        );
+            ]);
 
-        $provider = User::where('role', 'provider')
-            ->findOrFail($validated['provider_id']);
+            $provider = User::where('role', 'provider')
+                ->findOrFail($request->provider_id);
 
+            $this->linkProviderToFacility($facility->id, $provider->id);
+
+            return redirect()
+                ->route('providers.index')
+                ->with('success', 'Provider assigned successfully.');
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Option 2: Link provider by email
+        |--------------------------------------------------------------------------
+        */
+        if ($request->filled('provider_email')) {
+            $request->validate([
+                'provider_email' => ['required', 'email'],
+            ]);
+
+            $provider = User::where('role', 'provider')
+                ->where('email', $request->provider_email)
+                ->first();
+
+            if (!$provider) {
+                return redirect()
+                    ->route('providers.index')
+                    ->with('error', 'Provider not found. Ask the provider to register first at /register-provider, then link them here.');
+            }
+
+            $this->linkProviderToFacility($facility->id, $provider->id);
+
+            return redirect()
+                ->route('providers.index')
+                ->with('success', 'Provider linked successfully by email.');
+        }
+
+        return redirect()
+            ->route('providers.index')
+            ->withErrors([
+                'provider' => 'Please select a provider or enter a provider email.',
+            ]);
+    }
+
+    private function linkProviderToFacility(int $facilityId, int $providerId): void
+    {
         DB::table('facility_provider')->updateOrInsert(
             [
-                'facility_id' => $facility->id,
-                'provider_id' => $provider->id,
+                'facility_id' => $facilityId,
+                'provider_id' => $providerId,
             ],
             [
                 'created_at' => now(),
                 'updated_at' => now(),
             ]
         );
-
-        return redirect()
-            ->route('providers.index')
-            ->with('success', 'Provider assigned successfully.');
     }
 }
