@@ -5,7 +5,7 @@ use Illuminate\Http\Request;
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\BillingController;
-use Laravel\Cashier\Http\Controllers\WebhookController;
+use App\Http\Controllers\StripeWebhookController;
 
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\FacilityController;
@@ -751,7 +751,7 @@ Route::middleware('auth')->group(function () {
 |--------------------------------------------------------------------------
 */
 
-Route::post('/stripe/webhook', [WebhookController::class, 'handleWebhook'])
+Route::post('/stripe/webhook', [StripeWebhookController::class, 'handleWebhook'])
     ->name('cashier.webhook');
 Route::post('/select-facility/{facility}', function (\App\Models\Facility $facility) {
     $user = auth()->user();
