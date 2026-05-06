@@ -12,10 +12,10 @@ public function index()
 {
     $user = auth()->user();
     abort_if(!$user, 403, 'Unauthorized.');
-
-    $claims = Claim::with(['client', 'visit', 'providerNote', 'facility'])
-        ->latest()
-        ->get();
+      $claims = Claim::with(['client', 'visit', 'providerNote', 'facility'])
+    ->where('provider_id', $user->id)
+    ->latest()
+    ->get();
 
     // 🔥 Revenue calculations
     $totalPaid = Claim::where('status', 'paid')->sum('estimated_amount');
@@ -111,13 +111,15 @@ public function submit($id)
     ]);
 
     // 🔥 simulate clearinghouse response (for now)
-    $result = $service->simulateDecision();
+    $result = $service->simulateDecision($claim);
 
     if ($result['status'] === 'paid') {
-        $claim->update([
-            'status' => 'paid',
-            'paid_at' => now(),
-        ]);
+      $claim->update([
+    'status' => 'denied',
+    'denied_at' => now(),
+    'denial_reason' => $result['reason'] ?? null,
+    'payer_message' => $result['message'] ?? null,
+]);
     } else {
         $claim->update([
             'status' => 'denied',
