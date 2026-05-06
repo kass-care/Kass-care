@@ -15,7 +15,7 @@ class BillingController extends Controller
         return [
             'facility' => [
                 'name' => 'Facility',
-                'price_id' => 'price_1TTFIfIdKc8nV1TpsNGfOAKh',
+                'price_id' => env('STRIPE_PRICE_FACILITY'),
                 'price_label' => '$79/month',
                 'facility_limit' => 1,
                 'features' => [
@@ -28,7 +28,7 @@ class BillingController extends Controller
 
             'provider_solo' => [
                 'name' => 'Provider Solo',
-                'price_id' => 'price_1TTFIfIdKc8nV1TpsNGfOAKh',
+                'price_id' => env('STRIPE_PRICE_PROVIDER_SOLO'),
                 'price_label' => '$99/month',
                 'facility_limit' => 1,
                 'features' => [
@@ -41,7 +41,7 @@ class BillingController extends Controller
 
             'provider_pro' => [
                 'name' => 'Provider Pro',
-                'price_id' => 'price_1TTFEDIdKc8nV1TpHdWm4TPr',
+                'price_id' => env('STRIPE_PRICE_PROVIDER_PRO'),
                 'price_label' => '$199/month',
                 'facility_limit' => 10,
                 'features' => [
@@ -86,7 +86,10 @@ class BillingController extends Controller
         $selectedPlanConfig = $plans[$selectedPlan];
 
         $priceId = $selectedPlanConfig['price_id'];
-        $facilityLimit = $selectedPlanConfig['facility_limit'];
+if (empty($priceId) || str_contains($priceId, 'PUT_')) {
+    return back()->with('error', 'Stripe price is not configured for this plan yet.');
+}        
+$facilityLimit = $selectedPlanConfig['facility_limit'];
 
         $user->update([
             'plan' => $selectedPlan,
