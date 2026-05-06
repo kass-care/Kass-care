@@ -47,6 +47,10 @@
                         <a href="{{ route('provider.notes.index') }}" class="text-gray-700 hover:text-indigo-700">Notes</a>
                     @endif
 
+                <a href="{{ route('provider.smart.phrases') }}" class="hover:text-indigo-700">
+    Smart Phrases
+</a>
+
                     @if($role === 'provider' && Route::has('provider.compliance'))
                         <a href="{{ route('provider.compliance') }}" class="text-gray-700 hover:text-indigo-700">Compliance</a>
                     @endif
@@ -122,7 +126,7 @@
     </div>
 </footer>
 
+>/div
 @stack('scripts')
-
 </body>
 </html>

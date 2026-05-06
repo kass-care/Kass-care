@@ -3,9 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Client;
-use App\Models\Caregiver;
 use App\Models\Facility;
 use App\Models\Visit;
+use App\Models\Claim;
+use App\Models\User;
 use Illuminate\Support\Facades\Schema;
 
 class AdminDashboardController extends Controller
@@ -28,11 +29,6 @@ class AdminDashboardController extends Controller
         $openTaskCount = 0;
         $reviewTaskCount = 0;
 
-        /*
-        |--------------------------------------------------------------------------
-        | Clients
-        |--------------------------------------------------------------------------
-        */
         try {
             $clientQuery = Client::query();
 
@@ -45,114 +41,35 @@ class AdminDashboardController extends Controller
             $clientCount = 0;
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Caregivers
-        |--------------------------------------------------------------------------
-        */
-
-            try {
-
-    $caregiverQuery = \App\Models\User::where('role','caregiver');
-
-    if ($selectedFacilityId && Schema::hasColumn('users','facility_id')) {
-        $caregiverQuery->where('facility_id',$selectedFacilityId);
-    }
-
-    $caregiverCount = $caregiverQuery->count();
-
-} catch (\Throwable $e) {
-    $caregiverCount = 0;
-}
-        /*
-        |--------------------------------------------------------------------------
-        | Visits
-        |--------------------------------------------------------------------------
-        */
         try {
-            $visitBaseQuery = Visit::query();
+            $caregiverQuery = User::where('role', 'caregiver');
 
-            if ($selectedFacilityId && Schema::hasColumn('visits', 'facility_id')) {
-                $visitBaseQuery->where('facility_id', $selectedFacilityId);
+            if ($selectedFacilityId && Schema::hasColumn('users', 'facility_id')) {
+                $caregiverQuery->where('facility_id', $selectedFacilityId);
             }
 
-            $visitCount = (clone $visitBaseQuery)->count();
+            $caregiverCount = $caregiverQuery->count();
+        } catch (\Throwable $e) {
+            $caregiverCount = 0;
+        }
+
+        try {
+            $visitQuery = Visit::query();
+
+            if ($selectedFacilityId && Schema::hasColumn('visits', 'facility_id')) {
+                $visitQuery->where('facility_id', $selectedFacilityId);
+            }
+
+            $visitCount = (clone $visitQuery)->count();
 
             if (Schema::hasColumn('visits', 'status')) {
-                $scheduledVisitCount = (clone $visitBaseQuery)
-                    ->where('status', 'scheduled')
-                    ->count();
-
-                $completedVisitCount = (clone $visitBaseQuery)
-                    ->where('status', 'completed')
-                    ->count();
-
-                $missedVisitCount = (clone $visitBaseQuery)
-                    ->where('status', 'missed')
-                    ->count();
-
-                $inProgressVisitCount = (clone $visitBaseQuery)
-                    ->where('status', 'in_progress')
-                    ->count();
+                $scheduledVisitCount = (clone $visitQuery)->where('status', 'scheduled')->count();
+                $completedVisitCount = (clone $visitQuery)->where('status', 'completed')->count();
+                $missedVisitCount = (clone $visitQuery)->where('status', 'missed')->count();
+                $inProgressVisitCount = (clone $visitQuery)->where('status', 'in_progress')->count();
             }
         } catch (\Throwable $e) {
             $visitCount = 0;
-            $scheduledVisitCount = 0;
-            $completedVisitCount = 0;
-            $missedVisitCount = 0;
-            $inProgressVisitCount = 0;
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Alerts
-        |--------------------------------------------------------------------------
-        */
-        try {
-            if (class_exists(\App\Models\Alert::class)) {
-                $alertQuery = \App\Models\Alert::query();
-
-                if ($selectedFacilityId && Schema::hasColumn('alerts', 'facility_id')) {
-                    $alertQuery->where('facility_id', $selectedFacilityId);
-                }
-
-                $alertCount = $alertQuery->count();
-            }
-        } catch (\Throwable $e) {
-            $alertCount = 0;
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Tasks
-        |--------------------------------------------------------------------------
-        */
-        try {
-            if (class_exists(\App\Models\Task::class)) {
-                $openTaskQuery = \App\Models\Task::query();
-                $reviewTaskQuery = \App\Models\Task::query();
-
-                if ($selectedFacilityId && Schema::hasColumn('tasks', 'facility_id')) {
-                    $openTaskQuery->where('facility_id', $selectedFacilityId);
-                    $reviewTaskQuery->where('facility_id', $selectedFacilityId);
-                }
-
-                if (Schema::hasColumn('tasks', 'status')) {
-                    $openTaskCount = $openTaskQuery
-                        ->whereNotIn('status', ['completed', 'cancelled'])
-                        ->count();
-
-                    $reviewTaskCount = $reviewTaskQuery
-                        ->where('status', 'review')
-                        ->count();
-                } else {
-                    $openTaskCount = $openTaskQuery->count();
-                    $reviewTaskCount = 0;
-                }
-            }
-        } catch (\Throwable $e) {
-            $openTaskCount = 0;
-            $reviewTaskCount = 0;
         }
 
         $facilities = Facility::latest()->get();
@@ -180,31 +97,33 @@ class AdminDashboardController extends Controller
         $user = auth()->user();
 
         $facilityId = $user->facility_id;
-        $facility = \App\Models\Facility::find($facilityId);
+        $facility = Facility::find($facilityId);
 
         $patients = 0;
         $caregivers = 0;
         $visits = 0;
 
         try {
-            if (Schema::hasColumn('clients', 'facility_id')) {
-                $patients = \App\Models\Client::where('facility_id', $facilityId)->count();
+            if ($facilityId && Schema::hasColumn('clients', 'facility_id')) {
+                $patients = Client::where('facility_id', $facilityId)->count();
             }
         } catch (\Throwable $e) {
             $patients = 0;
         }
 
         try {
-            if (Schema::hasColumn('caregivers', 'facility_id')) {
-                $caregivers = \App\Models\Caregiver::where('facility_id', $facilityId)->count();
+            if ($facilityId && Schema::hasColumn('users', 'facility_id')) {
+                $caregivers = User::where('role', 'caregiver')
+                    ->where('facility_id', $facilityId)
+                    ->count();
             }
         } catch (\Throwable $e) {
             $caregivers = 0;
         }
 
         try {
-            if (Schema::hasColumn('visits', 'facility_id')) {
-                $visits = \App\Models\Visit::where('facility_id', $facilityId)->count();
+            if ($facilityId && Schema::hasColumn('visits', 'facility_id')) {
+                $visits = Visit::where('facility_id', $facilityId)->count();
             }
         } catch (\Throwable $e) {
             $visits = 0;
@@ -217,34 +136,35 @@ class AdminDashboardController extends Controller
             'visits' => $visits,
         ]);
     }
-}
-public function revenue()
-{
-    $facilityId = session('facility_id');
 
-    abort_if(!$facilityId, 403, 'No facility selected.');
+    public function revenue()
+    {
+        $facilityId = session('facility_id') ?? auth()->user()->facility_id ?? null;
 
-    $totalPaid = \App\Models\Claim::where('facility_id', $facilityId)
-        ->where('status', 'paid')
-        ->sum('estimated_amount');
+        abort_if(!$facilityId, 403, 'No facility selected.');
 
-    $totalPending = \App\Models\Claim::where('facility_id', $facilityId)
-        ->where('status', 'submitted')
-        ->sum('estimated_amount');
+        $totalPaid = Claim::where('facility_id', $facilityId)
+            ->where('status', 'paid')
+            ->sum('estimated_amount');
 
-    $totalDenied = \App\Models\Claim::where('facility_id', $facilityId)
-        ->where('status', 'denied')
-        ->sum('estimated_amount');
+        $totalPending = Claim::where('facility_id', $facilityId)
+            ->whereIn('status', ['draft', 'submitted'])
+            ->sum('estimated_amount');
 
-    $claims = \App\Models\Claim::with(['client','provider'])
-        ->where('facility_id', $facilityId)
-        ->latest()
-        ->get();
+        $totalDenied = Claim::where('facility_id', $facilityId)
+            ->where('status', 'denied')
+            ->sum('estimated_amount');
 
-    return view('facility.revenue.index', compact(
-        'totalPaid',
-        'totalPending',
-        'totalDenied',
-        'claims'
-    ));
+        $claims = Claim::with(['client', 'provider'])
+            ->where('facility_id', $facilityId)
+            ->latest()
+            ->get();
+
+        return view('facility.revenue.index', compact(
+            'totalPaid',
+            'totalPending',
+            'totalDenied',
+            'claims'
+        ));
+    }
 }

@@ -207,7 +207,67 @@
                               class="w-full rounded-xl border border-gray-300 px-4 py-3"
                               placeholder="Why is the patient being seen today?">{{ old('chief_complaint') }}</textarea>
                 </div>
+                      <div class="rounded-2xl border border-amber-200 bg-amber-50 p-5">
+    <label class="block text-sm font-bold text-slate-700 mb-2">
+        Previous Notes Timeline
+    </label>
 
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <button type="button"
+                onclick="loadPreviousTimeline({{ $visit->id }})"
+                class="rounded-xl bg-amber-500 px-4 py-3 text-sm font-bold text-white">
+            Load Timeline
+        </button>
+
+        <select id="previousNoteSelect"
+                onchange="previewSelectedPreviousNote()"
+                class="md:col-span-2 w-full rounded-xl border border-amber-300 bg-white px-4 py-3 text-sm">
+            <option value="">-- Load timeline first --</option>
+        </select>
+    </div>
+
+    <div class="mt-4 rounded-xl bg-white border border-amber-200 p-4">
+        <div class="flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
+            <p class="text-sm font-black text-slate-800">Preview</p>
+
+            <select id="previousInsertMode" class="rounded-xl border border-slate-300 px-3 py-2 text-sm">
+                <option value="replace">Replace SOAP fields</option>
+                <option value="append">Append to SOAP fields</option>
+            </select>
+        </div>
+
+        <div id="previousNotePreview" class="mt-3 text-sm text-slate-700 whitespace-pre-line">
+            Select a previous note to preview it here.
+        </div>
+    </div>
+
+    <button type="button"
+            onclick="insertSelectedPreviousNote()"
+            class="mt-4 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white">
+        Insert Selected Note
+    </button>
+</div>
+<div class="mb-6">
+    <label class="text-sm font-bold text-slate-700">Smart Phrases</label>
+
+    <div class="flex gap-2 mt-2">
+        <select id="smartPhraseSelect" class="border rounded-lg px-3 py-2 w-full">
+            <option value="">-- Select Phrase --</option>
+
+            @foreach(\App\Models\SmartPhrase::where('user_id', auth()->id())->get() as $phrase)
+                <option value="{{ $phrase->content }}">
+                    {{ $phrase->shortcut }}
+                </option>
+            @endforeach
+        </select>
+
+        <button type="button"
+            onclick="insertSmartPhrase()"
+            class="bg-indigo-600 text-white px-4 py-2 rounded-lg">
+            Insert
+        </button>
+    </div>
+</div>
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Subjective</label>
                     <textarea name="subjective" rows="5"
@@ -357,6 +417,149 @@ document.addEventListener('DOMContentLoaded', function () {
     buildObjective();
     buildScreeningNotes();
 });
+let previousNotesCache = [];
+
+function loadPreviousTimeline(visitId) {
+    fetch(`/provider/notes/previous/${visitId}`)
+        .then(function(res) {
+            if (!res.ok) throw new Error('No previous notes');
+            return res.json();
+        })
+        .then(function(notes) {
+            previousNotesCache = notes;
+
+            const select = document.getElementById('previousNoteSelect');
+            const preview = document.getElementById('previousNotePreview');
+
+            if (!select) return;
+
+            select.innerHTML = '<option value="">-- Select previous note --</option>';
+
+            notes.forEach(function(note, index) {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = note.label || ('Visit #' + note.visit_id);
+                select.appendChild(option);
+            });
+
+            if (preview) preview.textContent = 'Timeline loaded. Select a previous note to preview it here.';
+        })
+        .catch(function() {
+            previousNotesCache = [];
+
+            const select = document.getElementById('previousNoteSelect');
+            const preview = document.getElementById('previousNotePreview');
+
+            if (select) select.innerHTML = '<option value="">No previous notes found</option>';
+            if (preview) preview.textContent = 'No previous notes found for this patient.';
+
+            alert('No previous notes found for this patient.');
+        });
+}
+
+function previewSelectedPreviousNote() {
+    const select = document.getElementById('previousNoteSelect');
+    const preview = document.getElementById('previousNotePreview');
+
+    if (!select || !preview || select.value === '') {
+        if (preview) preview.textContent = 'Select a previous note to preview it here.';
+        return;
+    }
+
+    const note = previousNotesCache[parseInt(select.value, 10)];
+
+    if (!note) {
+        preview.textContent = 'Previous note could not be loaded.';
+        return;
+    }
+
+    preview.textContent =
+        'Subjective:\n' + (note.subjective || 'N/A') +
+        '\n\nObjective:\n' + (note.objective || 'N/A') +
+        '\n\nAssessment:\n' + (note.assessment || 'N/A') +
+        '\n\nPlan:\n' + (note.plan || 'N/A');
+}
+
+function mergeSoapField(selector, value, mode, label) {
+    const field = document.querySelector(selector);
+    if (!field) return;
+
+    const incoming = value || '';
+    if (!incoming) return;
+
+    if (mode === 'append' && field.value.trim() !== '') {
+        field.value = field.value.trim() + "\n\n--- Forwarded " + label + " ---\n" + incoming;
+    } else {
+        field.value = incoming;
+    }
+}
+
+function insertSelectedPreviousNote() {
+    const select = document.getElementById('previousNoteSelect');
+    const modeSelect = document.getElementById('previousInsertMode');
+
+    if (!select || select.value === '') {
+        alert('Please select a previous note first.');
+        return;
+    }
+
+    const note = previousNotesCache[parseInt(select.value, 10)];
+
+    if (!note) {
+        alert('Previous note could not be loaded.');
+        return;
+    }
+
+    const mode = modeSelect ? modeSelect.value : 'replace';
+    const label = note.label || ('Visit #' + note.visit_id);
+
+    mergeSoapField('textarea[name="subjective"]', note.subjective, mode, label);
+    mergeSoapField('textarea[name="objective"]', note.objective, mode, label);
+    mergeSoapField('textarea[name="assessment"]', note.assessment, mode, label);
+    mergeSoapField('textarea[name="plan"]', note.plan, mode, label);
+
+    previewSelectedPreviousNote();
+}
+function insertSmartPhrase() {
+    const select = document.getElementById('smartPhraseSelect');
+const smartPhraseMap = @json(
+    \App\Models\SmartPhrase::where('user_id', auth()->id())
+        ->pluck('content', 'shortcut')
+);
+
+function enableSmartPhraseAutoExpand() {
+    const fields = document.querySelectorAll(
+        'textarea[name="subjective"], textarea[name="assessment"], textarea[name="plan"]'
+    );
+
+    fields.forEach(function(field) {
+        field.addEventListener('keyup', function(e) {
+            if (e.key !== ' ' && e.key !== 'Enter') return;
+
+            let text = field.value;
+
+            Object.keys(smartPhraseMap).forEach(function(shortcut) {
+                const phrase = smartPhraseMap[shortcut];
+
+                const pattern = new RegExp('(^|\\s)' + shortcut.replace('.', '\\.') + '(\\s|$)', 'g');
+
+                text = text.replace(pattern, function(match, before, after) {
+                    return before + phrase + after;
+                });
+            });
+
+            field.value = text;
+        });
+    });
+}
+
+enableSmartPhraseAutoExpand();   
+ const field = document.querySelector('textarea[name="subjective"]');
+
+    if (!select || !field || !select.value) return;
+
+    field.value += "\n" + select.value;
+}
 </script>
 @endpush
 

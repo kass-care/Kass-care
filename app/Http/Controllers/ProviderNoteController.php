@@ -49,7 +49,7 @@ class ProviderNoteController extends Controller
             ->findOrFail($visitId);
 
         $client = $visit->client;
-
+       
         $clientName = $client?->name ?? 'Unknown Client';
         $clientDob = $client?->date_of_birth ?? null;
 
@@ -57,13 +57,25 @@ class ProviderNoteController extends Controller
         $objective = '';
         $assessment = 'Patient evaluated based on caregiver observations, clinical measurements, and provider assessment.';
         $plan = 'Continue monitoring. Adjust care plan as clinically indicated.';
-
+        // 🔥 Pull previous note for this client
+$previousNote = \App\Models\ProviderNote::where('client_id', $visit->client_id)
+    ->where('visit_id', '!=', $visitId)
+    ->whereHas('visit', function ($q) use ($visit) {
+        $q->where('facility_id', $visit->facility_id);
+    })
+    ->latest()
+    ->first();
+if ($previousNote) {
+    $subjective = $previousNote->subjective ?? $subjective;
+    $objective = $previousNote->objective ?? $objective;
+    $assessment = $previousNote->assessment ?? $assessment;
+    $plan = $previousNote->plan ?? $plan;
+}
         $latestLog = $visit->careLogs->sortByDesc('created_at')->first();
 
-        if ($latestLog && !empty($latestLog->notes)) {
-            $subjective = 'Caregiver reported: ' . $latestLog->notes;
-        }
-
+if (!$previousNote && $latestLog && !empty($latestLog->notes)) {
+    $subjective = 'Caregiver reported: ' . $latestLog->notes;
+}
         return view('provider.notes.create', compact(
             'visit',
             'clientName',
@@ -353,5 +365,38 @@ public function saveCodes(Request $request, \App\Models\ProviderNote $providerNo
         'success' => true,
         'saved' => $providerNote->codes()->count(),
     ]);
+}
+public function previous($visitId)
+{
+    $visit = \App\Models\Visit::findOrFail($visitId);
+
+    $notes = \App\Models\ProviderNote::with('visit')
+        ->where('client_id', $visit->client_id)
+        ->where('visit_id', '!=', $visitId)
+        ->whereHas('visit', function ($q) use ($visit) {
+            $q->where('facility_id', $visit->facility_id);
+        })
+        ->latest()
+        ->take(5)
+        ->get()
+        ->map(function ($note) {
+            return [
+                'id' => $note->id,
+                'visit_id' => $note->visit_id,
+                'date' => optional($note->created_at)->format('m/d/Y'),
+                'subjective' => $note->subjective,
+                'objective' => $note->objective,
+                'assessment' => $note->assessment,
+                'plan' => $note->plan,
+                'label' => 'Visit #' . $note->visit_id . ' — ' . optional($note->created_at)->format('m/d/Y'),
+            ];
+        })
+        ->values();
+
+    if ($notes->isEmpty()) {
+        return response()->json([], 404);
+    }
+
+    return response()->json($notes);
 }
 }

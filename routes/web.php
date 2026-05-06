@@ -260,6 +260,16 @@ Route::post('/pharmacy', [PharmacyOrderController::class, 'store'])
 Route::get('/pharmacy/{order}', [PharmacyOrderController::class, 'show'])
     ->name('pharmacy.show');
 });
+Route::middleware(['auth'])->group(function () {
+    Route::get('/provider/smart-phrases', [\App\Http\Controllers\SmartPhraseController::class, 'index'])
+        ->name('provider.smart.phrases');
+
+    Route::post('/provider/smart-phrases', [\App\Http\Controllers\SmartPhraseController::class, 'store'])
+        ->name('provider.smart.phrases.store');
+
+    Route::delete('/provider/smart-phrases/{id}', [\App\Http\Controllers\SmartPhraseController::class, 'destroy'])
+        ->name('provider.smart.phrases.destroy');
+});
 /*
 |--------------------------------------------------------------------------
 | Facility routes — Admin
@@ -434,6 +444,9 @@ Route::get('/notes/{providerNote}/edit', [ProviderNoteController::class, 'edit']
 
 Route::put('/notes/{providerNote}', [ProviderNoteController::class, 'update'])
     ->name('notes.update');
+
+Route::get('/notes/previous/{visitId}', [\App\Http\Controllers\ProviderNoteController::class, 'previous'])
+    ->name('provider.notes.previous');
 
         Route::get('/pharmacy', [PharmacyOrderController::class, 'index'])->name('pharmacy.index');
         Route::get('/pharmacy/create', [PharmacyOrderController::class, 'create'])->name('pharmacy.create');
