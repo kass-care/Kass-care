@@ -77,3 +77,5 @@ public function simulateDecision(Claim $claim): array
         'message' => $denial['message'],
     ];
 }
+}
+
