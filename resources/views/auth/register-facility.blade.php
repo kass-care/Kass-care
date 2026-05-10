@@ -60,7 +60,6 @@
             <form method="POST" action="{{ route('register-facility.store') }}" class="space-y-4">
                 @csrf
 
-                <input type="hidden" name="accept_terms" value="1">
                 <input type="hidden" name="plan" value="facility">
 
                 <input
@@ -126,6 +125,29 @@
                     required
                 >
 
+             <div class="rounded-2xl border border-cyan-400/20 bg-cyan-500/10 p-4">
+    <label class="flex items-start gap-3 text-sm text-slate-200 leading-6">
+        <input
+            type="checkbox"
+            name="accept_terms"
+            value="1"
+            required
+            class="mt-1 rounded border-slate-600 bg-slate-800 text-cyan-500 focus:ring-cyan-500"
+        >
+
+        <span>
+            I have read, understood, and agree to the
+            <a href="{{ url('/terms') }}" target="_blank" class="font-bold text-cyan-300 underline">
+                Terms & Conditions
+            </a>
+            of KassCare and KASS MTV USA LLC. I understand that KassCare is a healthcare operations platform and that my facility is responsible for lawful use, accurate information, protecting patient/client data, user account security, subscription billing, and compliance with applicable healthcare, privacy, and workplace requirements. I also understand that access may be suspended or terminated for non-payment, misuse, fraud, abuse, or violation of these terms.
+        </span>
+    </label>
+
+    @error('accept_terms')
+        <p class="mt-2 text-sm text-red-300">{{ $message }}</p>
+    @enderror
+</div>
                 <button
                     type="submit"
                     class="w-full rounded-2xl bg-indigo-600 py-3.5 font-bold text-white transition hover:bg-indigo-700"

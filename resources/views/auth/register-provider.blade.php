@@ -53,7 +53,6 @@
             <form method="POST" action="{{ route('register-provider.store') }}" class="space-y-4">
                 @csrf
 
-                <input type="hidden" name="accept_terms" value="1">
 
                 <input
                     type="text"
@@ -95,6 +94,29 @@
                     class="w-full rounded-2xl border border-slate-700 bg-slate-800 px-4 py-3"
                     required
                 >
+                 <div class="rounded-2xl border border-indigo-400/20 bg-indigo-500/10 p-4">
+    <label class="flex items-start gap-3 text-sm text-slate-200 leading-6">
+        <input
+            type="checkbox"
+            name="accept_terms"
+            value="1"
+            required
+            class="mt-1 rounded border-slate-600 bg-slate-800 text-indigo-500 focus:ring-indigo-500"
+        >
+
+        <span>
+            I have read, understood, and agree to the
+            <a href="{{ url('/terms') }}" target="_blank" class="font-bold text-indigo-300 underline">
+                Terms & Conditions
+            </a>
+            of KassCare and KASS MTV USA LLC. I understand that KassCare is a healthcare operations platform and that I am responsible for lawful clinical use, protecting patient/client data, account security, accurate documentation, billing compliance, and professional use of the platform. I also understand that my 30-day provider trial may convert to a paid subscription and that access may be suspended or terminated for non-payment, misuse, fraud, abuse, or violation of these terms.
+        </span>
+    </label>
+
+    @error('accept_terms')
+        <p class="mt-2 text-sm text-red-300">{{ $message }}</p>
+    @enderror
+</div>
 
                 <button
                     type="submit"

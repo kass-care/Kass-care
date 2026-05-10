@@ -17,24 +17,10 @@ class CheckSubscription
             return redirect()->route('login');
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Super Admin
-        |--------------------------------------------------------------------------
-        */
         if ($user->role === 'super_admin') {
             return $next($request);
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Admin pre-subscription access
-        |--------------------------------------------------------------------------
-        | Facility admins should still be able to:
-        | - reach dashboard
-        | - reach billing
-        | - activate subscription
-        */
         if ($user->role === 'admin') {
             if (
                 $request->routeIs('admin.dashboard') ||
@@ -50,11 +36,6 @@ class CheckSubscription
             }
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Resolve subscription from facility first
-        |--------------------------------------------------------------------------
-        */
         $facilityId = session('facility_id') ?? $user->facility_id ?? null;
 
         if ($facilityId) {
@@ -65,12 +46,15 @@ class CheckSubscription
             }
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Fallback to user subscription status
-        |--------------------------------------------------------------------------
-        */
         if (($user->subscription_status ?? 'inactive') === 'active') {
+            return $next($request);
+        }
+
+        if (
+            ($user->subscription_status ?? 'inactive') === 'trialing' &&
+            $user->trial_ends_at &&
+            now()->lessThan($user->trial_ends_at)
+        ) {
             return $next($request);
         }
 
