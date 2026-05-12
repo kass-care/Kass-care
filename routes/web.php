@@ -45,6 +45,7 @@ use App\Http\Controllers\FacilityProviderController;
 use App\Http\Controllers\Facility\PatientController;
 use App\Http\Controllers\Facility\CaregiverController as FacilityCaregiverController;
 use App\Http\Controllers\FacilityVisitController;
+use App\Http\Controllers\CaregiverEmarController;
 
 /*
 |--------------------------------------------------------------------------
@@ -655,6 +656,13 @@ Route::get('/visits/{visit}/report-issue', [CaregiverController::class, 'reportI
 Route::post('/visits/{visit}/report-issue', [CaregiverController::class, 'storeReportIssue'])
     ->name('visits.report-issue.store');
     });
+Route::middleware(['auth', 'role:caregiver', 'check.subscription'])->group(function () {
+    Route::get('/caregiver/emar', [CaregiverEmarController::class, 'index'])
+        ->name('caregiver.emar.index');
+
+    Route::post('/caregiver/emar/{medication}/administer', [CaregiverEmarController::class, 'administer'])
+        ->name('caregiver.emar.administer');
+});
 Route::middleware(['auth','role:caregiver'])->prefix('caregiver')->group(function () {
     Route::get('/dashboard', [CaregiverDashboardController::class, 'index'])->name('caregiver.dashboard');
 });

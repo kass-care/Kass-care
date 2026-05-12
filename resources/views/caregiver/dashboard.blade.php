@@ -75,7 +75,10 @@
                        class="inline-flex items-center justify-center rounded-xl bg-white px-5 py-3 text-sm font-bold text-emerald-800 shadow">
                         Open Visits
                     </a>
-
+                        <a href="{{ route('caregiver.emar.index') }}"
+   class="inline-flex items-center rounded-2xl bg-emerald-500 px-5 py-3 text-sm font-black text-white shadow-lg hover:bg-emerald-600">
+    💊 eMAR
+</a>
                     <a href="{{ route('caregiver.care-logs.index') }}"
                        class="inline-flex items-center justify-center rounded-xl bg-amber-400 px-5 py-3 text-sm font-bold text-slate-900 shadow">
                         Open Care Logs

@@ -45,6 +45,12 @@ class MedicationController extends Controller
             'frequency'       => ['nullable', 'string', 'max:255'],
             'status'          => ['nullable', 'string', 'max:50'],
             'instructions'    => ['nullable', 'string'],
+            'route'        => ['nullable', 'string', 'max:255'],
+'is_prn'       => ['nullable', 'boolean'],
+'emar_times'   => ['nullable', 'array'],
+'emar_times.*' => ['string', 'in:Morning,Noon,Evening,Bedtime,PRN'],
+'start_date'   => ['nullable', 'date'],
+'end_date'     => ['nullable', 'date', 'after_or_equal:start_date'],
         ]);
 
         if (!empty($validated['diagnosis_id'])) {
@@ -64,6 +70,11 @@ class MedicationController extends Controller
             'status'          => $validated['status'] ?? 'active',
             'instructions'    => $validated['instructions'] ?? null,
             'prescribed_by'   => auth()->id(),
+           'route'      => $validated['route'] ?? null,
+'is_prn'     => $request->boolean('is_prn'),
+'emar_times' => $validated['emar_times'] ?? ['Morning'],
+'start_date' => $validated['start_date'] ?? null,
+'end_date'   => $validated['end_date'] ?? null,
         ]);
 
         if ($user->role === 'provider') {

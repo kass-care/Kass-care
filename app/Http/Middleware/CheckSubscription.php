@@ -21,6 +21,8 @@ class CheckSubscription
             return $next($request);
         }
 
+        $allowedStatuses = ['active', 'trialing'];
+
         if ($user->role === 'admin') {
             if (
                 $request->routeIs('admin.dashboard') ||
@@ -41,21 +43,19 @@ class CheckSubscription
         if ($facilityId) {
             $facility = Facility::find($facilityId);
 
-            if ($facility && ($facility->subscription_status ?? 'inactive') === 'active') {
+            if ($facility && in_array(($facility->subscription_status ?? 'inactive'), $allowedStatuses, true)) {
                 return $next($request);
             }
         }
 
-        if (($user->subscription_status ?? 'inactive') === 'active') {
-            return $next($request);
-        }
-
-        if (
-            ($user->subscription_status ?? 'inactive') === 'trialing' &&
-            $user->trial_ends_at &&
-            now()->lessThan($user->trial_ends_at)
-        ) {
-            return $next($request);
+        if (in_array(($user->subscription_status ?? 'inactive'), $allowedStatuses, true)) {
+            if (($user->subscription_status ?? null) === 'trialing') {
+                if (!$user->trial_ends_at || now()->lessThanOrEqualTo($user->trial_ends_at)) {
+                    return $next($request);
+                }
+            } else {
+                return $next($request);
+            }
         }
 
         return redirect()->route('billing.notice');

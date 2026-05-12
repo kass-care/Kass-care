@@ -122,6 +122,10 @@
                         </div>
                     </div>
 
+                      <a href="{{ route('medications.create', $client->id) }}"
+   class="mt-4 inline-flex items-center justify-center w-full rounded-xl bg-emerald-500 px-4 py-3 text-sm font-black text-white hover:bg-emerald-600 transition">
+    💊 MAR Setup / Add Medication
+</a>
                         <a href="{{ route('admin.clients.index') }}"
                        class="mt-4 inline-flex items-center justify-center w-full rounded-xl bg-cyan-400 px-4 py-3 text-sm font-bold text-slate-950 hover:bg-cyan-300 transition">
                         Back to Patients

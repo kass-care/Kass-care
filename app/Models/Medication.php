@@ -15,7 +15,18 @@ class Medication extends Model
         'instructions',
         'status',
         'prescribed_by',
+       'route',
+'is_prn',
+'emar_times',
+'start_date',
+'end_date',
     ];
+protected $casts = [
+    'is_prn' => 'boolean',
+    'emar_times' => 'array',
+    'start_date' => 'date',
+    'end_date' => 'date',
+];
 
     public function client()
     {
@@ -31,4 +42,8 @@ class Medication extends Model
     {
         return $this->belongsTo(User::class, 'prescribed_by');
     }
+public function administrations()
+{
+    return $this->hasMany(EmarAdministration::class);
+}
 }
