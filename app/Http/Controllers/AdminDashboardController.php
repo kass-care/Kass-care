@@ -7,7 +7,6 @@ use App\Models\Facility;
 use App\Models\Visit;
 use App\Models\Claim;
 use App\Models\User;
-use Illuminate\Support\Facades\Schema;
 
 class AdminDashboardController extends Controller
 {
@@ -18,59 +17,33 @@ class AdminDashboardController extends Controller
 
         $facilityCount = Facility::count();
 
-        $clientCount = 0;
-        $caregiverCount = 0;
-        $visitCount = 0;
-        $scheduledVisitCount = 0;
-        $completedVisitCount = 0;
-        $missedVisitCount = 0;
-        $inProgressVisitCount = 0;
+        $clientQuery = Client::query();
+        if ($selectedFacilityId) {
+            $clientQuery->where('facility_id', $selectedFacilityId);
+        }
+
+        $caregiverQuery = User::where('role', 'caregiver');
+        if ($selectedFacilityId) {
+            $caregiverQuery->where('facility_id', $selectedFacilityId);
+        }
+
+        $visitQuery = Visit::query();
+        if ($selectedFacilityId) {
+            $visitQuery->where('facility_id', $selectedFacilityId);
+        }
+
+        $clientCount = $clientQuery->count();
+        $caregiverCount = $caregiverQuery->count();
+        $visitCount = (clone $visitQuery)->count();
+
+        $scheduledVisitCount = (clone $visitQuery)->where('status', 'scheduled')->count();
+        $completedVisitCount = (clone $visitQuery)->where('status', 'completed')->count();
+        $missedVisitCount = (clone $visitQuery)->where('status', 'missed')->count();
+        $inProgressVisitCount = (clone $visitQuery)->where('status', 'in_progress')->count();
+
         $alertCount = 0;
         $openTaskCount = 0;
         $reviewTaskCount = 0;
-
-        try {
-            $clientQuery = Client::query();
-
-            if ($selectedFacilityId && Schema::hasColumn('clients', 'facility_id')) {
-                $clientQuery->where('facility_id', $selectedFacilityId);
-            }
-
-            $clientCount = $clientQuery->count();
-        } catch (\Throwable $e) {
-            $clientCount = 0;
-        }
-
-        try {
-            $caregiverQuery = User::where('role', 'caregiver');
-
-            if ($selectedFacilityId && Schema::hasColumn('users', 'facility_id')) {
-                $caregiverQuery->where('facility_id', $selectedFacilityId);
-            }
-
-            $caregiverCount = $caregiverQuery->count();
-        } catch (\Throwable $e) {
-            $caregiverCount = 0;
-        }
-
-        try {
-            $visitQuery = Visit::query();
-
-            if ($selectedFacilityId && Schema::hasColumn('visits', 'facility_id')) {
-                $visitQuery->where('facility_id', $selectedFacilityId);
-            }
-
-            $visitCount = (clone $visitQuery)->count();
-
-            if (Schema::hasColumn('visits', 'status')) {
-                $scheduledVisitCount = (clone $visitQuery)->where('status', 'scheduled')->count();
-                $completedVisitCount = (clone $visitQuery)->where('status', 'completed')->count();
-                $missedVisitCount = (clone $visitQuery)->where('status', 'missed')->count();
-                $inProgressVisitCount = (clone $visitQuery)->where('status', 'in_progress')->count();
-            }
-        } catch (\Throwable $e) {
-            $visitCount = 0;
-        }
 
         $facilities = Facility::latest()->get();
 
@@ -96,44 +69,32 @@ class AdminDashboardController extends Controller
     {
         $user = auth()->user();
 
-        $facilityId = $user->facility_id;
+        abort_if(!$user, 403, 'Unauthorized.');
+
+        $facilityId = session('facility_id') ?? $user->facility_id;
+
+        abort_if(!$facilityId, 403, 'No facility selected.');
+
         $facility = Facility::find($facilityId);
 
-        $patients = 0;
-        $caregivers = 0;
-        $visits = 0;
+        $patients = Client::where('facility_id', $facilityId)->count();
 
-        try {
-            if ($facilityId && Schema::hasColumn('clients', 'facility_id')) {
-                $patients = Client::where('facility_id', $facilityId)->count();
-            }
-        } catch (\Throwable $e) {
-            $patients = 0;
-        }
+        $caregivers = User::where('role', 'caregiver')
+            ->where('facility_id', $facilityId)
+            ->count();
 
-        try {
-            if ($facilityId && Schema::hasColumn('users', 'facility_id')) {
-                $caregivers = User::where('role', 'caregiver')
-                    ->where('facility_id', $facilityId)
-                    ->count();
-            }
-        } catch (\Throwable $e) {
-            $caregivers = 0;
-        }
+        $visits = Visit::where('facility_id', $facilityId)->count();
 
-        try {
-            if ($facilityId && Schema::hasColumn('visits', 'facility_id')) {
-                $visits = Visit::where('facility_id', $facilityId)->count();
-            }
-        } catch (\Throwable $e) {
-            $visits = 0;
-        }
+        $providers = User::where('role', 'provider')
+            ->where('facility_id', $facilityId)
+            ->count();
 
         return view('admin.facility-home', [
             'facility' => $facility,
             'patients' => $patients,
             'caregivers' => $caregivers,
             'visits' => $visits,
+            'providers' => $providers,
         ]);
     }
 

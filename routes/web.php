@@ -152,47 +152,9 @@ Route::middleware('auth')->group(function () {
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'role:admin'])->get('/facility-admin/home', function () {
-    $user = auth()->user();
+Route::middleware(['auth', 'role:admin,provider'])->get('/facility-admin/home', [AdminDashboardController::class, 'facilityHome'])
+    ->name('facility.admin.home');
 
-    if (!$user || $user->role !== 'admin') {
-        abort(403, 'Unauthorized');
-    }
-
-    $facilityId = session('facility_id') ?? $user->facility_id;
-
-    if (!$facilityId) {
-        return view('admin.facility-home', [
-            'facility' => null,
-            'clientsCount' => 0,
-            'caregiversCount' => 0,
-            'visitsCount' => 0,
-            'providersCount' => 0,
-        ]);
-    }
-
-    $facility = \App\Models\Facility::find($facilityId);
-
-    $clientsCount = \App\Models\Patient::where('facility_id', $facilityId)->count();
-
-    $caregiversCount = \App\Models\User::where('facility_id', $facilityId)
-        ->where('role', 'caregiver')
-        ->count();
-
-    $visitsCount = \App\Models\Visit::where('facility_id', $facilityId)->count();
-
-    $providersCount = \App\Models\User::where('facility_id', $facilityId)
-        ->where('role', 'provider')
-        ->count();
-
-    return view('admin.facility-home', [
-        'facility' => $facility,
-        'clientsCount' => $clientsCount,
-        'caregiversCount' => $caregiversCount,
-        'visitsCount' => $visitsCount,
-        'providersCount' => $providersCount,
-    ]);
-})->name('facility.admin.home');
 
 Route::get('/facility/revenue', [\App\Http\Controllers\AdminDashboardController::class, 'revenue'])
     ->middleware(['auth'])

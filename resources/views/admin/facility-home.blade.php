@@ -58,25 +58,25 @@
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div class="rounded-3xl bg-slate-900 border border-slate-800 p-6">
             <p class="text-xs uppercase tracking-[0.3em] text-slate-400">Clients</p>
-            <p class="text-5xl font-bold mt-4">{{ $clientsCount ?? 0 }}</p>
+            <p class="text-5xl font-bold mt-4">{{ $patients ?? 0 }}</p>
             <p class="text-slate-400 mt-2">Registered in this facility</p>
         </div>
 
         <div class="rounded-3xl bg-slate-900 border border-slate-800 p-6">
             <p class="text-xs uppercase tracking-[0.3em] text-slate-400">Caregivers</p>
-            <p class="text-5xl font-bold mt-4">{{ $caregiversCount ?? 0 }}</p>
+            <p class="text-5xl font-bold mt-4">{{ $caregivers ?? 0 }}</p>
             <p class="text-slate-400 mt-2">Assigned workforce</p>
         </div>
 
         <div class="rounded-3xl bg-slate-900 border border-slate-800 p-6">
             <p class="text-xs uppercase tracking-[0.3em] text-slate-400">Visits</p>
-            <p class="text-5xl font-bold mt-4">{{ $visitsCount ?? 0 }}</p>
+            <p class="text-5xl font-bold mt-4">{{ $visits ?? 0 }}</p>
             <p class="text-slate-400 mt-2">Scheduled visits</p>
         </div>
 
         <div class="rounded-3xl bg-slate-900 border border-slate-800 p-6">
             <p class="text-xs uppercase tracking-[0.3em] text-slate-400">Providers</p>
-            <p class="text-5xl font-bold mt-4">{{ $providersCount ?? 0 }}</p>
+            <p class="text-5xl font-bold mt-4">{{ $providers ?? 0 }}</p>
             <p class="text-slate-400 mt-2">Linked providers</p>
         </div>
     </div>
