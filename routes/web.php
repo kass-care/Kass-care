@@ -1,4 +1,4 @@
-<?php
+W<?php
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
@@ -541,15 +541,16 @@ Route::get('/care-logs/{careLog}', [CareLogController::class, 'show'])
         | Patient Documents
         |--------------------------------------------------------------------------
         */
+          Route::middleware(['auth'])->group(function () {
+    Route::post('/patient-documents', [PatientDocumentController::class, 'store'])
+        ->name('patient-documents.store');
 
-        Route::post('/patient-documents', [PatientDocumentController::class, 'store'])
-            ->name('patient-documents.store');
+    Route::get('/patient-documents/{patientDocument}/download', [PatientDocumentController::class, 'download'])
+        ->name('patient-documents.download');
 
-        Route::get('/patient-documents/{patientDocument}/download', [PatientDocumentController::class, 'download'])
-            ->name('patient-documents.download');
-
-        Route::delete('/patient-documents/{patientDocument}', [PatientDocumentController::class, 'destroy'])
-            ->name('patient-documents.destroy');
+    Route::delete('/patient-documents/{patientDocument}', [PatientDocumentController::class, 'destroy'])
+        ->name('patient-documents.destroy');
+});
 
         Route::get('/rounds', [ProviderRoundsController::class, 'index'])->name('rounds.index');
         Route::post('/rounds/visit/mark-rounded', [ProviderRoundsController::class, 'markRounded'])

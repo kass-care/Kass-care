@@ -215,7 +215,97 @@
             </div>
         </div>
     </div>
+{{-- Patient Document Vault --}}
+<div class="bg-white shadow rounded-2xl p-6 border border-gray-100 mb-6">
+    <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-5">
+        <div>
+            <h2 class="font-semibold text-xl text-gray-800">📁 Patient Document Vault</h2>
+            <p class="text-sm text-gray-500 mt-1">
+                Store care plans, provider notes, MAR PDFs, hospital records, and survey-ready documents.
+            </p>
+        </div>
+    </div>
 
+    <form method="POST" action="{{ route('patient-documents.store') }}" enctype="multipart/form-data"
+          class="mb-6 rounded-2xl border border-emerald-100 bg-emerald-50 p-5">
+        @csrf
+
+        <input type="hidden" name="patient_id" value="{{ $client->id }}">
+
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">Document Title</label>
+                <input type="text" name="title" required
+                       class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm"
+                       placeholder="Example: Care Plan">
+            </div>
+
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">Category</label>
+                <select name="category" class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm">
+                    <option value="General">General</option>
+                    <option value="Care Plan">Care Plan</option>
+                    <option value="Provider Note">Provider Note</option>
+                    <option value="Medication / MAR">Medication / MAR</option>
+                    <option value="Hospital Record">Hospital Record</option>
+                    <option value="Consent Form">Consent Form</option>
+                    <option value="Lab Result">Lab Result</option>
+                    <option value="State Survey">State Survey</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">Upload File</label>
+                <input type="file" name="document" required
+                       class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm">
+            </div>
+        </div>
+
+        <button type="submit"
+                class="mt-4 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-black text-white hover:bg-emerald-700">
+            Upload to Patient Vault
+        </button>
+    </form>
+
+    <div class="space-y-3">
+        @forelse($client->documents as $document)
+            <div class="flex flex-col gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                    <p class="font-black text-gray-900">{{ $document->title }}</p>
+                    <p class="text-sm text-gray-500">
+                        {{ $document->category ?? 'General' }}
+                        · Uploaded {{ optional($document->created_at)->format('M d, Y g:i A') }}
+                        @if($document->uploader)
+                            · By {{ $document->uploader->name }}
+                        @endif
+                    </p>
+                </div>
+
+                <div class="flex gap-2">
+                    <a href="{{ route('patient-documents.download', $document->id) }}"
+                       class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-700">
+                        Download
+                    </a>
+
+                    <form method="POST" action="{{ route('patient-documents.destroy', $document->id) }}"
+                          onsubmit="return confirm('Delete this document?');">
+                        @csrf
+                        @method('DELETE')
+
+                        <button class="rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white hover:bg-red-700">
+                            Delete
+                        </button>
+                    </form>
+                </div>
+            </div>
+        @empty
+            <div class="rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 p-8 text-center">
+                <p class="font-bold text-gray-700">No documents uploaded yet.</p>
+                <p class="mt-1 text-sm text-gray-500">Generated PDFs and uploaded files will appear here.</p>
+            </div>
+        @endforelse
+    </div>
+</div>
     {{-- Visit History --}}
     <div class="bg-white shadow rounded-2xl p-6 border border-gray-100 mb-6">
         <h2 class="font-semibold text-xl mb-4 text-gray-800">Visit History</h2>
