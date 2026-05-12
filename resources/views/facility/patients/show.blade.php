@@ -45,6 +45,21 @@
         </div>
 
     </div>
+{{-- Medication / MAR Setup --}}
+<div class="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-6 shadow">
+    <h2 class="text-2xl font-black text-slate-900">
+        💊 Medication / Supplement Request
+    </h2>
+
+    <p class="mt-2 text-sm font-semibold text-slate-600">
+        Add a medication, vitamin, or supplement request for provider approval before it appears in caregiver eMAR.
+    </p>
+
+    <a href="{{ route('medications.create', $patient->id) }}"
+       class="mt-5 inline-flex rounded-2xl bg-amber-500 px-6 py-3 text-sm font-black text-slate-950 hover:bg-amber-400">
+        Add Medication / Supplement
+    </a>
+</div>
 
     {{-- Document Vault --}}
     <div class="bg-white shadow rounded-2xl p-6 border border-gray-100 mt-6">

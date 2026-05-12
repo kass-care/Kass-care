@@ -103,6 +103,25 @@
                             📝 Provider Notes
                         </a>
                     @endif
+                 @php
+    $pendingMedicationApprovals = \App\Models\Medication::where('approval_status', 'pending')
+        ->whereHas('client', function ($query) use ($facilityId) {
+            $query->where('facility_id', $facilityId);
+        })
+        ->count();
+@endphp
+
+@if(Route::has('provider.medication-approvals.index'))
+    <a href="{{ route('provider.medication-approvals.index') }}"
+       class="inline-flex items-center rounded-2xl bg-amber-400 px-5 py-3 font-black text-slate-900 hover:bg-amber-300">
+        💊 Medication Approvals
+        @if($pendingMedicationApprovals > 0)
+            <span class="ml-3 rounded-full bg-red-600 px-3 py-1 text-xs font-black text-white">
+                {{ $pendingMedicationApprovals }}
+            </span>
+        @endif
+    </a>
+@endif
 
                     @if(Route::has('provider.compliance'))
                         <a href="{{ route('provider.compliance') }}"

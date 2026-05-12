@@ -40,17 +40,17 @@ class MedicationController extends Controller
 
         $validated = $request->validate([
             'medication_name' => ['required', 'string', 'max:255'],
-            'diagnosis_id'    => ['nullable', 'exists:diagnoses,id'],
-            'dose'            => ['nullable', 'string', 'max:255'],
-            'frequency'       => ['nullable', 'string', 'max:255'],
-            'status'          => ['nullable', 'string', 'max:50'],
-            'instructions'    => ['nullable', 'string'],
-            'route'        => ['nullable', 'string', 'max:255'],
-'is_prn'       => ['nullable', 'boolean'],
-'emar_times'   => ['nullable', 'array'],
-'emar_times.*' => ['string', 'in:Morning,Noon,Evening,Bedtime,PRN'],
-'start_date'   => ['nullable', 'date'],
-'end_date'     => ['nullable', 'date', 'after_or_equal:start_date'],
+            'diagnosis_id' => ['nullable', 'exists:diagnoses,id'],
+            'dose' => ['nullable', 'string', 'max:255'],
+            'frequency' => ['nullable', 'string', 'max:255'],
+            'status' => ['nullable', 'string', 'max:50'],
+            'instructions' => ['nullable', 'string'],
+            'route' => ['nullable', 'string', 'max:255'],
+            'is_prn' => ['nullable', 'boolean'],
+            'emar_times' => ['nullable', 'array'],
+            'emar_times.*' => ['string', 'in:Morning,Noon,Evening,Bedtime,PRN'],
+            'start_date' => ['nullable', 'date'],
+            'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
         ]);
 
         if (!empty($validated['diagnosis_id'])) {
@@ -61,20 +61,32 @@ class MedicationController extends Controller
             abort_if(!$diagnosisBelongsToClient, 403, 'Diagnosis does not belong to this patient.');
         }
 
+        $approvalStatus = $user->role === 'provider' || $user->role === 'super_admin'
+            ? 'approved'
+            : 'pending';
+
+        $status = $approvalStatus === 'approved'
+            ? ($validated['status'] ?? 'active')
+            : 'pending';
+
         Medication::create([
-            'client_id'       => $client->id,
-            'diagnosis_id'    => $validated['diagnosis_id'] ?? null,
+            'client_id' => $client->id,
+            'diagnosis_id' => $validated['diagnosis_id'] ?? null,
             'medication_name' => $validated['medication_name'],
-            'dose'            => $validated['dose'] ?? null,
-            'frequency'       => $validated['frequency'] ?? null,
-            'status'          => $validated['status'] ?? 'active',
-            'instructions'    => $validated['instructions'] ?? null,
-            'prescribed_by'   => auth()->id(),
-           'route'      => $validated['route'] ?? null,
-'is_prn'     => $request->boolean('is_prn'),
-'emar_times' => $validated['emar_times'] ?? ['Morning'],
-'start_date' => $validated['start_date'] ?? null,
-'end_date'   => $validated['end_date'] ?? null,
+            'dose' => $validated['dose'] ?? null,
+            'frequency' => $validated['frequency'] ?? null,
+            'status' => $status,
+            'approval_status' => $approvalStatus,
+            'approved_by' => $approvalStatus === 'approved' ? $user->id : null,
+            'approved_at' => $approvalStatus === 'approved' ? now() : null,
+            'provider_note' => null,
+            'instructions' => $validated['instructions'] ?? null,
+            'prescribed_by' => $user->id,
+            'route' => $validated['route'] ?? null,
+            'is_prn' => $request->boolean('is_prn'),
+            'emar_times' => $validated['emar_times'] ?? ['Morning'],
+            'start_date' => $validated['start_date'] ?? null,
+            'end_date' => $validated['end_date'] ?? null,
         ]);
 
         if ($user->role === 'provider') {
@@ -85,6 +97,6 @@ class MedicationController extends Controller
 
         return redirect()
             ->back()
-            ->with('success', 'Medication added successfully.');
+            ->with('success', 'Medication submitted for provider approval.');
     }
 }

@@ -155,6 +155,10 @@
                    class="block w-full text-center px-4 py-4 rounded-2xl border border-slate-700 text-slate-200 font-semibold hover:bg-slate-800">
                     Open Providers
                 </a>
+                    <a href="{{ route('facility.patients.index') }}"
+   class="block w-full text-center px-4 py-4 rounded-2xl bg-amber-500 text-slate-950 font-bold hover:bg-amber-400">
+    Add Medication / Supplement
+</a>
             </div>
         </div>
 

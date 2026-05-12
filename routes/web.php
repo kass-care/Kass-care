@@ -27,6 +27,7 @@ use App\Http\Controllers\ProviderAlertController;
 use App\Http\Controllers\ProviderMessageController;
 use App\Http\Controllers\CommunicationController;
 use App\Http\Controllers\PharmacyOrderController;
+use App\Http\Controllers\ProviderMedicationApprovalController;
 
 use App\Http\Controllers\CaregiverDashboardController;
 use App\Http\Controllers\CaregiverController;
@@ -355,6 +356,16 @@ Route::middleware(['auth', 'role:provider,super_admin', 'check.subscription', 'c
     ->prefix('provider')
     ->name('provider.')
     ->group(function () {
+
+        
+Route::get('/medication-approvals', [ProviderMedicationApprovalController::class, 'index'])
+            ->name('medication-approvals.index');
+
+        Route::post('/medication-approvals/{medication}/approve', [ProviderMedicationApprovalController::class, 'approve'])
+            ->name('medication-approvals.approve');
+
+        Route::post('/medication-approvals/{medication}/reject', [ProviderMedicationApprovalController::class, 'reject'])
+            ->name('medication-approvals.reject');
 
         Route::get('/dashboard', [ProviderDashboardController::class, 'index'])->name('dashboard');
         Route::get('/calendar', [ProviderCalendarController::class, 'index'])->name('calendar');

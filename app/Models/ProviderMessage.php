@@ -11,6 +11,7 @@ class ProviderMessage extends Model
         'client_id',
         'sender_id',
         'provider_id',
+         'recipient_provider_id',
         'subject',
         'message',
         'provider_reply',
@@ -43,4 +44,9 @@ class ProviderMessage extends Model
     {
         return $this->belongsTo(User::class, 'provider_id');
     }
+public function recipientProvider()
+{
+    return $this->belongsTo(User::class, 'recipient_provider_id');
+}
+
 }

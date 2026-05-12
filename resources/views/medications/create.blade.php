@@ -133,13 +133,19 @@
             </div>
 
             <div class="mt-8 flex flex-col gap-3 md:flex-row md:items-center">
-                <button type="submit" class="rounded-2xl bg-indigo-700 px-6 py-3 font-black text-white shadow-lg hover:bg-indigo-800">
-                    Save Medication & eMAR Schedule
-                </button>
+            <div class="mt-10 flex flex-col gap-4 border-t border-slate-200 pt-6 md:flex-row md:items-center md:justify-between">
 
-                <a href="{{ route('provider.patients.workspace', $client->id) }}"
-                   class="rounded-2xl bg-slate-200 px-6 py-3 font-black text-slate-700 hover:bg-slate-300">
-                    Cancel
+    <a href="{{ route('provider.patients.workspace', $client->id) }}"
+       class="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-6 py-4 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-100">
+        Cancel
+    </a>
+
+    <button
+        type="submit"
+        class="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-500 px-8 py-4 text-base font-black text-white shadow-2xl transition duration-200 hover:scale-[1.02] hover:from-indigo-700 hover:via-blue-700 hover:to-cyan-600"
+    >
+        💊 Submit Medication for Provider Review
+    </button>
                 </a>
             </div>
         </form>

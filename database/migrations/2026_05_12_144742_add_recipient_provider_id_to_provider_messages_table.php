@@ -11,9 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('patient_documents', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
+        Schema::table('provider_messages', function (Blueprint $table) {
+            //
         });
     }
 
@@ -22,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('patient_documents');
+        Schema::table('provider_messages', function (Blueprint $table) {
+            //
+        });
     }
 };

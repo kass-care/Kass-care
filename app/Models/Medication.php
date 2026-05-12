@@ -20,12 +20,17 @@ class Medication extends Model
 'emar_times',
 'start_date',
 'end_date',
+'approval_status',
+'approved_by',
+'approved_at',
+'provider_note',
     ];
 protected $casts = [
     'is_prn' => 'boolean',
     'emar_times' => 'array',
     'start_date' => 'date',
     'end_date' => 'date',
+'approved_at' => 'datetime',
 ];
 
     public function client()

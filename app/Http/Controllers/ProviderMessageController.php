@@ -68,41 +68,48 @@ class ProviderMessageController extends Controller
 
         return view('provider.messages.index', compact('messages'));
     }
+     public function create()
+{
+    $facilities = Facility::query()->orderBy('name')->get();
+    $clients = Client::query()->orderBy('name')->get();
 
-    public function create()
-    {
-        $facilities = Facility::query()->orderBy('name')->get();
-        $clients = Client::query()->orderBy('name')->get();
+    $providers = User::where('role', 'provider')
+        ->where('id', '!=', auth()->id())
+        ->orderBy('name')
+        ->get();
 
-        return view('provider.messages.create', compact('facilities', 'clients'));
-    }
+    return view('provider.messages.create', compact('facilities', 'clients', 'providers'));
+}
 
-    public function store(Request $request)
-    {
-        $data = $request->validate([
-            'facility_id' => ['required', 'exists:facilities,id'],
-            'client_id' => ['nullable', 'exists:clients,id'],
-            'subject' => ['nullable', 'string', 'max:255'],
-            'message' => ['required', 'string'],
-            'priority' => ['nullable', 'string', 'max:50'],
-        ]);
+   public function store(Request $request)
+{
+    $data = $request->validate([
+        'facility_id' => ['nullable', 'exists:facilities,id'],
+        'recipient_provider_id' => ['required', 'exists:users,id'],
+        'client_id' => ['nullable', 'exists:clients,id'],
+        'subject' => ['nullable', 'string', 'max:255'],
+        'message' => ['required', 'string'],
+        'priority' => ['nullable', 'string', 'max:50'],
+    ]);
 
-        ProviderMessage::create([
-            'facility_id' => $data['facility_id'],
-            'client_id' => $data['client_id'] ?? null,
-            'provider_id' => auth()->id(),
-            'sender_id' => auth()->id(),
-            'subject' => $data['subject'] ?? 'Provider Message',
-            'message' => $data['message'],
-            'priority' => $data['priority'] ?? 'normal',
-            'sender_type' => 'provider',
-        ]);
+    ProviderMessage::create([
+        'facility_id' => $data['facility_id'] ?? null,
+        'client_id' => $data['client_id'] ?? null,
 
-        return redirect()
-            ->route('provider.messages.index')
-            ->with('success', 'Message sent successfully.');
-    }
+        'provider_id' => $data['recipient_provider_id'],
+        'recipient_provider_id' => $data['recipient_provider_id'],
 
+        'sender_id' => auth()->id(),
+
+        'subject' => $data['subject'] ?? 'Provider Message',
+        'message' => $data['message'],
+        'priority' => $data['priority'] ?? 'normal',
+    ]);
+
+    return redirect()
+        ->route('provider.messages.index')
+        ->with('success', 'Provider message sent successfully.');
+}
     public function show(ProviderMessage $message)
     {
         $user = auth()->user();
