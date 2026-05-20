@@ -96,7 +96,7 @@
                                     </p>
                                 </div>
 
-                                <a href="{{ route('pharmacy.show', $order->id) }}"
+                                <a href="{{ route('provider.pharmacy.show', $order->id) }}"
                                    class="rounded-xl bg-indigo-600 px-3 py-2 text-sm font-bold text-white hover:bg-indigo-700">
                                     View
                                 </a>
@@ -168,7 +168,7 @@
                                         {{ optional($order->prescribed_at)->format('M j, Y') ?? $order->created_at->format('M j, Y') }}
                                     </td>
                                     <td class="p-3">
-                                        <a href="{{ route('pharmacy.show', $order->id) }}"
+                                        <a href="{{ route('provider.pharmacy.show', $order->id) }}"
                                            class="font-bold text-indigo-600 hover:text-indigo-800">
                                             Open
                                         </a>

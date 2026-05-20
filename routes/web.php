@@ -1,4 +1,4 @@
-W<?php
+<?php
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
@@ -9,6 +9,11 @@ use App\Http\Controllers\StripeWebhookController;
 
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\FacilityController;
+use App\Http\Controllers\FacilityReadinessController;
+use App\Http\Controllers\FacilitySurveyPacketController;
+use App\Http\Controllers\FacilityMarController;
+use App\Http\Controllers\ShiftController;
+
 use App\Http\Controllers\ProviderManagementController;
 use App\Http\Controllers\CaregiverManagementController;
 use App\Http\Controllers\ClientController;
@@ -29,6 +34,7 @@ use App\Http\Controllers\CommunicationController;
 use App\Http\Controllers\PharmacyOrderController;
 use App\Http\Controllers\ProviderMedicationApprovalController;
 
+use App\Http\Controllers\FacilityCaregiverActivityController;
 use App\Http\Controllers\CaregiverDashboardController;
 use App\Http\Controllers\CaregiverController;
 use App\Http\Controllers\ProviderCalendarController;
@@ -37,6 +43,7 @@ use App\Http\Controllers\CareLogController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\AlertController;
 use App\Http\Controllers\ComplianceController;
+use App\Http\Controllers\ComplianceDocumentController;
 use App\Http\Controllers\FacilityProviderCycleController;
 use App\Http\Controllers\AdminActivityController;
 use App\Http\Controllers\ClaimLedgerController;
@@ -118,6 +125,9 @@ Route::middleware('auth')->group(function () {
             default => redirect()->route('login'),
         };
     })->name('redirect.by.role');
+
+Route::get('/caregiver-activity', [FacilityCaregiverActivityController::class, 'index'])
+    ->name('caregiver.activity');
 
     Route::get('/dashboard', function () {
         $user = auth()->user();
@@ -211,19 +221,57 @@ Route::middleware(['auth', 'role:provider,admin,super_admin'])->group(function (
 
     Route::delete('/facility-cycles/{facilityProviderCycle}', [FacilityProviderCycleController::class, 'destroy'])
         ->name('facility-provider-cycles.destroy');
-
-Route::get('/pharmacy', [PharmacyOrderController::class, 'index'])
-    ->name('pharmacy.index');
-
-Route::get('/pharmacy/create', [PharmacyOrderController::class, 'create'])
-    ->name('pharmacy.create');
-
-Route::post('/pharmacy', [PharmacyOrderController::class, 'store'])
-    ->name('pharmacy.store');
-
-Route::get('/pharmacy/{order}', [PharmacyOrderController::class, 'show'])
-    ->name('pharmacy.show');
 });
+
+
+Route::middleware(['auth', 'role:admin,provider'])
+    ->prefix('facility')
+    ->name('facility.')
+    ->group(function () {
+        Route::get('/readiness', [FacilityReadinessController::class, 'index'])
+            ->name('readiness.index');
+
+        Route::post('/readiness', [FacilityReadinessController::class, 'store'])
+            ->name('readiness.store');
+
+        Route::patch('/readiness/{readinessItem}', [FacilityReadinessController::class, 'update'])
+            ->name('readiness.update');
+
+Route::get('/compliance-documents', [ComplianceDocumentController::class, 'index'])
+    ->name('compliance-documents.index');
+
+Route::post('/compliance-documents', [ComplianceDocumentController::class, 'store'])
+    ->name('compliance-documents.store');
+
+Route::delete('/compliance-documents/{document}', [ComplianceDocumentController::class, 'destroy'])
+    ->name('compliance-documents.destroy');
+
+        Route::get('/readiness/packet/download', [FacilitySurveyPacketController::class, 'download'])
+            ->name('readiness.packet.download');
+
+        Route::get('/mar', [FacilityMarController::class, 'index'])
+            ->name('mar.index');
+
+        Route::get('/shifts', [ShiftController::class, 'index'])
+            ->name('shifts.index');
+
+        Route::post('/shifts', [ShiftController::class, 'store'])
+            ->name('shifts.store');
+
+        Route::get('/pharmacy', [PharmacyOrderController::class, 'index'])
+            ->name('pharmacy.index');
+
+        Route::get('/pharmacy/create', [PharmacyOrderController::class, 'create'])
+            ->name('pharmacy.create');
+
+        Route::post('/pharmacy', [PharmacyOrderController::class, 'store'])
+            ->name('pharmacy.store');
+
+        Route::get('/pharmacy/{order}', [PharmacyOrderController::class, 'show'])
+            ->name('pharmacy.show');
+    });
+
+
 Route::middleware(['auth'])->group(function () {
     Route::get('/provider/smart-phrases', [\App\Http\Controllers\SmartPhraseController::class, 'index'])
         ->name('provider.smart.phrases');
@@ -234,6 +282,7 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/provider/smart-phrases/{id}', [\App\Http\Controllers\SmartPhraseController::class, 'destroy'])
         ->name('provider.smart.phrases.destroy');
 });
+
 /*
 |--------------------------------------------------------------------------
 | Facility routes — Admin
@@ -425,6 +474,10 @@ Route::get('/notes/previous/{visitId}', [\App\Http\Controllers\ProviderNoteContr
         Route::get('/pharmacy', [PharmacyOrderController::class, 'index'])->name('pharmacy.index');
         Route::get('/pharmacy/create', [PharmacyOrderController::class, 'create'])->name('pharmacy.create');
         Route::post('/pharmacy', [PharmacyOrderController::class, 'store'])->name('pharmacy.store');
+     
+         Route::get('/pharmacy/{order}', [PharmacyOrderController::class, 'show'])
+    ->name('pharmacy.show');
+
         Route::patch('/pharmacy/{id}/status', [PharmacyOrderController::class, 'updateStatus'])->name('pharmacy.status');
         Route::get('/pharmacy/{order}/pdf', [PharmacyOrderController::class, 'downloadPdf'])->name('pharmacy.pdf');
         Route::post('/pharmacy/{order}/email', [PharmacyOrderController::class, 'emailPrescription'])->name('pharmacy.email');

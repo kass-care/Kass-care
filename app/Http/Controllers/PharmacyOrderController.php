@@ -120,7 +120,7 @@ class PharmacyOrderController extends Controller
         ]);
 
         return redirect()
-            ->route('pharmacy.show', $order)
+            ->route('provider.pharmacy.show', $order)
             ->with('success', 'Prescription created successfully!');
     }
 

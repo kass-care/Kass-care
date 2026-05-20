@@ -142,7 +142,7 @@
                                     📞 Call
                                 </a>
                             @endif
-                                  <a href="{{ route('pharmacy.show', $order->id) }}"
+                                  <a href="{{ route('provider.pharmacy.show', $order->id) }}"
    class="rounded-xl bg-slate-800 px-3 py-2 text-sm font-bold text-white hover:bg-slate-900">
     👁 View
 </a>
