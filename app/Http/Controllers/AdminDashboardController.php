@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Client;
-use App\Models\Facility;
-use App\Models\Visit;
 use App\Models\Claim;
+use App\Models\Client;
+use App\Models\ComplianceDocument;
+use App\Models\Facility;
 use App\Models\User;
+use App\Models\Visit;
 
 class AdminDashboardController extends Controller
 {
@@ -18,22 +19,18 @@ class AdminDashboardController extends Controller
         $facilityCount = Facility::count();
 
         $clientQuery = Client::query();
+        $caregiverQuery = User::where('role', 'caregiver');
+        $visitQuery = Visit::query();
+
         if ($selectedFacilityId) {
             $clientQuery->where('facility_id', $selectedFacilityId);
-        }
-
-        $caregiverQuery = User::where('role', 'caregiver');
-        if ($selectedFacilityId) {
             $caregiverQuery->where('facility_id', $selectedFacilityId);
-        }
-
-        $visitQuery = Visit::query();
-        if ($selectedFacilityId) {
             $visitQuery->where('facility_id', $selectedFacilityId);
         }
 
-        $clientCount = $clientQuery->count();
-        $caregiverCount = $caregiverQuery->count();
+        $clientCount = (clone $clientQuery)->count();
+        $caregiverCount = (clone $caregiverQuery)->count();
+        $providerCount = User::where('role', 'provider')->count();
         $visitCount = (clone $visitQuery)->count();
 
         $scheduledVisitCount = (clone $visitQuery)->where('status', 'scheduled')->count();
@@ -41,28 +38,53 @@ class AdminDashboardController extends Controller
         $missedVisitCount = (clone $visitQuery)->where('status', 'missed')->count();
         $inProgressVisitCount = (clone $visitQuery)->where('status', 'in_progress')->count();
 
-        $alertCount = 0;
-        $openTaskCount = 0;
-        $reviewTaskCount = 0;
+        $expiredDocuments = 0;
+        $expiringSoonDocuments = 0;
+
+        if (class_exists(ComplianceDocument::class)) {
+            $documentQuery = ComplianceDocument::query();
+
+            if ($selectedFacilityId) {
+                $documentQuery->where('facility_id', $selectedFacilityId);
+            }
+
+            $expiredDocuments = (clone $documentQuery)
+                ->whereDate('expires_at', '<', now())
+                ->count();
+
+            $expiringSoonDocuments = (clone $documentQuery)
+                ->whereDate('expires_at', '>=', now())
+                ->whereDate('expires_at', '<=', now()->addDays(30))
+                ->count();
+        }
+
+        $alertCount = $missedVisitCount + $expiredDocuments;
+        $openTaskCount = $scheduledVisitCount + $expiringSoonDocuments;
+        $reviewTaskCount = $inProgressVisitCount;
 
         $facilities = Facility::latest()->get();
+        $recentVisits = Visit::latest()->take(5)->get();
 
-        return view('admin.dashboard', compact(
-            'selectedFacilityId',
-            'selectedFacility',
-            'facilityCount',
-            'clientCount',
-            'caregiverCount',
-            'visitCount',
-            'scheduledVisitCount',
-            'completedVisitCount',
-            'missedVisitCount',
-            'inProgressVisitCount',
-            'alertCount',
-            'openTaskCount',
-            'reviewTaskCount',
-            'facilities'
-        ));
+                   return view('admin.dashboard', compact(
+    'selectedFacilityId',
+    'selectedFacility',
+    'facilityCount',
+    'clientCount',
+    'caregiverCount',
+    'providerCount',
+    'visitCount',
+    'scheduledVisitCount',
+    'completedVisitCount',
+    'missedVisitCount',
+    'inProgressVisitCount',
+    'expiredDocuments',
+    'expiringSoonDocuments',
+    'alertCount',
+    'openTaskCount',
+    'reviewTaskCount',
+    'facilities',
+    'recentVisits'
+));
     }
 
     public function facilityHome()
@@ -75,7 +97,7 @@ class AdminDashboardController extends Controller
 
         abort_if(!$facilityId, 403, 'No facility selected.');
 
-        $facility = Facility::find($facilityId);
+        $facility = Facility::findOrFail($facilityId);
 
         $patients = Client::where('facility_id', $facilityId)->count();
 
@@ -83,19 +105,28 @@ class AdminDashboardController extends Controller
             ->where('facility_id', $facilityId)
             ->count();
 
+        $providers = User::where('role', 'provider')->count();
+
         $visits = Visit::where('facility_id', $facilityId)->count();
 
-        $providers = User::where('role', 'provider')
-            ->where('facility_id', $facilityId)
+        $expiredDocuments = ComplianceDocument::where('facility_id', $facilityId)
+            ->whereDate('expires_at', '<', now())
             ->count();
 
-        return view('admin.facility-home', [
-            'facility' => $facility,
-            'patients' => $patients,
-            'caregivers' => $caregivers,
-            'visits' => $visits,
-            'providers' => $providers,
-        ]);
+        $expiringSoonDocuments = ComplianceDocument::where('facility_id', $facilityId)
+            ->whereDate('expires_at', '>=', now())
+            ->whereDate('expires_at', '<=', now()->addDays(30))
+            ->count();
+
+        return view('admin.facility-home', compact(
+            'facility',
+            'patients',
+            'caregivers',
+            'providers',
+            'visits',
+            'expiredDocuments',
+            'expiringSoonDocuments'
+        ));
     }
 
     public function revenue()

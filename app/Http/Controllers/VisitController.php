@@ -177,4 +177,20 @@ class VisitController extends Controller
             'Unauthorized visit access.'
         );
     }
+public function show(\App\Models\Visit $visit)
+{
+    $user = auth()->user();
+
+    if ($user && $user->role !== 'super_admin') {
+        $facilityId = session('facility_id') ?? $user->facility_id ?? null;
+
+        abort_if(
+            $facilityId && (int) $visit->facility_id !== (int) $facilityId,
+            403,
+            'Unauthorized visit access.'
+        );
+    }
+
+    return redirect()->route('admin.visits.index');
+}
 }

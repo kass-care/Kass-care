@@ -98,7 +98,8 @@ Route::middleware('auth')->group(function () {
         ]);
 
         return match ($user->role) {
-            'super_admin' => redirect()->route('admin.dashboard'),
+           'super_admin' => redirect()->route('admin.dashboard')
+    ->with('success', 'Facility context changed to: ' . $facility->name),
             'admin' => redirect()->route('facility.admin.home'),
             'provider' => redirect()->route('provider.dashboard'),
             default => redirect()->route('dashboard'),
@@ -788,45 +789,6 @@ Route::middleware('auth')->group(function () {
 
 Route::post('/stripe/webhook', [StripeWebhookController::class, 'handleWebhook'])
     ->name('cashier.webhook');
-Route::post('/select-facility/{facility}', function (\App\Models\Facility $facility) {
-    $user = auth()->user();
-
-    abort_if(!$user, 403, 'Unauthorized.');
-
-    if (in_array($user->role, ['super_admin', 'admin'])) {
-        session([
-            'facility_id' => $facility->id,
-            'facility_name' => $facility->name,
-        ]);
-
-        return redirect()->route('dashboard')
-            ->with('success', 'You are now managing: ' . $facility->name);
-    }
-
-    if ($user->role === 'provider') {
-        session([
-            'facility_id' => $facility->id,
-            'facility_name' => $facility->name,
-        ]);
-
-        return redirect()->route('provider.dashboard')
-            ->with('success', 'Facility context changed to: ' . $facility->name);
-    }
-
-    if ($user->role === 'caregiver') {
-        abort(403, 'Caregivers cannot switch facility context.');
-    }
-
-    abort(403, 'Access denied.');
-})->middleware('auth')->name('select.facility');
-Route::post('/clear-facility-context', function () {
-    session()->forget(['facility_id', 'facility_name']);
-    return redirect('/admin/dashboard');
-})->middleware('auth')->name('facility.clear');
-Route::post('/clear-facility-context', function () {
-    session()->forget('facility_id');
-    return redirect()->back();
-})->name('clear.facility');
 Route::get('/register-provider', function () {
     return view('auth.register-provider');
 })->name('register-provider');

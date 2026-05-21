@@ -226,7 +226,7 @@
         </div>
     </div>
 
-    <form method="POST" action="{{ route('patient-documents.store') }}" enctype="multipart/form-data"
+    <form method="POST" action="{{ route('provider.patient-documents.store') }}" enctype="multipart/form-data"
           class="mb-6 rounded-2xl border border-emerald-100 bg-emerald-50 p-5">
         @csrf
 
