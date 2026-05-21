@@ -26,6 +26,16 @@
                 Manage multiple facilities, reduce paperwork, and access intelligent
                 clinical workflows designed for modern providers.
             </p>
+               <div class="mt-6 rounded-2xl border border-emerald-300 bg-emerald-50 px-5 py-4 shadow-sm">
+    <p class="text-lg font-black text-emerald-800">
+        🚀 Start Your 30-Day Free Trial
+    </p>
+
+    <p class="mt-1 text-sm font-semibold text-emerald-700">
+        Full access to provider workflows, patient tools, messaging,
+        compliance tracking, and clinical operations.
+    </p>
+</div>
 
             <div class="mt-8 space-y-4">
                 <div class="rounded-2xl bg-white/5 border border-white/10 p-4">

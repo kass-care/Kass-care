@@ -114,18 +114,25 @@
                         KassCare brings care documentation, facility workflows, caregiver coordination,
                         provider intelligence, compliance tracking, and patient visibility into one powerful platform.
                     </p>
+                         <div class="mt-10 flex flex-wrap gap-4">
 
-                    <div class="mt-10 flex flex-wrap gap-4">
-                        <a href="{{ route('register-facility') }}"
-                           class="rounded-2xl bg-indigo-500 px-6 py-3.5 text-sm font-black text-white shadow-2xl shadow-indigo-950/40 transition hover:bg-indigo-400">
-                            Register Facility
-                        </a>
+    <a href="{{ route('register-facility') }}"
+       class="rounded-2xl bg-emerald-700 px-7 py-4 text-sm font-black text-white shadow-2xl transition hover:bg-emerald-800">
+        🚀 Start 30-Day Free Trial
+    </a>
 
-                        <a href="{{ route('login') }}"
-                           class="rounded-2xl border border-white/15 bg-white/10 px-6 py-3.5 text-sm font-black text-white transition hover:bg-white/20">
-                            Sign In
-                        </a>
-                    </div>
+    <a href="{{ route('login') }}"
+       class="rounded-2xl border border-white/15 bg-white/10 px-7 py-4 text-sm font-black text-white transition hover:bg-white/20">
+        Sign In
+    </a>
+
+</div>
+
+<div class="mt-5">
+    <p class="inline-flex items-center rounded-full border border-emerald-400/20 bg-emerald-400/10 px-5 py-2 text-sm font-bold text-emerald-200">
+        ✅ Full platform access • 30-Day Free Trial • No setup stress
+    </p>
+</div>
 
                     <div class="mt-8 flex flex-wrap gap-6 text-sm text-slate-300">
                         <span>Built for providers</span>

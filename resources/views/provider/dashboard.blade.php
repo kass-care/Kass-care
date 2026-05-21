@@ -18,6 +18,9 @@
         $deniedClaims     = $deniedClaims ?? 0;
         $totalRevenue     = $totalRevenue ?? 0;
 
+       $unreadProviderMessages = \App\Models\ProviderMessage::where('provider_id', auth()->id())
+    ->whereNull('read_at')
+    ->count();
         $recentPatients = collect();
 
         if (isset($patients) && $patients instanceof \Illuminate\Support\Collection) {
@@ -363,22 +366,24 @@
                         </a>
                     @endif
 
-                    @if(Route::has('provider.messages.index'))
-                        <a href="{{ route('provider.messages.index') }}"
-                           class="flex items-center justify-between rounded-2xl bg-slate-50 px-5 py-4 transition hover:bg-slate-100">
-                            <span class="font-semibold text-slate-700">📥 View Messages</span>
-                            <span>↗️</span>
-                        </a>
-                    @endif
+                            @if(Route::has('provider.messages.index'))
+    <a href="{{ route('provider.messages.index') }}"
+       class="flex items-center justify-between rounded-2xl bg-slate-50 px-5 py-4 transition hover:bg-slate-100">
+        <span class="font-semibold text-slate-700">
+            📥 View Messages
+        </span>
 
-                    @if(Route::has('provider.alerts.index'))
-                        <a href="{{ route('provider.alerts.index', ['type' => 'all']) }}"
-                           class="flex items-center justify-between rounded-2xl bg-red-50 px-5 py-4 transition hover:bg-red-100">
-                            <span class="font-semibold text-red-700">🔔 Clinical Alerts</span>
-                            <span>↗️</span>
-                        </a>
-                    @endif
+        <div class="flex items-center gap-2">
+            @if(($unreadProviderMessages ?? 0) > 0)
+                <span class="rounded-full bg-red-600 px-3 py-1 text-xs font-black text-white">
+                    {{ $unreadProviderMessages }}
+                </span>
+            @endif
 
+            <span>↗️</span>
+        </div>
+    </a>
+@endif
                     @if(Route::has('provider.calendar'))
                         <a href="{{ route('provider.calendar') }}"
                            class="flex items-center justify-between rounded-2xl bg-blue-50 px-5 py-4 transition hover:bg-blue-100">

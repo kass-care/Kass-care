@@ -127,7 +127,19 @@
     </div>
 </footer>
 
->/div
+<script type="text/javascript">
+window.$crisp = [];
+window.CRISP_WEBSITE_ID = "f087bf18-511e-4421-9fe5-8f4dfd34c527";
+
+(function () {
+    d = document;
+    s = d.createElement("script");
+    s.src = "https://client.crisp.chat/l.js";
+    s.async = 1;
+    d.getElementsByTagName("head")[0].appendChild(s);
+})();
+</script>
+
 @stack('scripts')
 </body>
 </html>

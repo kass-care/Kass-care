@@ -76,7 +76,7 @@
 
         {{-- Upload Form --}}
         <form method="POST"
-              action="{{ route('provider.patient-documents.store') }}"
+              action="{{ route('provider.provider.patient-documents.store') }}"
               enctype="multipart/form-data"
               class="rounded-2xl border border-emerald-100 bg-emerald-50 p-5 mb-6">
 
