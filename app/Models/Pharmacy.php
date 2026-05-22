@@ -6,10 +6,17 @@ use Illuminate\Database\Eloquent\Model;
 
 class Pharmacy extends Model
 {
-    protected $fillable = [
-        'name',
-        'email',
-        'phone',
-        'fax',
-    ];
+       protected $fillable = [
+    'name',
+    'email',
+    'phone',
+    'fax',
+    'type',
+    'address',
+    'city',
+    'state',
+    'zip',
+    'ncpdp_id',
+    'notes',
+];
 }
