@@ -100,7 +100,7 @@ Route::middleware('auth')->group(function () {
         return match ($user->role) {
            'super_admin' => redirect()->route('admin.dashboard')
     ->with('success', 'Facility context changed to: ' . $facility->name),
-            'admin' => redirect()->route('facility.admin.home'),
+            'admin' => redirect()->route('facility.visits.index'),
             'provider' => redirect()->route('provider.dashboard'),
             default => redirect()->route('dashboard'),
         };
@@ -479,7 +479,6 @@ Route::get('/notes/previous/{visitId}', [\App\Http\Controllers\ProviderNoteContr
          Route::get('/pharmacy/{order}', [PharmacyOrderController::class, 'show'])
     ->name('pharmacy.show');
 
-        Route::patch('/pharmacy/{id}/status', [PharmacyOrderController::class, 'updateStatus'])->name('pharmacy.status');
         Route::get('/pharmacy/{order}/pdf', [PharmacyOrderController::class, 'downloadPdf'])->name('pharmacy.pdf');
         Route::post('/pharmacy/{order}/email', [PharmacyOrderController::class, 'emailPrescription'])->name('pharmacy.email');
 
@@ -604,15 +603,6 @@ Route::put('/notes/{providerNote}', [ProviderNoteController::class, 'update'])->
 Route::get('/pharmacy/create', [PharmacyOrderController::class, 'create'])
     ->name('pharmacy.create');
 
-Route::post('/pharmacy/store', [PharmacyOrderController::class, 'store'])
-    ->name('pharmacy.store');
-
-Route::get('/pharmacy/order/{order}/pdf', [PharmacyOrderController::class, 'downloadPdf'])
-    ->name('pharmacy.pdf');
-
-Route::post('/pharmacy/order/{order}/email', [PharmacyOrderController::class, 'emailPrescription'])
-    ->name('pharmacy.email');
-
 Route::get('/messages', [ProviderMessageController::class, 'providerIndex'])
     ->name('messages.index');
 
@@ -637,7 +627,6 @@ Route::post('/pharmacy/{id}/status', [PharmacyOrderController::class, 'updateSta
 | Caregiver
 |--------------------------------------------------------------------------
 */
-
 Route::middleware(['auth', 'role:caregiver'])
     ->prefix('caregiver')
     ->name('caregiver.')
@@ -655,11 +644,11 @@ Route::middleware(['auth', 'role:caregiver'])
         Route::post('/check-in/{id}', [CaregiverController::class, 'storeCheckIn'])
             ->name('checkin.store');
 
-        Route::get('/check-out/{id}', [CaregiverController::class, 'checkOut'])
+        Route::get('/check-out/{visit}', [CaregiverController::class, 'checkOut'])
             ->name('checkout');
 
-        Route::post('/check-out/{id}', [CaregiverController::class, 'storeCheckOut'])
-            ->name('visits.checkout');
+        Route::post('/check-out/{visit}', [CaregiverController::class, 'checkoutSave'])
+            ->name('checkout.save');
 
         Route::get('/care-logs', [CareLogController::class, 'index'])
             ->name('care-logs.index');
@@ -672,28 +661,20 @@ Route::middleware(['auth', 'role:caregiver'])
 
         Route::get('/care-logs/{careLog}', [CareLogController::class, 'show'])
             ->name('care-logs.show');
-Route::get('/check-out/{visit}', [CaregiverController::class, 'checkOut'])
-    ->name('checkout');
 
-Route::post('/check-out/{visit}', [CaregiverController::class, 'checkoutSave'])
-    ->name('checkout.save');
+        Route::get('/visits/{visit}/report-issue', [CaregiverController::class, 'reportIssue'])
+            ->name('visits.report-issue');
 
-Route::get('/visits/{visit}/report-issue', [CaregiverController::class, 'reportIssue'])
-    ->name('visits.report-issue');
+        Route::post('/visits/{visit}/report-issue', [CaregiverController::class, 'storeReportIssue'])
+            ->name('visits.report-issue.store');
 
-Route::post('/visits/{visit}/report-issue', [CaregiverController::class, 'storeReportIssue'])
-    ->name('visits.report-issue.store');
+        Route::get('/emar', [CaregiverEmarController::class, 'index'])
+            ->name('emar.index');
+
+        Route::post('/emar/{medication}/administer', [CaregiverEmarController::class, 'administer'])
+            ->name('emar.administer');
     });
-Route::middleware(['auth', 'role:caregiver', 'check.subscription'])->group(function () {
-    Route::get('/caregiver/emar', [CaregiverEmarController::class, 'index'])
-        ->name('caregiver.emar.index');
 
-    Route::post('/caregiver/emar/{medication}/administer', [CaregiverEmarController::class, 'administer'])
-        ->name('caregiver.emar.administer');
-});
-Route::middleware(['auth','role:caregiver'])->prefix('caregiver')->group(function () {
-    Route::get('/dashboard', [CaregiverDashboardController::class, 'index'])->name('caregiver.dashboard');
-});
 /*
 |--------------------------------------------------------------------------
 | Profile + alerts
