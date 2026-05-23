@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\Visit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\DutyTemplate;
 
 class FacilityVisitController extends Controller
 {
@@ -56,7 +57,7 @@ class FacilityVisitController extends Controller
             'visits',
             'clients',
             'providers',
-            'caregivers'
+            'caregivers',
         ));
     }
 
@@ -86,12 +87,17 @@ class FacilityVisitController extends Controller
     })
     ->orderBy('name')
     ->get();
+$dutyTemplates = DutyTemplate::whereNull('facility_id')
+    ->orWhere('facility_id', $facilityId)
+    ->orderBy('title')
+    ->get();
 
         return view('facility.visits.create', compact(
             'facility',
             'clients',
             'caregivers',
-            'providers'
+            'providers',
+            'dutyTemplates'
         ));
     }
 
@@ -103,31 +109,36 @@ class FacilityVisitController extends Controller
  $validated = $request->validate([
     'client_id' => ['required', 'exists:clients,id'],
     'provider_id' => ['nullable', 'exists:users,id'],
-    'caregiver_id' => ['required', 'exists:users,id'],
+     'caregiver_ids' => ['required', 'array', 'min:1'],
+'caregiver_ids.*' => ['exists:users,id'],
+'duties' => ['nullable', 'string'],
     'visit_date' => ['required', 'date'],
     'status' => ['required', 'string'],
 ]);
-$caregiver = User::where('id', $validated['caregiver_id'])
+$caregivers = User::whereIn('id', $validated['caregiver_ids'])
     ->where('role', 'caregiver')
-    ->firstOrFail();
-abort_if(!$caregiver, 422, 'Invalid caregiver selected.');
+    ->where('facility_id', $facilityId)
+    ->get();
+
+abort_if($caregivers->count() !== count($validated['caregiver_ids']), 422, 'Invalid caregiver selection.');
 
         $client = Client::findOrFail($validated['client_id']);
         
 
         abort_if((int) $client->facility_id !== (int) $facilityId, 403, 'Client not in this facility.');
-        abort_if((int) $caregiver->facility_id !== (int) $facilityId, 403, 'Caregiver not in this facility.');
 
-        Visit::create([
-            'client_id' => $client->id,
-            'caregiver_id' => $caregiver->id,
-            'provider_id' => $validated['provider_id'] ?? null,
-            'visit_date' => $validated['visit_date'],
-            'status' => $validated['status'],
-            'activity' => $validated['activity'] ?? 'Visit',
-            'facility_id' => $facilityId,
-        ]);
+        $visit = Visit::create([
+    'client_id' => $client->id,
+    'caregiver_id' => $caregivers->first()->id,
+    'provider_id' => $validated['provider_id'] ?? null,
+    'visit_date' => $validated['visit_date'],
+    'status' => $validated['status'],
+    'activity' => $validated['activity'] ?? 'Visit',
+    'duties' => $validated['duties'] ?? null,
+    'facility_id' => $facilityId,
+]);
 
+$visit->caregivers()->sync($caregivers->pluck('id')->toArray());
         return redirect()
             ->route('facility.visits.index')
             ->with('success', 'Visit created successfully!');
@@ -185,7 +196,6 @@ abort_if(!$caregiver, 422, 'Invalid caregiver selected.');
         $caregiver = User::where('role', 'caregiver')->findOrFail($validated['caregiver_id']);
 
         abort_if((int) $client->facility_id !== (int) $visit->facility_id, 403);
-        abort_if((int) $caregiver->facility_id !== (int) $facilityId, 403, 'Selected caregiver does not belong to this facility.');
 
         $visit->update([
             'client_id' => $client->id,

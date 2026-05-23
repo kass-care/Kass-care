@@ -133,4 +133,9 @@ class Visit extends Model
     {
         return $this->hasOne(ProviderNote::class, 'visit_id');
     }
+public function caregivers()
+{
+    return $this->belongsToMany(\App\Models\User::class, 'visit_caregiver', 'visit_id', 'caregiver_id')
+        ->withTimestamps();
+}
 }

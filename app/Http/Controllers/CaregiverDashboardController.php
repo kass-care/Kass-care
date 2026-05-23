@@ -126,14 +126,18 @@ class CaregiverDashboardController extends Controller
             ->map(function ($clientVisits) {
                 $latestVisit = $clientVisits->sortByDesc('updated_at')->first();
                 $client = $latestVisit->client;
+                 return (object) [
+    'id' => $client->id ?? null,
+    'name' => $client->name ?? 'Unknown Client',
+    'photo' => $client->photo ?? null,
+    'gender' => $client->gender ?? null,
+    'dob' => $client->dob ?? $client->date_of_birth ?? null,
+    'duties' => $latestVisit->duties ?? null,
+    'latest_status' => $latestVisit->status ?? 'N/A',
+    'latest_visit_date' => $latestVisit->visit_date ?? $latestVisit->updated_at,
+    'visit_id' => $latestVisit->id,
+];
 
-                return (object) [
-                    'id' => $client->id ?? null,
-                    'name' => $client->name ?? 'Unknown Client',
-                    'latest_status' => $latestVisit->status ?? 'N/A',
-                    'latest_visit_date' => $latestVisit->visit_date ?? $latestVisit->updated_at,
-                    'visit_id' => $latestVisit->id,
-                ];
             })
             ->values();
 

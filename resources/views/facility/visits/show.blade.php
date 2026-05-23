@@ -22,21 +22,118 @@
             Back to Facility Visits
         </a>
     </div>
+             @if($visit->client)
+<div class="sticky top-0 z-40 mb-6 rounded-3xl border border-indigo-500/20 bg-slate-950/95 p-5 shadow-2xl">
+    <div class="flex items-center gap-4">
 
+        @if($visit->client->photo)
+            <img
+                src="{{ asset('storage/' . $visit->client->photo) }}"
+                class="h-20 w-20 rounded-2xl object-cover border-2 border-indigo-500"
+            >
+        @else
+            <div class="h-20 w-20 rounded-2xl bg-slate-800 flex items-center justify-center text-3xl font-black text-indigo-300">
+                {{ strtoupper(substr($visit->client->name ?? 'P',0,1)) }}
+            </div>
+        @endif
+
+        <div>
+            <p class="text-xs uppercase tracking-[0.3em] text-indigo-300">
+                Active Patient
+            </p>
+
+            <h2 class="text-2xl font-black text-white">
+                {{ $visit->client->name }}
+            </h2>
+
+            <div class="mt-2 flex flex-wrap gap-2 text-xs text-slate-300">
+
+                @if($visit->client->date_of_birth)
+                    <span class="rounded-full bg-slate-800 px-3 py-1">
+                        DOB:
+                        {{ \Carbon\Carbon::parse($visit->client->date_of_birth)->format('M d, Y') }}
+                    </span>
+
+                    <span class="rounded-full bg-slate-800 px-3 py-1">
+                        Age:
+                        {{ \Carbon\Carbon::parse($visit->client->date_of_birth)->age }}
+                    </span>
+                @endif
+
+                <span class="rounded-full bg-emerald-500/20 px-3 py-1 text-emerald-300">
+                    Visit #{{ $visit->id }}
+                </span>
+
+            </div>
+        </div>
+    </div>
+</div>
+@endif
     <!-- MAIN CARD -->
     <div class="bg-slate-900 rounded-3xl border border-slate-800 p-8 space-y-8">
 
-        <!-- ✅ PATIENT SECTION WITH PHOTO -->
-        <div class="flex items-center gap-4 border border-slate-800 rounded-2xl p-5 bg-slate-950/60">
-            <img
-                src="{{ $visit->client?->photo
-                    ? asset('storage/' . $visit->client->photo)
-                    : 'https://ui-avatars.com/api/?name=' . urlencode($visit->client->name ?? 'Patient') }}"
-                class="h-16 w-16 rounded-full object-cover border border-slate-600"
-                alt="Patient photo"
-            >
+                    Patient Workspace
+                </p>
 
-            <div>
+                <h2 class="text-3xl font-black text-white">
+                    {{ $visit->client->name }}
+                </h2>
+
+                <div class="mt-2 flex flex-wrap items-center gap-3 text-sm text-slate-300">
+
+                    @if($visit->client->dob)
+                        <span class="rounded-full bg-slate-800 px-3 py-1">
+                            DOB:
+                            {{ \Carbon\Carbon::parse($visit->client->dob)->format('M d, Y') }}
+                        </span>
+
+                        <span class="rounded-full bg-slate-800 px-3 py-1">
+                            Age:
+                            {{ \Carbon\Carbon::parse($visit->client->dob)->age }}
+                        </span>
+                    @endif
+
+                    @if($visit->client->gender)
+                        <span class="rounded-full bg-slate-800 px-3 py-1">
+                            {{ $visit->client->gender }}
+                        </span>
+                    @endif
+
+                    <span class="rounded-full bg-emerald-500/20 px-3 py-1 text-emerald-300">
+                        {{ ucfirst($visit->status) }}
+                    </span>
+
+                </div>
+            </div>
+        </div>
+
+        {{-- Right Side --}}
+        <div class="flex flex-wrap gap-3">
+
+            <div class="rounded-2xl bg-slate-900 px-5 py-3 border border-slate-800">
+                <p class="text-xs uppercase text-slate-400">
+                    Visit Date
+                </p>
+
+                <p class="text-lg font-bold text-white">
+                    {{ \Carbon\Carbon::parse($visit->visit_date)->format('M d, Y') }}
+                </p>
+            </div>
+
+            <div class="rounded-2xl bg-slate-900 px-5 py-3 border border-slate-800">
+                <p class="text-xs uppercase text-slate-400">
+                    Visit ID
+                </p>
+
+                <p class="text-lg font-bold text-white">
+                    #{{ $visit->id }}
+                </p>
+            </div>
+
+        </div>
+
+    </div>
+</div>
                 <p class="text-xs uppercase tracking-widest text-slate-400">Patient</p>
                 <p class="text-xl font-bold">
                     {{ $visit->client->name
@@ -89,17 +186,6 @@
                 </p>
             </div>
 
-        </div>
-
-        <!-- NEXT BUILD HOOK -->
-        <div class="rounded-2xl border border-dashed border-slate-700 bg-slate-950/40 p-6">
-            <h2 class="text-xl font-semibold mb-2">Next Build Hook</h2>
-            <p class="text-slate-300">
-                This visit workspace is now connected.
-                Next we wire:
-                caregiver charting, vitals, provider notes,
-                visit completion, and medication follow-up.
-            </p>
         </div>
 
     </div>

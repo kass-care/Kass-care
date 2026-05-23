@@ -143,117 +143,65 @@
                 </div>
             </div>
         @endif
+                        <div class="mb-8 overflow-hidden rounded-3xl border border-emerald-200 bg-white shadow-sm">
+    <div class="border-b border-emerald-100 bg-emerald-50 px-6 py-5">
+        <h3 class="text-2xl font-black text-slate-900">Today’s Assigned Patients</h3>
+        <p class="mt-1 text-sm text-slate-600">Tap a patient to open the assigned visit and chart care.</p>
+    </div>
 
-        <div class="mb-8 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-            <div class="flex items-center justify-between border-b border-slate-200 px-6 py-5">
-                <div>
-                    <h3 class="text-2xl font-bold text-slate-900">Today's Assigned Visits</h3>
-                    <p class="mt-1 text-sm text-slate-500">Blue visit cards preserved and upgraded</p>
-                </div>
+    <div class="grid grid-cols-1 gap-5 p-6 md:grid-cols-2 xl:grid-cols-3">
+        @forelse ($assignedClients->take(12) as $client)
+            <a href="{{ route('caregiver.care-logs.create', ['visit_id' => $client->visit_id]) }}"
+               class="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-emerald-300 hover:shadow-xl">
 
-                <span class="text-sm font-semibold text-emerald-700">
-                    {{ $todayVisits->count() }} visit(s)
-                </span>
-            </div>
-
-            <div class="grid grid-cols-1 gap-5 p-6 md:grid-cols-2">
-                @forelse ($todayVisits as $visit)
-                    <div class="rounded-3xl border border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 p-6 shadow-sm">
-                        <div class="flex items-start justify-between gap-4">
-                            <div>
-                                <p class="text-xs font-bold uppercase tracking-widest text-blue-600">
-                                    Assigned Visit
-                                </p>
-
-                                <h4 class="mt-2 text-2xl font-black text-slate-900">
-                                    {{ $resolveClientName($visit->client ?? null) }}
-                                </h4>
-
-                                <p class="mt-2 text-sm text-slate-600">
-                                    Time: {{ $formatVisitTime($visit) }}
-                                </p>
-
-                                <p class="mt-1 text-sm text-slate-600">
-                                    Status:
-                                    <span class="font-bold">{{ $displayStatus($visit->status ?? 'scheduled') }}</span>
-                                </p>
+                <div class="flex items-center gap-4">
+                    <div class="h-20 w-20 overflow-hidden rounded-2xl border-2 border-emerald-200 bg-emerald-50">
+                        @if(!empty($client->photo))
+                            <img src="{{ asset('storage/' . $client->photo) }}"
+                                 class="h-full w-full object-cover"
+                                 alt="Patient photo">
+                        @else
+                            <div class="flex h-full w-full items-center justify-center text-3xl font-black text-emerald-700">
+                                {{ strtoupper(substr($client->name ?? 'P', 0, 1)) }}
                             </div>
-
-                            <span class="rounded-full bg-white px-3 py-1 text-xs font-bold text-blue-700 shadow">
-                                #{{ $visit->id }}
-                            </span>
-                        </div>
-
-                        <div class="mt-5 flex flex-wrap gap-2">
-                            @if (($visit->status ?? '') === 'scheduled')
-                                <a href="{{ route('caregiver.checkin', $visit->id) }}"
-                                   class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white shadow">
-                                    Check In
-                                </a>
-                            @elseif (($visit->status ?? '') === 'in_progress')
-                                <a href="{{ route('caregiver.care-logs.create', ['visit_id' => $visit->id]) }}"
-                                   class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white shadow">
-                                    Care Log
-                                </a>
-
-                                <a href="{{ route('caregiver.checkout', $visit->id) }}"
-                                   class="rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white shadow">
-                                    Check Out
-                                </a>
-                            @elseif (($visit->status ?? '') === 'completed')
-                                <span class="rounded-xl bg-emerald-100 px-4 py-2 text-sm font-bold text-emerald-700">
-                                    Done
-                                </span>
-                            @else
-                                <span class="rounded-xl bg-slate-100 px-4 py-2 text-sm font-bold text-slate-700">
-                                    {{ $displayStatus($visit->status ?? 'scheduled') }}
-                                </span>
-                            @endif
-                        </div>
+                        @endif
                     </div>
-                @empty
-                    <div class="rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-10 text-center text-slate-500 md:col-span-2">
-                        No visits today.
-                    </div>
-                @endforelse
-            </div>
-        </div>
 
-        <div class="mb-8 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-            <div class="border-b border-slate-200 px-6 py-5">
-                <h3 class="text-2xl font-bold text-slate-900">Assigned Clients</h3>
-                <p class="mt-1 text-sm text-slate-500">Clients connected to your visit history</p>
-            </div>
+                    <div class="min-w-0">
+                        <p class="text-xs font-black uppercase tracking-[0.25em] text-emerald-600">
+                            Patient
+                        </p>
 
-            <div class="grid grid-cols-1 gap-5 p-6 md:grid-cols-2">
-                @forelse ($assignedClients->take(8) as $client)
-                    <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                        <h4 class="text-xl font-bold text-slate-900">
-                            {{ $client->name ?? $resolveClientName($client) }}
+                        <h4 class="truncate text-xl font-black text-slate-900">
+                            {{ $client->name }}
                         </h4>
 
-                        <p class="mt-2 text-sm text-slate-600">
-                            Latest status: {{ $displayStatus($client->latest_status ?? 'n/a') }}
+                        <p class="mt-1 text-xs font-semibold text-slate-500">
+                            Visit #{{ $client->visit_id }} • {{ $displayStatus($client->latest_status ?? 'scheduled') }}
                         </p>
-
-                        <p class="mt-1 text-sm text-slate-500">
-                            Last activity:
-                            {{ !empty($client->latest_visit_date) ? $formatDateTime($client->latest_visit_date) : 'N/A' }}
-                        </p>
-
-                        <a href="{{ route('caregiver.visits') }}"
-                           class="mt-4 inline-flex rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-bold text-blue-700">
-                            Open Visit
-                        </a>
                     </div>
-                @empty
-                    <div class="rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-10 text-center text-slate-500 md:col-span-2">
-                        No assigned clients found yet.
+                </div>
+
+                @if(!empty($client->duties))
+                    <div class="mt-4 rounded-2xl bg-slate-50 p-4 text-sm text-slate-700">
+                        <p class="mb-1 text-xs font-black uppercase tracking-[0.2em] text-slate-400">Duties</p>
+                        {{ \Illuminate\Support\Str::limit($client->duties, 130) }}
                     </div>
-                @endforelse
+                @endif
+
+                <div class="mt-4 inline-flex rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white group-hover:bg-emerald-700">
+                    Open Shift →
+                </div>
+            </a>
+        @empty
+            <div class="rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-10 text-center text-slate-500 md:col-span-2 xl:col-span-3">
+                No assigned patients found yet.
             </div>
-        </div>
+        @endforelse
+    </div>
+</div>
 
+                                <h4 class="mt-2 text-2xl font-black text-slate-900">
         <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
             <div class="flex items-center justify-between border-b border-slate-200 px-6 py-5">
                 <div>

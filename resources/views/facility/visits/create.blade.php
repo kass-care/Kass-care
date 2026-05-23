@@ -83,23 +83,71 @@
     </select>
 </div>
 
-<div>
-    <label for="caregiver_id" class="block text-sm font-semibold text-slate-300 mb-2">
-        Caregiver
+             <div>
+    <label class="block text-sm font-semibold text-slate-300 mb-2">
+        Assign Caregivers
     </label>
+
     <select
-        name="caregiver_id"
-        id="caregiver_id"
-        class="block w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white focus:border-indigo-500 focus:outline-none"
+        name="caregiver_ids[]"
+        multiple
+        class="block w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white focus:border-indigo-500 focus:outline-none min-h-[180px]"
     >
-        <option value="">Select caregiver</option>
         @foreach ($caregivers as $caregiver)
-            <option value="{{ $caregiver->id }}" {{ old('caregiver_id') == $caregiver->id ? 'selected' : '' }}>
+            <option value="{{ $caregiver->id }}">
                 {{ $caregiver->name ?? 'Unnamed Caregiver' }}
             </option>
         @endforeach
     </select>
+
+    <p class="mt-2 text-xs text-slate-400">
+        Hold CTRL (Windows) or CMD (Mac) to select multiple caregivers.
+    </p>
 </div>
+
+<div class="mt-6">
+    <label class="block text-sm font-semibold text-slate-300 mb-3">
+        Duty Templates
+    </label>
+
+    <div class="flex flex-wrap gap-2">
+        @foreach($dutyTemplates as $template)
+            <button
+                type="button"
+                onclick="insertDutyTemplate(`{{ addslashes($template->duties) }}`)"
+                class="rounded-xl bg-indigo-600/20 border border-indigo-500/40 px-4 py-2 text-sm font-semibold text-indigo-200 hover:bg-indigo-600/30"
+            >
+                {{ $template->title }}
+            </button>
+        @endforeach
+    </div>
+</div>
+
+<div class="mt-6">
+    <label for="duties" class="block text-sm font-semibold text-slate-300 mb-2">
+        Shift Duties / Instructions
+    </label>
+
+    <textarea
+        name="duties"
+        id="duties"
+        rows="6"
+        class="block w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white focus:border-indigo-500 focus:outline-none"
+        placeholder="Enter caregiver duties and shift instructions..."
+    >{{ old('duties') }}</textarea>
+</div>
+
+<script>
+function insertDutyTemplate(text) {
+    const textarea = document.getElementById('duties');
+
+    if (textarea.value.trim() !== '') {
+        textarea.value += "\n\n";
+    }
+
+    textarea.value += text;
+}
+</script>
                 </div>
 
                 <div>
