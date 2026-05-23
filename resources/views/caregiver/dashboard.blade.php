@@ -202,51 +202,19 @@
 </div>
 
                                 <h4 class="mt-2 text-2xl font-black text-slate-900">
-        <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-            <div class="flex items-center justify-between border-b border-slate-200 px-6 py-5">
-                <div>
-                    <h3 class="text-2xl font-bold text-slate-900">Recent Visit History</h3>
-                    <p class="mt-1 text-sm text-slate-500">Latest activity from your visit records</p>
-                </div>
+                      <div class="mb-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+            <h3 class="text-2xl font-black text-slate-900">Visit History</h3>
+            <p class="mt-1 text-sm text-slate-500">Open full visit history only when needed.</p>
+        </div>
 
-                <a href="{{ route('caregiver.care-logs.index') }}"
-                   class="text-sm font-bold text-indigo-700 hover:text-indigo-900">
-                    View Care Logs →
-                </a>
-            </div>
-
-            <div class="p-6 space-y-4">
-                @forelse ($recentVisits as $visit)
-                    <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                            <div>
-                                <h4 class="text-xl font-bold text-slate-900">
-                                    {{ $resolveClientName($visit->client ?? null) }}
-                                </h4>
-
-                                <p class="mt-1 text-sm text-slate-700">
-                                    Status:
-                                    <span class="font-semibold">
-                                        {{ $displayStatus($visit->status ?? 'n/a') }}
-                                    </span>
-                                </p>
-
-                                <div class="mt-1 text-sm font-medium text-slate-500">
-                                    {{ !empty($visit->updated_at) ? Carbon::parse($visit->updated_at)->diffForHumans() : 'N/A' }}
-                                </div>
-                            </div>
-
-                            <a href="{{ route('caregiver.visits') }}"
-                               class="inline-flex items-center rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-bold text-indigo-700">
-                                Open Visit
-                            </a>
-                        </div>
-                    </div>
-                @empty
-                    <div class="rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-10 text-center text-slate-500">
-                        No visit history yet.
-                    </div>
-                @endforelse
+       <a href="{{ route('caregiver.visits') }}"
+   class="inline-flex items-center justify-center rounded-xl bg-slate-900 px-5 py-3 text-sm font-bold text-white shadow hover:bg-slate-800">
+    View Visit History →
+</a>
+    </div>
+</div>
             </div>
         </div>
 
