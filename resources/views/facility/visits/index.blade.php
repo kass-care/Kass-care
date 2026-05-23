@@ -59,17 +59,12 @@
                 <tr class="border-b border-slate-800">
 
        <td class="py-3">
-    {{
-        optional($patients[$visit->client_id] ?? null)->name
-        ?? trim(
-            (optional($patients[$visit->client_id] ?? null)->first_name ?? '') . ' ' .
-            (optional($patients[$visit->client_id] ?? null)->last_name ?? '')
-        )
-        ?: 'Patient not found'
-    }}
+{{ $visit->client?->name
+    ?? trim(($visit->client?->first_name ?? '') . ' ' . ($visit->client?->last_name ?? ''))
+    ?: 'Patient not found' }}
 </td>
                     <td class="py-3">
-                        {{ $providers[$visit->provider_id]->name ?? 'Unassigned' }}
+                         {{ $visit->provider?->name ?? 'Unassigned' }}
                     </td>
 
                     <td class="py-3">

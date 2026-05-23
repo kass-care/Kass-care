@@ -75,7 +75,7 @@
             </a>
 
             @if(auth()->user()->facility_id)
-                <form method="POST" action="/select-facility/{{ auth()->user()->facility_id }}">
+                <form method="POST" action="{{ route('select.facility', auth()->user()->facility_id) }}">
                     @csrf
                     <button type="submit"
                             class="inline-flex items-center rounded-2xl border border-indigo-400 px-5 py-3 text-sm font-semibold text-indigo-100 hover:bg-indigo-500/20">
