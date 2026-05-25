@@ -76,6 +76,15 @@
                         <option value="Safety & Environment">Safety & Environment</option>
                     </select>
                 </div>
+                  <label class="block">
+    <span class="text-sm font-bold text-slate-700">Client / Resident</span>
+    <select name="client_id" class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3">
+        <option value="">Facility-level document</option>
+        @foreach($clients as $client)
+            <option value="{{ $client->id }}">{{ $client->name }}</option>
+        @endforeach
+    </select>
+</label>
 
                 <div>
                     <label class="block text-sm font-black text-slate-700 mb-2">Attach to Readiness Item</label>
@@ -132,6 +141,7 @@
                         <p class="text-xl font-black text-slate-900">
                             {{ $document->title }}
                         </p>
+                         {{ $document->client?->name ?? 'Facility-level' }}
 
                         <p class="mt-1 text-sm font-semibold text-slate-500">
                             {{ $document->category ?? 'Uncategorized' }}

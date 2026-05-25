@@ -76,7 +76,7 @@
 
         {{-- Upload Form --}}
         <form method="POST"
-              action="{{ route('provider.patient-documents.store') }}"
+              action="{{ route('facility.patient-documents.store') }}"
               enctype="multipart/form-data"
               class="rounded-2xl border border-emerald-100 bg-emerald-50 p-5 mb-6">
 
@@ -86,7 +86,7 @@
                    name="patient_id"
                    value="{{ $patient->id }}">
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
 
                 <div>
                     <label class="block text-sm font-bold text-gray-700 mb-2">
@@ -99,6 +99,15 @@
                            class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm"
                            placeholder="Example: Physician Order">
                 </div>
+                     <div>
+    <label class="block text-sm font-bold text-gray-700 mb-2">
+        Expiration Date
+    </label>
+
+    <input type="date"
+           name="expires_at"
+           class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm">
+</div>
 
                 <div>
                     <label class="block text-sm font-bold text-gray-700 mb-2">
@@ -164,13 +173,13 @@
 
                     <div class="flex gap-2">
 
-                        <a href="{{ route('provider.patient-documents.download', $document->id) }}"
+                        <a href="{{ route('facility.patient-documents.download', $document->id) }}"
                            class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-700">
                             Download
                         </a>
 
                         <form method="POST"
-                              action="{{ route('provider.patient-documents.destroy', $document->id) }}"
+                              action="{{ route('facility.patient-documents.destroy', $document->id) }}"
                               onsubmit="return confirm('Delete this document?');">
 
                             @csrf

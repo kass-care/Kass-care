@@ -16,11 +16,15 @@ class PatientDocument extends Model
         'category',
         'file_path',
         'uploaded_by',
+       'expires_at',
     ];
 
+   protected $casts = [
+    'expires_at' => 'date',
+];
     public function patient()
     {
-        return $this->belongsTo(Patient::class);
+        return $this->belongsTo(Client::class, 'patient_id');
     }
 
     public function uploader()

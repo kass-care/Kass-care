@@ -8,6 +8,7 @@ class ComplianceDocument extends Model
 {
     protected $fillable = [
         'facility_id',
+       'client_id',
         'readiness_item_id',
         'title',
         'category',
@@ -27,6 +28,10 @@ class ComplianceDocument extends Model
     {
         return $this->belongsTo(Facility::class);
     }
+public function client()
+{
+    return $this->belongsTo(Client::class);
+}
 
     public function readinessItem()
     {

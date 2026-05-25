@@ -15,6 +15,7 @@ class PatientDocumentController extends Controller
             'patient_id' => ['required', 'exists:clients,id'],
             'title' => ['required', 'string', 'max:255'],
             'category' => ['nullable', 'string', 'max:100'],
+            'expires_at' => ['nullable', 'date'],
             'document' => ['required', 'file', 'max:10240'],
         ]);
 
@@ -22,10 +23,17 @@ class PatientDocumentController extends Controller
         abort_if(!$user, 403, 'Unauthorized.');
 
         $client = Client::findOrFail($validated['patient_id']);
+        $facilityId = $client->facility_id;
 
-        $facilityId = session('facility_id') ?? $user->facility_id ?? $client->facility_id;
+if ($user->role !== 'super_admin') {
+    $activeFacilityId = session('facility_id') ?? $user->facility_id ?? null;
 
-        abort_if((int) $client->facility_id !== (int) $facilityId, 403, 'Unauthorized facility access.');
+    abort_if(
+        $activeFacilityId && (int) $client->facility_id !== (int) $activeFacilityId,
+        403,
+        'Unauthorized facility access.'
+    );
+}
 
         $filePath = $request->file('document')->store('patient_documents', 'public');
 
@@ -36,6 +44,7 @@ class PatientDocumentController extends Controller
             'category' => $validated['category'] ?? 'General',
             'file_path' => $filePath,
             'uploaded_by' => $user->id,
+           'expires_at' => $validated['expires_at'] ?? null,
         ]);
 
         return back()->with('success', 'Document uploaded successfully.');

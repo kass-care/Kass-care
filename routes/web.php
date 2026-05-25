@@ -247,6 +247,15 @@ Route::post('/compliance-documents', [ComplianceDocumentController::class, 'stor
 Route::delete('/compliance-documents/{document}', [ComplianceDocumentController::class, 'destroy'])
     ->name('compliance-documents.destroy');
 
+         Route::post('/patient-documents', [PatientDocumentController::class, 'store'])
+    ->name('patient-documents.store');
+
+Route::get('/patient-documents/{patientDocument}/download', [PatientDocumentController::class, 'download'])
+    ->name('patient-documents.download');
+
+Route::delete('/patient-documents/{patientDocument}', [PatientDocumentController::class, 'destroy'])
+    ->name('patient-documents.destroy');
+
         Route::get('/readiness/packet/download', [FacilitySurveyPacketController::class, 'download'])
             ->name('readiness.packet.download');
 

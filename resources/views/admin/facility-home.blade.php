@@ -230,16 +230,11 @@
                     Open Providers
                 </a>
 
-                <a href="{{ route('facility.patients.index') }}"
-                   class="block w-full rounded-2xl bg-amber-500 px-4 py-4 text-center font-bold text-slate-950 hover:bg-amber-400">
-                    Add Medication / Supplement
-                </a>
-
                 <a href="{{ route('facility.readiness.index') }}"
                    class="block w-full rounded-2xl bg-green-700 px-4 py-4 text-center font-black text-white hover:bg-green-800">
                     ✅ State Inspection Readiness
                 </a>
-                          <a href="{{ route('facility.patients.index') }}"
+<a href="{{ route('facility.mar.index') }}"
    class="block w-full rounded-2xl bg-cyan-600 px-4 py-4 text-center font-black text-white hover:bg-cyan-700">
     💊 Medication Administration Record (MAR)
 </a>
