@@ -10,23 +10,29 @@ use Illuminate\Support\Facades\DB;
 
 class VisitController extends Controller
 {
-    public function index()
-    {
-        $user = auth()->user();
+public function index()
+{
+    $user = auth()->user();
 
-        // Get provider facilities
+    $query = Visit::with(['client', 'caregiver', 'provider', 'facility'])
+        ->latest();
+
+    if ($user->role === 'super_admin') {
+        if (session('facility_id')) {
+            $query->where('facility_id', session('facility_id'));
+        }
+    } else {
         $facilityIds = DB::table('facility_provider')
             ->where('provider_id', $user->id)
             ->pluck('facility_id');
 
-        $visits = Visit::with(['client', 'caregiver'])
-            ->whereIn('facility_id', $facilityIds)
-            ->latest()
-            ->get();
-
-        return view('visits.index', compact('visits'));
+        $query->whereIn('facility_id', $facilityIds);
     }
 
+    $visits = $query->get();
+
+    return view('visits.index', compact('visits'));
+}
     public function create()
     {
         $user = auth()->user();
@@ -88,7 +94,7 @@ class VisitController extends Controller
         ]);
 
         return redirect()
-            ->route('visits.index')
+            ->route('admin.visits.index')
             ->with('success', 'Visit created successfully!');
     }
 
@@ -105,7 +111,7 @@ class VisitController extends Controller
         $clients = Client::whereIn('facility_id', $facilityIds)->get();
         $caregivers = Caregiver::whereIn('facility_id', $facilityIds)->get();
 
-        return view('visits.edit', compact('visit', 'clients', 'caregivers'));
+        return view('facility.visits.edit', compact('visit', 'clients', 'caregivers'));
     }
 
     public function update(Request $request, Visit $visit)
@@ -144,7 +150,7 @@ class VisitController extends Controller
         ]);
 
         return redirect()
-            ->route('visits.index')
+            ->route('admin.visits.index')
             ->with('success', 'Visit updated successfully!');
     }
 
@@ -155,7 +161,7 @@ class VisitController extends Controller
         $visit->delete();
 
         return redirect()
-            ->route('visits.index')
+            ->route('admin.visits.index')
             ->with('success', 'Visit deleted successfully!');
     }
 

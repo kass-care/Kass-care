@@ -6,6 +6,7 @@ use App\Models\ComplianceDocument;
 use App\Models\ReadinessItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Client;
 
 class ComplianceDocumentController extends Controller
 {
@@ -16,10 +17,13 @@ class ComplianceDocumentController extends Controller
 
         $facilityId = session('facility_id') ?? $user->facility_id;
         abort_if(!$facilityId, 403, 'No facility selected.');
-    
-           $documents = ComplianceDocument::with(['readinessItem', 'uploader'])
+       
+$documents = ComplianceDocument::with(['readinessItem', 'uploader', 'client']) 
     ->where('facility_id', $facilityId)
     ->latest()
+    ->get();
+$clients = Client::where('facility_id', $facilityId)
+    ->orderBy('name')
     ->get();
 
 $expiredDocuments = $documents->filter(function ($document) {
@@ -39,6 +43,7 @@ $expiringSoonDocuments = $documents->filter(function ($document) {
        return view('facility.compliance-documents.index', compact(
     'documents',
     'readinessItems',
+    'clients',
     'expiredDocuments',
     'expiringSoonDocuments'
 ));
@@ -57,6 +62,7 @@ $expiringSoonDocuments = $documents->filter(function ($document) {
             'title' => ['required', 'string', 'max:255'],
             'category' => ['nullable', 'string', 'max:255'],
             'readiness_item_id' => ['nullable', 'exists:readiness_items,id'],
+           'client_id' => ['nullable', 'exists:clients,id'],
             'expires_at' => ['nullable', 'date'],
             'notes' => ['nullable', 'string'],
             'document' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,doc,docx', 'max:10240'],
@@ -68,6 +74,7 @@ $expiringSoonDocuments = $documents->filter(function ($document) {
         ComplianceDocument::create([
             'facility_id' => $facilityId,
             'readiness_item_id' => $validated['readiness_item_id'] ?? null,
+           'client_id' => $validated['client_id'] ?? null,
             'title' => $validated['title'],
             'category' => $validated['category'] ?? null,
             'file_path' => $path,

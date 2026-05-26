@@ -162,9 +162,8 @@
                             </form>
 
                             <form method="POST" action="{{ route('provider.pharmacy.status', $order->id) }}" class="flex items-center gap-2">
-                                @csrf
-                                @method('PATCH')
-
+    @csrf
+    
                                 <select name="status" class="rounded-xl border border-slate-300 px-2 py-2 text-sm">
                                     <option value="pending" {{ $order->status === 'pending' ? 'selected' : '' }}>Pending</option>
                                     <option value="sent" {{ $order->status === 'sent' ? 'selected' : '' }}>Sent</option>

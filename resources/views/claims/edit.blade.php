@@ -10,7 +10,7 @@
 <p class="text-sm text-gray-500 mt-1">Update claim payment, balance, or insurance response.</p>
 </div>
 
-<a href="{{ route('claims.index') }}"
+<a href="{{ route('admin.claims.index') }}"
 class="inline-flex items-center rounded-xl bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-200">
 Back to Claims
 </a>
@@ -158,7 +158,7 @@ Update Claim
 </button>
 
 <a
-href="{{ route('claims.index') }}"
+href="{{ route('admin.claims.index') }}"
 class="inline-flex items-center rounded-xl bg-gray-100 px-6 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-200">
 
 Cancel

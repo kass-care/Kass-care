@@ -57,7 +57,7 @@
 
                         <td class="px-4 py-3">
                             <div class="flex flex-wrap gap-2">
-                                <a href="{{ route('admin.visits.edit', $visit->id) }}"
+                                <a href="{{ route('admin.visits.show', $visit->id) }}"
                                    class="bg-indigo-500 text-white px-3 py-1 rounded hover:bg-indigo-600 text-sm">
                                     Edit
                                 </a>

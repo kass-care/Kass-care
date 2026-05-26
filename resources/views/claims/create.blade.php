@@ -8,7 +8,7 @@
             <p class="text-sm text-gray-500 mt-1">Add a new insurance claim ledger entry.</p>
         </div>
 
-        <a href="{{ route('claims.index') }}"
+        <a href="{{ route('admin.claims.index') }}"
            class="inline-flex items-center rounded-xl bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-200">
             Back to Claims
         </a>
@@ -25,7 +25,7 @@
         </div>
     @endif
 
-    <form method="POST" action="{{ route('claims.store') }}" class="space-y-6">
+    <form method="POST" action="{{ route('admin.claims.store') }}" class="space-y-6">
         @csrf
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -182,7 +182,7 @@
                 Save Claim
             </button>
 
-            <a href="{{ route('claims.index') }}"
+            <a href="{{ route('admin.claims.index') }}"
                class="inline-flex items-center rounded-xl bg-gray-100 px-6 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-200">
                 Cancel
             </a>
