@@ -16,6 +16,7 @@ use App\Http\Controllers\ShiftController;
 
 use App\Http\Controllers\ProviderManagementController;
 use App\Http\Controllers\CaregiverManagementController;
+use App\Http\Controllers\CaregiverShiftController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\VisitController;
 use App\Http\Controllers\EvvController;
@@ -631,7 +632,7 @@ Route::post('/pharmacy/{id}/status', [PharmacyOrderController::class, 'updateSta
     ->name('pharmacy.status');
         Route::get('/tasks', [TaskController::class, 'index'])->name('tasks.index');
 }); 
-/*
+     /*
 |--------------------------------------------------------------------------
 | Caregiver
 |--------------------------------------------------------------------------
@@ -646,6 +647,15 @@ Route::middleware(['auth', 'role:caregiver'])
 
         Route::get('/visits', [CaregiverController::class, 'visits'])
             ->name('visits');
+
+        Route::get('/shifts', [CaregiverShiftController::class, 'index'])
+            ->name('shifts.index');
+
+        Route::post('/shifts/{shift}/clock-in', [CaregiverShiftController::class, 'clockIn'])
+    	->name('shifts.clock-in');
+
+	Route::post('/shifts/{shift}/clock-out', [CaregiverShiftController::class, 'clockOut'])
+    	->name('shifts.clock-out');
 
         Route::get('/check-in/{id}', [CaregiverController::class, 'checkIn'])
             ->name('checkin');
@@ -683,7 +693,6 @@ Route::middleware(['auth', 'role:caregiver'])
         Route::post('/emar/{medication}/administer', [CaregiverEmarController::class, 'administer'])
             ->name('emar.administer');
     });
-
 /*
 |--------------------------------------------------------------------------
 | Profile + alerts
