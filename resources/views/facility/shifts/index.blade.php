@@ -35,12 +35,19 @@
 
                 <div class="mb-5">
                     <label class="block mb-2 text-sm font-bold text-slate-300">Assign Residents</label>
-                    <select name="client_ids[]" multiple class="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-4 text-white h-40">
-                        @foreach($clients as $client)
-                            <option value="{{ $client->id }}">{{ $client->name }}</option>
-                        @endforeach
-                    </select>
-                    <p class="mt-2 text-xs text-slate-500">Hold CMD on Mac to select multiple residents.</p>
+                     <div class="grid grid-cols-1 gap-2 rounded-2xl border border-slate-700 bg-slate-950 p-4">
+   	 @foreach($clients as $client)
+        <label class="flex items-center gap-3 rounded-xl bg-slate-900 px-3 py-2">
+            <input
+                type="checkbox"
+                name="client_ids[]"
+                value="{{ $client->id }}"
+                class="rounded border-slate-600 bg-slate-900 text-cyan-500"
+            >
+            <span>{{ $client->name }}</span>
+        </label>
+    @endforeach
+</div> 
                 </div>
 
                 <div class="mb-5">
@@ -123,7 +130,21 @@
                                 </div>
                             </div>
                         @endif
+                                  @if($shift->clients->count())
+    <div class="mt-5">
+        <p class="mb-2 text-xs uppercase tracking-[0.3em] text-cyan-400">
+            Assigned Residents
+        </p>
 
+        <div class="flex flex-wrap gap-2">
+            @foreach($shift->clients as $client)
+                <span class="rounded-full bg-cyan-500/10 px-3 py-1 text-xs font-bold text-cyan-100">
+                    {{ $client->name }}
+                </span>
+            @endforeach
+        </div>
+    </div>
+@endif
                         @if(!empty($shift->duties))
                             <div class="mt-5">
                                 <p class="mb-2 text-xs uppercase tracking-[0.3em] text-indigo-400">Shift Duties</p>
