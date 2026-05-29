@@ -21,6 +21,10 @@ class Shift extends Model
     'duties',
     'special_instructions',
     'created_by',
+    'clock_in_latitude',
+    'clock_in_longitude',
+	'clock_out_latitude',
+	'clock_out_longitude',
 ]; 
 
     protected $casts = [

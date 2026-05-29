@@ -29,6 +29,9 @@ class Facility extends Model
     'next_visit',
     'stripe_id',
     'is_active',
+   'latitude',
+'longitude',
+'allowed_radius_meters',
 ];
 
       protected $casts = [

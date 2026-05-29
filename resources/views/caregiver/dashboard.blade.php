@@ -71,9 +71,9 @@
                 </div>
 
                 <div class="flex flex-wrap gap-3">
-                    <a href="{{ route('caregiver.visits') }}"
+                  <a  href="{{ route('caregiver.shifts.index') }}"
                        class="inline-flex items-center justify-center rounded-xl bg-white px-5 py-3 text-sm font-bold text-emerald-800 shadow">
-                        Open Visits
+                        Open Shifts
                     </a>
                         <a href="{{ route('caregiver.emar.index') }}"
    class="inline-flex items-center rounded-2xl bg-emerald-500 px-5 py-3 text-sm font-black text-white shadow-lg hover:bg-emerald-600">
