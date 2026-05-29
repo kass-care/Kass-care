@@ -262,6 +262,9 @@ Route::delete('/patient-documents/{patientDocument}', [PatientDocumentController
 
         Route::get('/mar', [FacilityMarController::class, 'index'])
             ->name('mar.index');
+	
+	Route::patch('/mar/administrations/{administration}/correct', [FacilityMarController::class, 'correct'])
+    ->name('mar.administrations.correct');
 
         Route::get('/shifts', [ShiftController::class, 'index'])
             ->name('shifts.index');

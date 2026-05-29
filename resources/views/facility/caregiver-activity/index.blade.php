@@ -16,7 +16,50 @@
             Monitor caregiver visits, care logs, and medication administration activity for today.
         </p>
     </div>
+	<div class="mt-8 rounded-3xl border border-red-200 bg-red-50 p-6 shadow-sm">
+    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+            <p class="text-xs font-black uppercase tracking-[0.3em] text-red-700">
+                Facility Alerts
+            </p>
+            <h2 class="mt-2 text-2xl font-black text-red-900">
+                Real-Time Accountability Warnings
+            </h2>
+        </div>
 
+        <a href="{{ route('facility.mar.index') }}"
+           class="inline-flex rounded-2xl bg-red-700 px-5 py-3 text-sm font-black text-white hover:bg-red-800">
+            Review Medication Issues
+        </a>
+    </div>
+
+    <div class="mt-5 grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div class="rounded-2xl bg-white p-4 border border-red-100">
+            <p class="text-xs font-black uppercase text-red-600">Late Caregivers</p>
+            <p class="mt-2 text-3xl font-black text-red-700">⚠ {{ $summary['late_caregivers'] ?? 0 }}</p>
+        </div>
+
+        <div class="rounded-2xl bg-white p-4 border border-orange-100">
+            <p class="text-xs font-black uppercase text-orange-600">Missing Clock-Ins</p>
+            <p class="mt-2 text-3xl font-black text-orange-700">⚠ {{ $summary['missing_clock_ins'] ?? 0 }}</p>
+        </div>
+
+        <div class="rounded-2xl bg-white p-4 border border-rose-100">
+            <p class="text-xs font-black uppercase text-rose-600">Medication Issues</p>
+            <p class="mt-2 text-3xl font-black text-rose-700">⚠ {{ $summary['medication_issues'] ?? 0 }}</p>
+        </div>
+
+        <div class="rounded-2xl bg-white p-4 border border-purple-100">
+            <p class="text-xs font-black uppercase text-purple-600">Corrections Today</p>
+            <p class="mt-2 text-3xl font-black text-purple-700">✍️ {{ $summary['corrections_today'] ?? 0 }}</p>
+        </div>
+
+        <div class="rounded-2xl bg-white p-4 border border-amber-100">
+            <p class="text-xs font-black uppercase text-amber-600">GPS Pending</p>
+            <p class="mt-2 text-3xl font-black text-amber-700">📍 {{ $summary['gps_pending'] ?? 0 }}</p>
+        </div>
+    </div>
+</div>
     <div class="mt-8 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <div class="rounded-3xl bg-white border p-5 shadow-sm">
             <p class="text-xs font-black uppercase text-slate-500">Visits Today</p>

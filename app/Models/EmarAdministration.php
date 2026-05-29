@@ -16,11 +16,19 @@ class EmarAdministration extends Model
         'status',
         'administered_at',
         'notes',
+	'is_corrected',
+	'previous_status',
+	'previous_notes',
+	'correction_reason',
+	'corrected_by',
+	'corrected_at',
     ];
 
     protected $casts = [
         'scheduled_date' => 'date',
         'administered_at' => 'datetime',
+	'is_corrected' => 'boolean',
+	'corrected_at' => 'datetime',
     ];
 
     public function facility()
@@ -42,4 +50,8 @@ class EmarAdministration extends Model
     {
         return $this->belongsTo(User::class, 'caregiver_id');
     }
+   public function correctedBy()
+{
+    return $this->belongsTo(User::class, 'corrected_by');
+}
 }

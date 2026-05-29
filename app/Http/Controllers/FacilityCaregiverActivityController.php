@@ -99,21 +99,76 @@ $caregivers = User::where('role', 'caregiver')
 
         return $caregiver;
     }); 
+$lateCaregivers = $shiftsToday->filter(function ($shift) {
+    return $shift->clock_in_at
+        && $shift->clock_in_at->format('H:i:s') > $shift->start_time;
+})->count();
 
-        $summary = [
-            'visits_today' => $visitsToday->count(),
-            'completed_visits' => $visitsToday->where('status', 'completed')->count(),
-            'in_progress_visits' => $visitsToday->where('status', 'in_progress')->count(),
-            'care_logs_today' => $careLogsToday->count(),
-            'meds_administered' => $emarToday->where('status', 'administered')->count(),
-            'meds_not_administered' => $emarToday->whereIn('status', ['missed', 'refused', 'held'])->count(),
-	   'on_duty' => $shiftsToday->where('status', 'active')->count(),
-	    'scheduled_shifts' => $shiftsToday->count(),
-	   'on_duty' => $caregivers->where('shift_status', 'on_duty')->count(),
-	   'scheduled' => $caregivers->where('shift_status', 'scheduled')->count(),
-	  'completed_shifts' => $caregivers->where('shift_status', 'completed')->count(),
-        ];
+$missingClockIns = $shiftsToday->filter(function ($shift) {
+    return !$shift->clock_in_at
+        && now()->format('H:i:s') > $shift->start_time;
+})->count();
 
+$medicationIssues = $emarToday->whereIn('status', [
+    'missed',
+    'refused',
+    'held',
+    'side_effects'
+])->count();
+
+$correctionsToday = EmarAdministration::where('facility_id', $facilityId)
+    ->where('is_corrected', true)
+    ->whereDate('corrected_at', today())
+    ->count();
+
+$gpsPending = $shiftsToday->filter(function ($shift) {
+    return !$shift->clock_in_latitude
+        || !$shift->clock_in_longitude;
+})->count();
+
+      $summary = [
+
+    // Accountability Alerts
+    'late_caregivers'   => $lateCaregivers,
+    'missing_clock_ins' => $missingClockIns,
+    'medication_issues' => $medicationIssues,
+    'corrections_today' => $correctionsToday,
+    'gps_pending'       => $gpsPending,
+
+    // Activity Summary
+    'visits_today' => $visitsToday->count(),
+
+    'completed_visits' => $visitsToday
+        ->where('status', 'completed')
+        ->count(),
+
+    'in_progress_visits' => $visitsToday
+        ->where('status', 'in_progress')
+        ->count(),
+
+    'care_logs_today' => $careLogsToday->count(),
+
+    'meds_administered' => $emarToday
+        ->where('status', 'administered')
+        ->count(),
+
+    'meds_not_administered' => $emarToday
+        ->whereIn('status', ['missed', 'refused', 'held'])
+        ->count(),
+
+    // Shift Engine KPIs
+    'on_duty' => $caregivers
+        ->where('shift_status', 'on_duty')
+        ->count(),
+
+    'scheduled' => $caregivers
+        ->where('shift_status', 'scheduled')
+        ->count(),
+
+    'completed_shifts' => $caregivers
+        ->where('shift_status', 'completed')
+        ->count(),
+];
         return view('facility.caregiver-activity.index', compact(
             'summary',
             'visitsToday',
