@@ -130,21 +130,6 @@
                                 </div>
                             </div>
                         @endif
-                                  @if($shift->clients->count())
-    <div class="mt-5">
-        <p class="mb-2 text-xs uppercase tracking-[0.3em] text-cyan-400">
-            Assigned Residents
-        </p>
-
-        <div class="flex flex-wrap gap-2">
-            @foreach($shift->clients as $client)
-                <span class="rounded-full bg-cyan-500/10 px-3 py-1 text-xs font-bold text-cyan-100">
-                    {{ $client->name }}
-                </span>
-            @endforeach
-        </div>
-    </div>
-@endif
                         @if(!empty($shift->duties))
                             <div class="mt-5">
                                 <p class="mb-2 text-xs uppercase tracking-[0.3em] text-indigo-400">Shift Duties</p>
