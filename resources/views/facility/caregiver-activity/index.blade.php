@@ -49,6 +49,30 @@
         </div>
     </div>
 
+   <div class="mt-8 grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="rounded-3xl bg-emerald-600 p-5 text-white shadow">
+        <p class="text-xs font-black uppercase tracking-[0.25em]">On Duty</p>
+        <p class="mt-3 text-4xl font-black">{{ $summary['on_duty'] ?? 0 }}</p>
+    </div>
+
+    <div class="rounded-3xl bg-amber-400 p-5 text-amber-950 shadow">
+        <p class="text-xs font-black uppercase tracking-[0.25em]">Scheduled</p>
+        <p class="mt-3 text-4xl font-black">{{ $summary['scheduled'] ?? 0 }}</p>
+    </div>
+
+    <div class="rounded-3xl bg-cyan-600 p-5 text-white shadow">
+        <p class="text-xs font-black uppercase tracking-[0.25em]">Completed Shifts</p>
+        <p class="mt-3 text-4xl font-black">{{ $summary['completed_shifts'] ?? 0 }}</p>
+    </div>
+
+    <div class="rounded-3xl bg-slate-800 p-5 text-white shadow">
+        <p class="text-xs font-black uppercase tracking-[0.25em]">Off Duty</p>
+        <p class="mt-3 text-4xl font-black">
+            {{ $caregivers->where('shift_status', 'off_duty')->count() }}
+        </p>
+    </div>
+</div>
+
     <div class="mt-8 rounded-3xl bg-white border shadow-sm overflow-hidden">
         <div class="border-b px-6 py-5">
             <h2 class="text-2xl font-black text-slate-900">Caregiver Status Today</h2>
@@ -59,28 +83,53 @@
                 <div class="rounded-3xl border border-slate-200 p-5 shadow-sm">
                     <h3 class="text-xl font-black text-slate-900">{{ $caregiver->name }}</h3>
 
-                    <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
-                        <div class="rounded-2xl bg-slate-50 p-3">
-                            <p class="font-bold text-slate-500">Visits</p>
-                            <p class="text-2xl font-black text-slate-900">{{ $caregiver->today_visits_count }}</p>
-                        </div>
+			<div class="mt-4 grid grid-cols-2 gap-3 text-sm">
+    <div class="rounded-2xl bg-slate-50 p-3">
+        <p class="font-bold text-slate-500">Shift</p>
+        <p class="text-lg font-black text-slate-900">{{ strtoupper($caregiver->shift_status) }}</p>
+    </div>
 
-                        <div class="rounded-2xl bg-emerald-50 p-3">
-                            <p class="font-bold text-emerald-600">Completed</p>
-                            <p class="text-2xl font-black text-emerald-700">{{ $caregiver->completed_visits_count }}</p>
-                        </div>
+    <div class="rounded-2xl bg-emerald-50 p-3">
+        <p class="font-bold text-emerald-600">GPS</p>
+        <p class="text-lg font-black text-emerald-700">
+            {{ $caregiver->gps_verified ? 'Verified ✅' : 'Not Yet' }}
+        </p>
+    </div>
 
-                        <div class="rounded-2xl bg-indigo-50 p-3">
-                            <p class="font-bold text-indigo-600">Care Logs</p>
-                            <p class="text-2xl font-black text-indigo-700">{{ $caregiver->care_logs_count }}</p>
-                        </div>
+    <div class="rounded-2xl bg-blue-50 p-3">
+        <p class="font-bold text-blue-600">Clock In</p>
+        <p class="text-sm font-black text-blue-700">
+            {{ $caregiver->clock_in_at ? $caregiver->clock_in_at->format('g:i A') : '--' }}
+        </p>
+    </div>
 
-                        <div class="rounded-2xl bg-green-50 p-3">
-                            <p class="font-bold text-green-600">Meds</p>
-                            <p class="text-2xl font-black text-green-700">{{ $caregiver->meds_signed_count }}</p>
-                        </div>
-                    </div>
+    <div class="rounded-2xl bg-amber-50 p-3">
+        <p class="font-bold text-amber-600">Clock Out</p>
+        <p class="text-sm font-black text-amber-700">
+            {{ $caregiver->clock_out_at ? $caregiver->clock_out_at->format('g:i A') : '--' }}
+        </p>
+    </div>
 
+    <div class="rounded-2xl bg-cyan-50 p-3">
+        <p class="font-bold text-cyan-600">Residents</p>
+        <p class="text-2xl font-black text-cyan-700">{{ $caregiver->assigned_residents_count }}</p>
+    </div>
+
+    <div class="rounded-2xl bg-indigo-50 p-3">
+        <p class="font-bold text-indigo-600">Care Logs</p>
+        <p class="text-2xl font-black text-indigo-700">{{ $caregiver->care_logs_count }}</p>
+    </div>
+
+    <div class="rounded-2xl bg-green-50 p-3">
+        <p class="font-bold text-green-600">Meds</p>
+        <p class="text-2xl font-black text-green-700">{{ $caregiver->meds_signed_count }}</p>
+    </div>
+
+    <div class="rounded-2xl bg-slate-50 p-3">
+        <p class="font-bold text-slate-500">Visits</p>
+        <p class="text-2xl font-black text-slate-900">{{ $caregiver->today_visits_count }}</p>
+    </div>
+</div>
                     <p class="mt-4 text-sm font-semibold text-slate-500">
                         Last Activity:
                         {{ $caregiver->last_activity_at ? $caregiver->last_activity_at->diffForHumans() : 'No activity today' }}
