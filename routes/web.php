@@ -532,27 +532,104 @@ Route::middleware('check.plan:provider_pro')->group(function () {
         ->name('claims.markDenied');
 
 });
-Route::get('coding-assistant/{note}', function ($noteId) {
+  Route::get('coding-assistant/{note}', function ($noteId) {
+    $note = \App\Models\ProviderNote::with(['visit.client', 'client'])->findOrFail($noteId);
 
-    $note = \App\Models\ProviderNote::with('visit.client')->findOrFail($noteId);
-
-    $text = strtolower($note->note);
+    $text = strtolower(trim(
+        ($note->chief_complaint ?? '') . ' ' .
+        ($note->subjective ?? '') . ' ' .
+        ($note->objective ?? '') . ' ' .
+        ($note->assessment ?? '') . ' ' .
+        ($note->plan ?? '') . ' ' .
+        ($note->note ?? '')
+    ));
 
     $icdSuggestions = [];
 
-    if (str_contains($text, 'abdominal pain')) {
-        $icdSuggestions[] = ['code' => 'R10.9', 'label' => 'Unspecified abdominal pain'];
+    $keywordMap = [
+        'copd exacerbation' => ['code' => 'J44.1', 'label' => 'COPD with acute exacerbation'],
+        'copd' => ['code' => 'J44.9', 'label' => 'Chronic obstructive pulmonary disease, unspecified'],
+        'shortness of breath' => ['code' => 'R06.02', 'label' => 'Shortness of breath'],
+        'sob' => ['code' => 'R06.02', 'label' => 'Shortness of breath'],
+        'wheezing' => ['code' => 'R06.2', 'label' => 'Wheezing'],
+        'low oxygen' => ['code' => 'R09.02', 'label' => 'Hypoxemia'],
+        'hypoxia' => ['code' => 'R09.02', 'label' => 'Hypoxemia'],
+        'hypertension' => ['code' => 'I10', 'label' => 'Essential hypertension'],
+        'high blood pressure' => ['code' => 'I10', 'label' => 'Essential hypertension'],
+        'diabetes' => ['code' => 'E11.9', 'label' => 'Type 2 diabetes mellitus without complications'],
+        'chest pain' => ['code' => 'R07.9', 'label' => 'Chest pain, unspecified'],
+        'cough' => ['code' => 'R05.9', 'label' => 'Cough, unspecified'],
+        'fever' => ['code' => 'R50.9', 'label' => 'Fever, unspecified'],
+        'fall' => ['code' => 'W19.XXXA', 'label' => 'Unspecified fall, initial encounter'],
+        'weakness' => ['code' => 'R53.1', 'label' => 'Weakness'],
+        'confusion' => ['code' => 'R41.0', 'label' => 'Disorientation, unspecified'],
+        'abdominal pain' => ['code' => 'R10.9', 'label' => 'Unspecified abdominal pain'],
+        'appendicitis' => ['code' => 'K37', 'label' => 'Unspecified appendicitis'],
+    ];
+
+    foreach ($keywordMap as $keyword => $suggestion) {
+        if (str_contains($text, $keyword)) {
+            $icdSuggestions[$suggestion['code']] = $suggestion;
+        }
     }
 
-    if (str_contains($text, 'appendicitis')) {
-        $icdSuggestions[] = ['code' => 'K37', 'label' => 'Unspecified appendicitis'];
+    $icdSuggestions = array_values($icdSuggestions);
+
+    $documentationGaps = [];
+
+    if (empty($note->chief_complaint)) {
+        $documentationGaps[] = 'Chief complaint missing';
     }
 
-    $cpt = '99214';
+    if (empty($note->subjective)) {
+        $documentationGaps[] = 'Subjective findings missing';
+    }
+
+    if (empty($note->objective)) {
+        $documentationGaps[] = 'Objective findings missing';
+    }
+
+    if (empty($note->assessment)) {
+        $documentationGaps[] = 'Assessment missing';
+    }
+
+    if (empty($note->plan)) {
+        $documentationGaps[] = 'Plan missing';
+    }
+
+    if (str_contains($text, 'copd') && !str_contains($text, 'oxygen') && !str_contains($text, 'spo2')) {
+        $documentationGaps[] = 'COPD note: oxygen saturation / SpO2 should be documented';
+    }
+
+    if (str_contains($text, 'shortness of breath') && !str_contains($text, 'respiratory rate')) {
+        $documentationGaps[] = 'Shortness of breath: respiratory rate should be documented';
+    }
+
+    $documentationScore = max(0, 100 - (count($documentationGaps) * 15));
+
+    $noteLength = strlen($text);
+    $hasAssessment = !empty($note->assessment);
+    $hasPlan = !empty($note->plan);
+    $hasObjective = !empty($note->objective);
+
+    if ($noteLength > 1200 && $hasAssessment && $hasPlan && $hasObjective) {
+        $cpt = '99215';
+    } elseif ($noteLength > 500 && $hasAssessment && $hasPlan) {
+        $cpt = '99214';
+    } else {
+        $cpt = '99213';
+    }
+
     $pos = '12';
 
-    return view('provider.coding-assistant', compact('note', 'icdSuggestions', 'cpt', 'pos'));
-
+    return view('provider.coding-assistant', compact(
+        'note',
+        'icdSuggestions',
+        'cpt',
+        'pos',
+        'documentationGaps',
+        'documentationScore'
+    ));
 })->name('coding.assistant');
 
 Route::post('/notes/{providerNote}/codes', [\App\Http\Controllers\ProviderNoteController::class, 'saveCodes'])

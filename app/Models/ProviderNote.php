@@ -34,4 +34,8 @@ public function codes()
 {
     return $this->hasMany(ProviderNoteCode::class);
 }
+public function client()
+{
+    return $this->belongsTo(Client::class);
+}
 }
