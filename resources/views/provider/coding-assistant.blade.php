@@ -251,6 +251,50 @@ $claimRiskLabel = match (true) {
     </p>
 </div>
 @endif
+   @php
+    $revenueLeakageScore = 0;
+
+    if ($nextCpt && $revenueOpportunity > 0) {
+        $revenueLeakageScore = min(
+            100,
+            round(($revenueOpportunity / max($estimatedAmount,1)) * 100)
+        );
+    }
+
+    $revenueLeakageRisk = match (true) {
+        $revenueLeakageScore >= 50 => 'HIGH LEAKAGE',
+        $revenueLeakageScore >= 25 => 'MODERATE LEAKAGE',
+        default => 'LOW LEAKAGE',
+    };
+@endphp
+
+@if($nextCpt)
+<div class="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+    <p class="text-xs uppercase font-bold text-emerald-700">
+        Revenue Leakage Detector
+    </p>
+
+    <div class="mt-3 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+
+        <div>
+            <p class="text-3xl font-black text-emerald-800">
+                ${{ number_format($revenueOpportunity,2) }}
+            </p>
+
+            <p class="mt-1 text-sm font-bold text-slate-600">
+                {{ $revenueLeakageRisk }}
+            </p>
+        </div>
+
+        <div class="rounded-xl bg-white border border-emerald-100 px-4 py-3 text-sm font-bold text-slate-700 md:max-w-md">
+            Documentation may support CPT {{ $nextCpt }} and recover approximately
+            ${{ number_format($revenueOpportunity,2) }}
+            in additional reimbursement when clinically justified.
+        </div>
+
+    </div>
+</div>
+@endif
    <div class="mt-5 rounded-2xl border border-blue-200 bg-blue-50 p-5">
     <p class="text-xs uppercase font-bold text-blue-700">
         Claim Approval Probability
