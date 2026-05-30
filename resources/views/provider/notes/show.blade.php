@@ -50,12 +50,11 @@
                 </a>
                 @endif
 
-                <!-- Coding Assistant -->
-                <a href="{{ route('provider.coding.assistant', $providerNote->id) }}"
-                   class="rounded-xl bg-purple-600 px-5 py-3 text-sm font-bold text-white hover:bg-purple-700">
-                    🧠 Coding Assistant
-                </a>
-
+                <!-- Revenue Intelligence -->
+<a href="{{ route('provider.coding.assistant', $providerNote->id) }}"
+   class="rounded-xl bg-purple-600 px-5 py-3 text-sm font-bold text-white hover:bg-purple-700">
+    💰 Revenue Intelligence
+</a>
                 <!-- Back -->
                 <a href="{{ route('provider.notes.index') }}"
                    class="rounded-xl bg-white border border-slate-200 px-5 py-3 text-sm font-bold text-slate-700 hover:bg-slate-100">
