@@ -394,6 +394,67 @@ $claimRiskLabel = match (true) {
         </div>
     </div>
 </div>
+@php
+    $complexityLevel = match ($cpt) {
+        '99215' => 'HIGH COMPLEXITY',
+        '99214' => 'MODERATE COMPLEXITY',
+        default => 'LOW COMPLEXITY',
+    };
+
+    $complexityReasons = [];
+
+    if (!empty($note->chief_complaint)) {
+        $complexityReasons[] = 'Chief complaint documented';
+    }
+
+    if (!empty($note->subjective)) {
+        $complexityReasons[] = 'Subjective findings documented';
+    }
+
+    if (!empty($note->objective)) {
+        $complexityReasons[] = 'Objective findings documented';
+    }
+
+    if (!empty($note->assessment)) {
+        $complexityReasons[] = 'Assessment documented';
+    }
+
+    if (!empty($note->plan)) {
+        $complexityReasons[] = 'Plan documented';
+    }
+
+    if (!empty($icdSuggestions)) {
+        $complexityReasons[] = 'ICD-10 diagnostic support detected';
+    }
+@endphp
+
+<div class="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-5">
+    <p class="text-xs uppercase font-bold text-amber-700">
+        CPT Complexity Justification
+    </p>
+
+    <div class="mt-3 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+
+        <div>
+            <p class="text-3xl font-black text-amber-800">
+                {{ $complexityLevel }}
+            </p>
+
+            <p class="mt-1 text-sm font-bold text-slate-600">
+                CPT {{ $cpt }}
+            </p>
+        </div>
+
+        <div class="md:max-w-md space-y-2">
+            @foreach($complexityReasons as $reason)
+                <p class="rounded-xl bg-white border border-amber-100 px-4 py-2 text-sm font-bold text-slate-700">
+                    ✓ {{ $reason }}
+                </p>
+            @endforeach
+        </div>
+
+    </div>
+</div>
     <div class="mt-5">
         @if(!empty($documentationGaps))
             <ul class="space-y-2">
