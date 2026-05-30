@@ -601,6 +601,7 @@ $predictedDenialFix = match ($predictedDenialReason) {
         {{ $predictedDenialFix }}
     </p>
 </div>
+      
     <div class="mt-5">
         @if(!empty($documentationGaps))
             <ul class="space-y-2">
@@ -613,6 +614,84 @@ $predictedDenialFix = match ($predictedDenialReason) {
            @endif
     </div>
 </div>
+
+
+@php
+    $auditReadinessScore = 100;
+    $auditReadinessFindings = [];
+
+    if (empty($note->chief_complaint)) {
+        $auditReadinessScore -= 15;
+        $auditReadinessFindings[] = 'Chief complaint missing';
+    }
+
+    if (empty($note->subjective)) {
+        $auditReadinessScore -= 10;
+        $auditReadinessFindings[] = 'Subjective findings missing';
+    }
+
+    if (empty($note->objective)) {
+        $auditReadinessScore -= 15;
+        $auditReadinessFindings[] = 'Objective findings missing';
+    }
+
+    if (empty($note->assessment)) {
+        $auditReadinessScore -= 20;
+        $auditReadinessFindings[] = 'Assessment missing';
+    }
+
+    if (empty($note->plan)) {
+        $auditReadinessScore -= 20;
+        $auditReadinessFindings[] = 'Plan missing';
+    }
+
+    if (empty($icdSuggestions)) {
+        $auditReadinessScore -= 15;
+        $auditReadinessFindings[] = 'ICD-10 support needs review';
+    }
+
+    $auditReadinessScore = max(0, $auditReadinessScore);
+
+    $auditReadinessStatus = match (true) {
+        $auditReadinessScore >= 90 => 'AUDIT READY',
+        $auditReadinessScore >= 75 => 'REVIEW RECOMMENDED',
+        default => 'AUDIT RISK',
+    };
+@endphp
+
+<div class="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+    <p class="text-xs uppercase font-bold text-slate-700">
+        Audit Readiness Score
+    </p>
+
+    <div class="mt-3 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+            <p class="text-3xl font-black text-slate-900">
+                {{ $auditReadinessScore }}%
+            </p>
+            <p class="mt-1 text-sm font-bold text-slate-600">
+                {{ $auditReadinessStatus }}
+            </p>
+        </div>
+
+        <div class="md:max-w-md">
+            @if(empty($auditReadinessFindings))
+                <p class="rounded-xl bg-white border border-slate-200 px-4 py-3 text-sm font-bold text-slate-700">
+                    ✅ Documentation appears audit-ready for provider/biller review.
+                </p>
+            @else
+                <div class="space-y-2">
+                    @foreach($auditReadinessFindings as $finding)
+                        <p class="rounded-xl bg-white border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">
+                            ⚠ {{ $finding }}
+                        </p>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+    </div>
+</div>
+
      <div class="bg-white rounded-3xl shadow border border-cyan-200 p-6">
     <p class="text-xs uppercase font-bold text-cyan-700">AI Documentation Assistant</p>
     <h2 class="mt-1 text-xl font-black text-slate-900">Suggested Documentation Fixes</h2>
