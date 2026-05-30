@@ -602,19 +602,108 @@ $predictedDenialFix = match ($predictedDenialReason) {
     </p>
 </div>
       
-    <div class="mt-5">
+<div class="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-5">
+    <p class="text-xs uppercase font-bold text-amber-700">
+        Audit Findings & Documentation Gaps
+    </p>
+
+    <div class="mt-3">
         @if(!empty($documentationGaps))
-            <ul class="space-y-2">
+            <div class="space-y-2">
                 @foreach($documentationGaps as $gap)
-                    <li class="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm font-bold text-amber-900">
-                        ⚠ {{ $gap }}
-                    </li>
+                    <div class="rounded-xl bg-white border border-amber-200 px-4 py-3">
+                        <p class="text-sm font-bold text-amber-900">
+                            ⚠ {{ $gap }}
+                        </p>
+                    </div>
                 @endforeach
-            </ul>
-           @endif
+            </div>
+
+            <p class="mt-4 text-sm font-bold text-amber-800">
+                Priority: Review before final claim submission.
+            </p>
+        @else
+            <div class="rounded-xl bg-white border border-emerald-200 px-4 py-3">
+                <p class="text-sm font-bold text-emerald-800">
+                    ✅ No audit findings detected.
+                </p>
+            </div>
+        @endif
+     @php
+    $auditFixes = [];
+
+    foreach ($documentationGaps as $gap) {
+
+        if (str_contains(strtolower($gap), 'respiratory rate')) {
+            $auditFixes[] = [
+                'issue' => $gap,
+                'fix' => 'Document respiratory rate and respiratory effort.',
+                'example' => 'Respiratory rate 20/min. No respiratory distress observed.'
+            ];
+        }
+
+        elseif (str_contains(strtolower($gap), 'chief complaint')) {
+            $auditFixes[] = [
+                'issue' => $gap,
+                'fix' => 'Add a clear chief complaint.',
+                'example' => 'Patient seen for shortness of breath and fatigue.'
+            ];
+        }
+
+        elseif (str_contains(strtolower($gap), 'assessment')) {
+            $auditFixes[] = [
+                'issue' => $gap,
+                'fix' => 'Add a clinical assessment.',
+                'example' => 'Symptoms consistent with chronic cardiopulmonary disease.'
+            ];
+        }
+
+        elseif (str_contains(strtolower($gap), 'plan')) {
+            $auditFixes[] = [
+                'issue' => $gap,
+                'fix' => 'Add treatment or follow-up plan.',
+                'example' => 'Continue monitoring and follow up in 30 days.'
+            ];
+        }
+    }
+@endphp
+
+@if(count($auditFixes))
+<div class="mt-5 rounded-2xl border border-orange-200 bg-orange-50 p-5">
+    <p class="text-xs uppercase font-bold text-orange-700">
+        Smart Audit Remediation Engine
+    </p>
+
+    <div class="mt-4 space-y-4">
+
+        @foreach($auditFixes as $fix)
+
+            <div class="rounded-xl bg-white border border-orange-100 p-4">
+
+                <p class="font-black text-orange-700">
+                    ⚠ {{ $fix['issue'] }}
+                </p>
+
+                <p class="mt-2 text-sm text-slate-700">
+                    <span class="font-bold">Recommended Fix:</span>
+                    {{ $fix['fix'] }}
+                </p>
+
+                <p class="mt-2 text-sm text-emerald-700 font-semibold">
+                    Example:
+                    {{ $fix['example'] }}
+                </p>
+
+            </div>
+
+        @endforeach
+
     </div>
 </div>
+@endif
 
+    </div>
+</div>
 
 @php
     $auditReadinessScore = 100;
@@ -661,8 +750,53 @@ $predictedDenialFix = match ($predictedDenialReason) {
 
 <div class="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5">
     <p class="text-xs uppercase font-bold text-slate-700">
+
+     @php
+    $auditSimulationScore = $auditReadinessScore;
+
+    $auditSimulationStatus = match (true) {
+        $auditSimulationScore >= 90 => 'AUDIT PASS',
+        $auditSimulationScore >= 75 => 'AUDIT REVIEW ADVISED',
+        default => 'AUDIT FAIL',
+    };
+
+    $auditSimulationRisk = match (true) {
+        $auditSimulationScore >= 90 => 'LOW',
+        $auditSimulationScore >= 75 => 'MODERATE',
+        default => 'HIGH',
+    };
+@endphp
+
+<div class="mt-5 rounded-2xl border border-indigo-200 bg-indigo-50 p-5">
+    <p class="text-xs uppercase font-bold text-indigo-700">
+        Clinical Audit Simulator
+    </p>
+
+    <div class="mt-3 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+
+        <div>
+            <p class="text-3xl font-black text-indigo-800">
+                {{ $auditSimulationScore }}%
+            </p>
+
+            <p class="mt-1 text-sm font-bold text-slate-700">
+                {{ $auditSimulationStatus }}
+            </p>
+        </div>
+
+        <div class="rounded-xl bg-white border border-indigo-100 px-4 py-3">
+            <p class="text-sm font-bold text-slate-800">
+                Estimated Medicare Audit Risk:
+                <span class="text-indigo-700">{{ $auditSimulationRisk }}</span>
+            </p>
+        </div>
+
+    </div>
+</div>
+
         Audit Readiness Score
     </p>
+
 
     <div class="mt-3 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
