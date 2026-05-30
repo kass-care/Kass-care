@@ -2,7 +2,7 @@
 
 @section('content')
 @php
-    $client = $note->visit?->client ?? null;
+    $client = $note->visit?->client ?? $note->client ?? null;
     $noteText = $note->note ?? '';
 
     $icdSuggestions = $icdSuggestions ?? [];
@@ -100,7 +100,83 @@
                 </div>
             </div>
         </div>
+          <div class="bg-white rounded-3xl shadow border border-slate-200 p-6">
+    <div class="flex items-center justify-between gap-4">
+        <div>
+            <p class="text-xs uppercase font-bold text-purple-600">Documentation Quality</p>
+            <h2 class="mt-1 text-xl font-black text-slate-900">Coding Readiness Score</h2>
+        </div>
+            
+        <div class="rounded-2xl bg-purple-100 px-5 py-3 text-3xl font-black text-purple-800">
+            {{ $documentationScore ?? 0 }}%
+        </div>
+    </div>
+              @php
+    $estimatedAmount = match ($cpt) {
+        '99215' => 225,
+        '99214' => 150,
+        '99213' => 95,
+        default => 75,
+    };
 
+    $confidenceLabel = ($documentationScore ?? 0) >= 85
+        ? 'Strong'
+        : (($documentationScore ?? 0) >= 70 ? 'Moderate' : 'Needs Review');
+@endphp
+
+<div class="bg-white rounded-3xl shadow border border-emerald-200 p-6">
+    <div class="flex items-center justify-between gap-4">
+        <div>
+            <p class="text-xs uppercase font-bold text-emerald-600">Suggested Revenue</p>
+            <h2 class="mt-1 text-xl font-black text-slate-900">Estimated Claim Value</h2>
+            <p class="mt-1 text-sm text-slate-600">
+                Based on suggested E/M CPT level and documentation readiness.
+            </p>
+        </div>
+
+        <div class="text-right">
+            <p class="text-4xl font-black text-emerald-700">
+                ${{ number_format($estimatedAmount, 2) }}
+            </p>
+            <p class="mt-1 text-sm font-bold text-slate-500">
+                CPT {{ $cpt }}
+            </p>
+        </div>
+    </div>
+
+    <div class="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="rounded-2xl bg-emerald-50 border border-emerald-100 p-4">
+            <p class="text-xs uppercase font-bold text-emerald-700">CPT</p>
+            <p class="mt-1 text-2xl font-black text-emerald-800">{{ $cpt }}</p>
+        </div>
+
+        <div class="rounded-2xl bg-indigo-50 border border-indigo-100 p-4">
+            <p class="text-xs uppercase font-bold text-indigo-700">POS</p>
+            <p class="mt-1 text-2xl font-black text-indigo-800">{{ $pos }}</p>
+        </div>
+
+        <div class="rounded-2xl bg-amber-50 border border-amber-100 p-4">
+            <p class="text-xs uppercase font-bold text-amber-700">Confidence</p>
+            <p class="mt-1 text-2xl font-black text-amber-800">{{ $confidenceLabel }}</p>
+        </div>
+    </div>
+</div>
+    <div class="mt-5">
+        @if(!empty($documentationGaps))
+            <ul class="space-y-2">
+                @foreach($documentationGaps as $gap)
+                    <li class="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm font-bold text-amber-900">
+                        ⚠ {{ $gap }}
+                    </li>
+                @endforeach
+            </ul>
+        @else
+            <div class="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm font-bold text-emerald-800">
+                ✅ Documentation looks strong for coding review.
+            </div>
+        @endif
+    </div>
+</div>
         <div class="bg-white rounded-3xl shadow border border-slate-200 p-6">
             <h2 class="text-xl font-bold text-slate-900 mb-4">Patient Context</h2>
 
