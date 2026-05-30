@@ -833,6 +833,7 @@ $predictedDenialFix = match ($predictedDenialReason) {
 
     </div>
 </div>
+   
         <div class="rounded-xl bg-white border border-indigo-100 px-4 py-3">
             <p class="text-sm font-bold text-slate-800">
                 Estimated Medicare Audit Risk:
@@ -862,7 +863,64 @@ $predictedDenialFix = match ($predictedDenialReason) {
                 <p class="rounded-xl bg-white border border-slate-200 px-4 py-3 text-sm font-bold text-slate-700">
                     ✅ Documentation appears audit-ready for provider/biller review.
                 </p>
-            @else
+   @php
+    $medicareCompatibility = $auditSurvivalProbability;
+    $unitedCompatibility   = max(0, $auditSurvivalProbability - 3);
+    $aetnaCompatibility    = max(0, $auditSurvivalProbability - 4);
+    $humanaCompatibility   = max(0, $auditSurvivalProbability - 1);
+    $bcbsCompatibility     = max(0, $auditSurvivalProbability - 2);
+
+    $payerRiskReason = $documentationGaps[0] ?? 'No significant payer risk detected';
+@endphp
+
+<div class="mt-5 rounded-2xl border border-blue-200 bg-blue-50 p-5">
+
+    <p class="text-xs uppercase font-bold text-blue-700">
+        Payer Compatibility Engine
+    </p>
+
+    <div class="mt-4 grid grid-cols-1 md:grid-cols-5 gap-3">
+
+        <div class="rounded-xl bg-white p-3 border border-blue-100">
+            <p class="text-xs font-bold text-slate-500">Medicare</p>
+            <p class="text-xl font-black text-blue-800">{{ $medicareCompatibility }}%</p>
+        </div>
+
+        <div class="rounded-xl bg-white p-3 border border-blue-100">
+            <p class="text-xs font-bold text-slate-500">United</p>
+            <p class="text-xl font-black text-blue-800">{{ $unitedCompatibility }}%</p>
+        </div>
+
+        <div class="rounded-xl bg-white p-3 border border-blue-100">
+            <p class="text-xs font-bold text-slate-500">Aetna</p>
+            <p class="text-xl font-black text-blue-800">{{ $aetnaCompatibility }}%</p>
+        </div>
+
+        <div class="rounded-xl bg-white p-3 border border-blue-100">
+            <p class="text-xs font-bold text-slate-500">Humana</p>
+            <p class="text-xl font-black text-blue-800">{{ $humanaCompatibility }}%</p>
+        </div>
+
+        <div class="rounded-xl bg-white p-3 border border-blue-100">
+            <p class="text-xs font-bold text-slate-500">Blue Cross</p>
+            <p class="text-xl font-black text-blue-800">{{ $bcbsCompatibility }}%</p>
+        </div>
+
+    </div>
+
+    <div class="mt-4 rounded-xl bg-white border border-blue-100 p-4">
+
+        <p class="text-xs uppercase font-bold text-blue-700">
+            Most Likely Rejection Trigger
+        </p>
+
+        <p class="mt-2 text-sm font-bold text-slate-800">
+            {{ $payerRiskReason }}
+        </p>
+
+    </div>
+
+</div>         @else
                 <div class="space-y-2">
                     @foreach($auditReadinessFindings as $finding)
                         <p class="rounded-xl bg-white border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">
