@@ -610,10 +610,7 @@ $predictedDenialFix = match ($predictedDenialReason) {
                     </li>
                 @endforeach
             </ul>
-        @else
-            <div class="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm font-bold text-emerald-800">
-            </div>
-        @endif
+           @endif
     </div>
 </div>
      <div class="bg-white rounded-3xl shadow border border-cyan-200 p-6">
