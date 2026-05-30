@@ -111,7 +111,7 @@
             {{ $documentationScore ?? 0 }}%
         </div>
     </div>
-              @php
+@php
     $estimatedAmount = match ($cpt) {
         '99215' => 225,
         '99214' => 150,
@@ -119,11 +119,25 @@
         default => 75,
     };
 
+    $nextCpt = null;
+    $nextAmount = null;
+
+    if ($cpt === '99213') {
+        $nextCpt = '99214';
+        $nextAmount = 150;
+    } elseif ($cpt === '99214') {
+        $nextCpt = '99215';
+        $nextAmount = 225;
+    }
+
+    $revenueOpportunity = $nextAmount
+        ? ($nextAmount - $estimatedAmount)
+        : 0;
+
     $confidenceLabel = ($documentationScore ?? 0) >= 85
         ? 'Strong'
         : (($documentationScore ?? 0) >= 70 ? 'Moderate' : 'Needs Review');
 @endphp
-
 <div class="bg-white rounded-3xl shadow border border-emerald-200 p-6">
     <div class="flex items-center justify-between gap-4">
         <div>
@@ -149,7 +163,7 @@
             <p class="text-xs uppercase font-bold text-emerald-700">CPT</p>
             <p class="mt-1 text-2xl font-black text-emerald-800">{{ $cpt }}</p>
         </div>
-
+            
         <div class="rounded-2xl bg-indigo-50 border border-indigo-100 p-4">
             <p class="text-xs uppercase font-bold text-indigo-700">POS</p>
             <p class="mt-1 text-2xl font-black text-indigo-800">{{ $pos }}</p>
@@ -161,6 +175,42 @@
         </div>
     </div>
 </div>
+@if($nextCpt)
+<div class="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+    <p class="text-xs uppercase font-bold text-emerald-700">
+        Revenue Opportunity
+    </p>
+
+    <div class="mt-3 grid grid-cols-1 md:grid-cols-3 gap-4">
+
+        <div>
+            <p class="text-xs text-slate-500">Current</p>
+            <p class="font-black text-slate-900">
+                {{ $cpt }} = ${{ number_format($estimatedAmount,2) }}
+            </p>
+        </div>
+
+        <div>
+            <p class="text-xs text-slate-500">Potential</p>
+            <p class="font-black text-indigo-800">
+                {{ $nextCpt }} = ${{ number_format($nextAmount,2) }}
+            </p>
+        </div>
+
+        <div>
+            <p class="text-xs text-slate-500">Opportunity</p>
+            <p class="font-black text-emerald-700">
+                +${{ number_format($revenueOpportunity,2) }}
+            </p>
+        </div>
+
+    </div>
+
+    <p class="mt-3 text-sm text-slate-700">
+        Improving documentation completeness may support a higher complexity level when clinically justified.
+    </p>
+</div>
+@endif
     <div class="mt-5">
         @if(!empty($documentationGaps))
             <ul class="space-y-2">
