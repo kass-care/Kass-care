@@ -137,6 +137,46 @@
     $confidenceLabel = ($documentationScore ?? 0) >= 85
         ? 'Strong'
         : (($documentationScore ?? 0) >= 70 ? 'Moderate' : 'Needs Review');
+$claimRiskScore = 100;
+$claimRiskFactors = [];
+
+if (empty($note->chief_complaint)) {
+    $claimRiskScore -= 15;
+    $claimRiskFactors[] = 'Chief complaint missing';
+}
+
+if (empty($note->subjective)) {
+    $claimRiskScore -= 15;
+    $claimRiskFactors[] = 'Subjective findings missing';
+}
+
+if (empty($note->objective)) {
+    $claimRiskScore -= 15;
+    $claimRiskFactors[] = 'Objective findings missing';
+}
+
+if (empty($note->assessment)) {
+    $claimRiskScore -= 20;
+    $claimRiskFactors[] = 'Assessment missing';
+}
+
+if (empty($note->plan)) {
+    $claimRiskScore -= 20;
+    $claimRiskFactors[] = 'Plan missing';
+}
+
+if (empty($icdSuggestions)) {
+    $claimRiskScore -= 15;
+    $claimRiskFactors[] = 'No clear ICD-10 support detected';
+}
+
+$claimRiskScore = max(0, $claimRiskScore);
+
+$claimRiskLabel = match (true) {
+    $claimRiskScore >= 85 => 'LOW RISK',
+    $claimRiskScore >= 70 => 'MODERATE RISK',
+    default => 'HIGH RISK',
+};
 @endphp
 <div class="bg-white rounded-3xl shadow border border-emerald-200 p-6">
     <div class="flex items-center justify-between gap-4">
@@ -211,6 +251,42 @@
     </p>
 </div>
 @endif
+   <div class="mt-5 rounded-2xl border border-blue-200 bg-blue-50 p-5">
+    <p class="text-xs uppercase font-bold text-blue-700">
+        Claim Approval Probability
+    </p>
+
+    <div class="mt-3 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+            <p class="text-5xl font-black text-blue-800">
+                {{ $claimRiskScore }}%
+            </p>
+            <p class="mt-1 text-sm font-black text-slate-700">
+                {{ $claimRiskLabel }}
+            </p>
+        </div>
+
+        <div class="md:text-right">
+            @if(empty($claimRiskFactors))
+                <p class="rounded-xl bg-emerald-100 px-4 py-3 text-sm font-bold text-emerald-800">
+                    ✅ Claim documentation appears strong for review.
+                </p>
+            @else
+                <div class="space-y-2">
+                    @foreach($claimRiskFactors as $factor)
+                        <p class="rounded-xl bg-white border border-blue-100 px-4 py-2 text-sm font-bold text-slate-700">
+                            ⚠ {{ $factor }}
+                        </p>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+    </div>
+
+    <p class="mt-4 text-sm text-slate-700">
+        This is a decision-support estimate only. Provider or biller must verify payer rules, medical necessity, ICD/CPT support, and final claim submission.
+    </p>
+</div>
     <div class="mt-5">
         @if(!empty($documentationGaps))
             <ul class="space-y-2">
