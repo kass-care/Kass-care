@@ -783,7 +783,56 @@ $predictedDenialFix = match ($predictedDenialReason) {
                 {{ $auditSimulationStatus }}
             </p>
         </div>
+        @php
+    $auditSurvivalProbability = max(
+        0,
+        min(
+            100,
+            $auditReadinessScore -
+            (count($documentationGaps ?? []) * 5)
+        )
+    );
+@endphp
 
+<div class="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+    <p class="text-xs uppercase font-bold text-emerald-700">
+        Audit Survival Probability
+    </p>
+
+    <p class="mt-3 text-3xl font-black text-emerald-800">
+        {{ $auditSurvivalProbability }}%
+    </p>
+
+    <div class="mt-4 space-y-2">
+
+        @if(!empty($note->chief_complaint))
+            <p>✓ Chief Complaint Present</p>
+        @endif
+
+        @if(!empty($note->assessment))
+            <p>✓ Assessment Present</p>
+        @endif
+
+        @if(!empty($note->plan))
+            <p>✓ Plan Present</p>
+        @endif
+
+        @if(!empty($note->objective))
+            <p>✓ Objective Findings Present</p>
+        @endif
+
+        @if(!empty($icdSuggestions))
+            <p>✓ ICD Support Present</p>
+        @endif
+
+        @foreach(($documentationGaps ?? []) as $gap)
+            <p class="text-amber-700">
+                ⚠ {{ $gap }}
+            </p>
+        @endforeach
+
+    </div>
+</div>
         <div class="rounded-xl bg-white border border-indigo-100 px-4 py-3">
             <p class="text-sm font-bold text-slate-800">
                 Estimated Medicare Audit Risk:
