@@ -96,6 +96,39 @@ $caregivers = User::where('role', 'caregiver')
             $caregiverShift?->clock_in_latitude &&
             $caregiverShift?->clock_in_longitude
         );
+$shiftScore = $caregiverShift
+    ? (($caregiverShift->clock_in_at && $caregiverShift->clock_out_at) ? 100 : ($caregiverShift->clock_in_at ? 70 : 40))
+    : 0;
+
+$gpsScore = $caregiver->gps_verified ? 100 : 0;
+
+$visitScore = $caregiver->today_visits_count > 0
+    ? round(($caregiver->completed_visits_count / max($caregiver->today_visits_count, 1)) * 100)
+    : 0;
+
+$medScore = $caregiverMeds->count() > 0
+    ? round(($caregiver->meds_signed_count / max($caregiverMeds->count(), 1)) * 100)
+    : 0;
+
+$caregiver->shift_score = $shiftScore;
+$caregiver->gps_score = $gpsScore;
+$caregiver->visit_score = $visitScore;
+$caregiver->med_score = $medScore;
+
+$caregiver->accountability_score = round((
+    $shiftScore +
+    $gpsScore +
+    $visitScore +
+    $medScore
+) / 4);
+
+$caregiver->accountability_grade = match (true) {
+    $caregiver->accountability_score >= 90 => 'A',
+    $caregiver->accountability_score >= 80 => 'B',
+    $caregiver->accountability_score >= 70 => 'C',
+    $caregiver->accountability_score >= 60 => 'D',
+    default => 'Needs Attention',
+};
 
         return $caregiver;
     }); 

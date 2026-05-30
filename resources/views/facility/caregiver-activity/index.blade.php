@@ -125,6 +125,22 @@
             @forelse($caregivers as $caregiver)
                 <div class="rounded-3xl border border-slate-200 p-5 shadow-sm">
                     <h3 class="text-xl font-black text-slate-900">{{ $caregiver->name }}</h3>
+                     <div class="mt-4 rounded-2xl bg-slate-900 p-4 text-white">
+    <div class="flex items-center justify-between">
+        <div>
+            <p class="text-xs font-black uppercase tracking-[0.25em] text-cyan-300">
+                Accountability Score
+            </p>
+            <p class="mt-2 text-4xl font-black">
+                {{ $caregiver->accountability_score }}%
+            </p>
+        </div>
+
+        <span class="rounded-2xl bg-cyan-400 px-4 py-2 text-sm font-black text-slate-950">
+            {{ $caregiver->accountability_grade }}
+        </span>
+    </div>
+</div>
 
 			<div class="mt-4 grid grid-cols-2 gap-3 text-sm">
     <div class="rounded-2xl bg-slate-50 p-3">
