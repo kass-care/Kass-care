@@ -892,13 +892,25 @@ $predictedDenialFix = match ($predictedDenialReason) {
                 {{ $auditReadinessStatus }}
             </p>
         </div>
-
-        <div class="md:max-w-md">
+ <div class="md:max-w-md">
             @if(empty($auditReadinessFindings))
                 <p class="rounded-xl bg-white border border-slate-200 px-4 py-3 text-sm font-bold text-slate-700">
                     ✅ Documentation appears audit-ready for provider/biller review.
                 </p>
-   @php
+            @else
+                <div class="space-y-2">
+                    @foreach($auditReadinessFindings as $finding)
+                        <p class="rounded-xl bg-white border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">
+                            ⚠ {{ $finding }}
+                        </p>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+    </div>
+</div>
+
+@php
     $medicareCompatibility = $auditSurvivalProbability;
     $unitedCompatibility   = max(0, $auditSurvivalProbability - 3);
     $aetnaCompatibility    = max(0, $auditSurvivalProbability - 4);
@@ -955,17 +967,6 @@ $predictedDenialFix = match ($predictedDenialReason) {
 
     </div>
 
-</div>         @else
-                <div class="space-y-2">
-                    @foreach($auditReadinessFindings as $finding)
-                        <p class="rounded-xl bg-white border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">
-                            ⚠ {{ $finding }}
-                        </p>
-                    @endforeach
-                </div>
-            @endif
-        </div>
-    </div>
 </div>
 
      <div class="bg-white rounded-3xl shadow border border-cyan-200 p-6">
