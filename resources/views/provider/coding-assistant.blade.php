@@ -540,8 +540,18 @@ $claimRiskLabel = match (true) {
         $denialRiskScore >= 70 => 'MODERATE DENIAL RISK',
         default => 'HIGH DENIAL RISK',
     };
-@endphp
+      $predictedDenialReason = $denialReasons[0] ?? 'No major denial predicted';
 
+$predictedDenialFix = match ($predictedDenialReason) {
+    'Missing chief complaint' => 'Add a clear chief complaint explaining why the patient was seen.',
+    'Missing assessment' => 'Add a clinical assessment that supports medical decision-making.',
+    'Missing plan' => 'Add a treatment, monitoring, or follow-up plan.',
+    'Missing objective findings' => 'Add vitals, measurements, exam findings, or care-log observations.',
+    'No ICD-10 support detected' => 'Add or confirm an ICD-10 diagnosis that supports the visit and CPT level.',
+    'Weak medical necessity support' => 'Strengthen the note with diagnosis, assessment, plan, and clinical rationale.',
+    default => 'No immediate fix required before provider/biller review.',
+};
+@endphp
 <div class="mt-5 rounded-2xl border border-red-200 bg-red-50 p-5">
     <p class="text-xs uppercase font-bold text-red-700">
         Claim Denial Prevention
@@ -577,6 +587,20 @@ $claimRiskLabel = match (true) {
 
     </div>
 </div>
+<div class="mt-4 rounded-xl bg-white border border-red-100 px-4 py-3">
+    <p class="text-xs uppercase font-bold text-red-700">
+        Top Predicted Denial Reason
+    </p>
+
+    <p class="mt-2 text-sm font-black text-slate-800">
+        {{ $predictedDenialReason }}
+    </p>
+
+    <p class="mt-2 text-sm text-slate-700">
+        <span class="font-bold">Recommended fix:</span>
+        {{ $predictedDenialFix }}
+    </p>
+</div>
     <div class="mt-5">
         @if(!empty($documentationGaps))
             <ul class="space-y-2">
@@ -588,7 +612,6 @@ $claimRiskLabel = match (true) {
             </ul>
         @else
             <div class="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm font-bold text-emerald-800">
-                ✅ Documentation looks strong for coding review.
             </div>
         @endif
     </div>
