@@ -319,6 +319,81 @@ $claimRiskLabel = match (true) {
         </div>
     </div>
 </div>
+@php
+    $medicalNecessityScore = 100;
+    $medicalNecessityFactors = [];
+
+    if (empty($note->chief_complaint)) {
+        $medicalNecessityScore -= 20;
+        $medicalNecessityFactors[] = 'Chief complaint is needed to support why the visit occurred.';
+    }
+
+    if (empty($note->assessment)) {
+        $medicalNecessityScore -= 25;
+        $medicalNecessityFactors[] = 'Assessment is needed to support clinical decision-making.';
+    }
+
+    if (empty($note->plan)) {
+        $medicalNecessityScore -= 25;
+        $medicalNecessityFactors[] = 'Plan is needed to support ongoing treatment or monitoring.';
+    }
+
+    if (empty($note->objective)) {
+        $medicalNecessityScore -= 15;
+        $medicalNecessityFactors[] = 'Objective findings/vitals help support medical necessity.';
+    }
+
+    if ($cpt === '99215' && ($documentationScore ?? 0) < 90) {
+        $medicalNecessityScore -= 20;
+        $medicalNecessityFactors[] = 'High-complexity CPT 99215 may require stronger documentation support.';
+    }
+
+    if ($cpt === '99214' && ($documentationScore ?? 0) < 70) {
+        $medicalNecessityScore -= 15;
+        $medicalNecessityFactors[] = 'Moderate-complexity CPT 99214 may require stronger documentation support.';
+    }
+
+    $medicalNecessityScore = max(0, $medicalNecessityScore);
+
+    $medicalNecessityStatus = match (true) {
+        $medicalNecessityScore >= 85 => 'SUPPORTED',
+        $medicalNecessityScore >= 70 => 'NEEDS REVIEW',
+        default => 'HIGH RISK',
+    };
+@endphp
+
+<div class="mt-5 rounded-2xl border border-rose-200 bg-rose-50 p-5">
+    <p class="text-xs uppercase font-bold text-rose-700">
+        Medical Necessity Review
+    </p>
+
+    <div class="mt-3 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+            <p class="text-3xl font-black text-rose-800">
+                {{ $medicalNecessityScore }}%
+            </p>
+            <p class="mt-1 text-sm font-bold text-slate-600">
+                {{ $medicalNecessityStatus }}
+            </p>
+        </div>
+
+        <div class="md:max-w-md">
+            @if(empty($medicalNecessityFactors))
+                <p class="rounded-xl bg-white border border-rose-100 px-4 py-3 text-sm font-bold text-slate-700">
+                    ✅ Documentation appears to support medical necessity for review.
+                </p>
+            @else
+                <div class="space-y-2">
+                    @foreach($medicalNecessityFactors as $factor)
+                        <p class="rounded-xl bg-white border border-rose-100 px-4 py-2 text-sm font-bold text-slate-700">
+                            ⚠ {{ $factor }}
+                        </p>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+    </div>
+</div>
     <div class="mt-5">
         @if(!empty($documentationGaps))
             <ul class="space-y-2">
