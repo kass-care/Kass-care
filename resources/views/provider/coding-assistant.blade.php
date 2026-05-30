@@ -295,6 +295,41 @@ $claimRiskLabel = match (true) {
     </div>
 </div>
 @endif
+@php
+    $cptOptimizerMessage = match ($cpt) {
+        '99212' => 'Documentation may support CPT 99213 if additional clinical detail is documented.',
+        '99213' => 'Documentation may support CPT 99214 with stronger assessment and medical decision making.',
+        '99214' => 'Documentation may support CPT 99215 when high complexity decision making is clearly documented.',
+        default => 'Current CPT level appears appropriate.',
+    };
+@endphp
+
+<div class="mt-5 rounded-2xl border border-indigo-200 bg-indigo-50 p-5">
+    <p class="text-xs uppercase font-bold text-indigo-700">
+        CPT Level Optimizer Engine
+    </p>
+
+    <div class="mt-3 rounded-xl bg-white border border-indigo-100 p-4">
+        <p class="text-lg font-black text-indigo-800">
+            Current CPT: {{ $cpt }}
+        </p>
+
+        <p class="mt-2 text-sm text-slate-700">
+            {{ $cptOptimizerMessage }}
+        </p>
+
+        @if($nextCpt)
+            <div class="mt-3 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3">
+                <p class="text-sm font-bold text-emerald-800">
+                    Potential Upgrade Path:
+                    {{ $cpt }}
+                    →
+                    {{ $nextCpt }}
+                </p>
+            </div>
+        @endif
+    </div>
+</div>
    <div class="mt-5 rounded-2xl border border-blue-200 bg-blue-50 p-5">
     <p class="text-xs uppercase font-bold text-blue-700">
         Claim Approval Probability
