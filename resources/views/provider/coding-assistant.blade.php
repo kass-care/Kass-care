@@ -287,6 +287,38 @@ $claimRiskLabel = match (true) {
         This is a decision-support estimate only. Provider or biller must verify payer rules, medical necessity, ICD/CPT support, and final claim submission.
     </p>
 </div>
+@php
+    $hasIcdSupport = !empty($icdSuggestions);
+
+    $icdCptValidationStatus = $hasIcdSupport
+        ? 'SUPPORTED'
+        : 'NEEDS REVIEW';
+
+    $icdCptValidationMessage = $hasIcdSupport
+        ? 'At least one ICD-10 suggestion is present for provider/biller review.'
+        : 'No clear ICD-10 support was detected for the suggested CPT level. Review diagnosis documentation before claim submission.';
+@endphp
+
+<div class="mt-5 rounded-2xl border border-violet-200 bg-violet-50 p-5">
+    <p class="text-xs uppercase font-bold text-violet-700">
+        ICD/CPT Validation
+    </p>
+
+    <div class="mt-3 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+            <p class="text-3xl font-black text-violet-800">
+                {{ $icdCptValidationStatus }}
+            </p>
+            <p class="mt-1 text-sm font-bold text-slate-600">
+                CPT {{ $cpt }} · ICD Support Check
+            </p>
+        </div>
+
+        <div class="rounded-xl bg-white border border-violet-100 px-4 py-3 text-sm font-bold text-slate-700 md:max-w-md">
+            {{ $icdCptValidationMessage }}
+        </div>
+    </div>
+</div>
     <div class="mt-5">
         @if(!empty($documentationGaps))
             <ul class="space-y-2">
