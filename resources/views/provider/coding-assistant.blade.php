@@ -455,6 +455,84 @@ $claimRiskLabel = match (true) {
 
     </div>
 </div>
+   @php
+    $denialRiskScore = 100;
+    $denialReasons = [];
+
+    if (empty($note->chief_complaint)) {
+        $denialRiskScore -= 15;
+        $denialReasons[] = 'Missing chief complaint';
+    }
+
+    if (empty($note->assessment)) {
+        $denialRiskScore -= 20;
+        $denialReasons[] = 'Missing assessment';
+    }
+
+    if (empty($note->plan)) {
+        $denialRiskScore -= 20;
+        $denialReasons[] = 'Missing plan';
+    }
+
+    if (empty($note->objective)) {
+        $denialRiskScore -= 15;
+        $denialReasons[] = 'Missing objective findings';
+    }
+
+    if (empty($icdSuggestions)) {
+        $denialRiskScore -= 15;
+        $denialReasons[] = 'No ICD-10 support detected';
+    }
+
+    if ($medicalNecessityScore < 70) {
+        $denialRiskScore -= 20;
+        $denialReasons[] = 'Weak medical necessity support';
+    }
+
+    $denialRiskScore = max(0, $denialRiskScore);
+
+    $denialStatus = match (true) {
+        $denialRiskScore >= 85 => 'LOW DENIAL RISK',
+        $denialRiskScore >= 70 => 'MODERATE DENIAL RISK',
+        default => 'HIGH DENIAL RISK',
+    };
+@endphp
+
+<div class="mt-5 rounded-2xl border border-red-200 bg-red-50 p-5">
+    <p class="text-xs uppercase font-bold text-red-700">
+        Claim Denial Prevention
+    </p>
+
+    <div class="mt-3 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+
+        <div>
+            <p class="text-3xl font-black text-red-800">
+                {{ $denialRiskScore }}%
+            </p>
+
+            <p class="mt-1 text-sm font-bold text-slate-700">
+                {{ $denialStatus }}
+            </p>
+        </div>
+
+        <div class="md:max-w-md">
+            @if(empty($denialReasons))
+                <p class="rounded-xl bg-white border border-red-100 px-4 py-3 text-sm font-bold text-slate-700">
+                    ✅ No major denial risks detected.
+                </p>
+            @else
+                <div class="space-y-2">
+                    @foreach($denialReasons as $reason)
+                        <p class="rounded-xl bg-white border border-red-100 px-4 py-2 text-sm font-bold text-slate-700">
+                            ⚠ {{ $reason }}
+                        </p>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+
+    </div>
+</div>
     <div class="mt-5">
         @if(!empty($documentationGaps))
             <ul class="space-y-2">
