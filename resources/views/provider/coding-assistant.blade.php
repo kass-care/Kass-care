@@ -177,6 +177,42 @@
         @endif
     </div>
 </div>
+     <div class="bg-white rounded-3xl shadow border border-cyan-200 p-6">
+    <p class="text-xs uppercase font-bold text-cyan-700">AI Documentation Assistant</p>
+    <h2 class="mt-1 text-xl font-black text-slate-900">Suggested Documentation Fixes</h2>
+    <p class="mt-1 text-sm text-slate-600">
+        Draft suggestions for provider review. Provider must verify before signing.
+    </p>
+
+    <div class="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="rounded-2xl bg-cyan-50 border border-cyan-100 p-4">
+            <p class="text-xs uppercase font-bold text-cyan-700">Suggested Chief Complaint</p>
+            <p class="mt-2 text-sm font-semibold text-slate-700">
+                {{ !empty($note->chief_complaint)
+                    ? $note->chief_complaint
+                    : 'Follow-up evaluation and care-plan review.' }}
+            </p>
+        </div>
+
+        <div class="rounded-2xl bg-indigo-50 border border-indigo-100 p-4">
+            <p class="text-xs uppercase font-bold text-indigo-700">Suggested Subjective</p>
+            <p class="mt-2 text-sm font-semibold text-slate-700">
+                {{ !empty($note->subjective)
+                    ? $note->subjective
+                    : 'Patient/caregiver report should document current symptoms, medication tolerance, functional changes, and any new concerns since the last visit.' }}
+            </p>
+        </div>
+
+        <div class="rounded-2xl bg-emerald-50 border border-emerald-100 p-4">
+            <p class="text-xs uppercase font-bold text-emerald-700">Suggested Objective</p>
+            <p class="mt-2 text-sm font-semibold text-slate-700">
+                {{ !empty($note->objective)
+                    ? $note->objective
+                    : 'Review recent vital signs, oxygen saturation, weight, care logs, eMAR activity, mobility status, and clinical measurements.' }}
+            </p>
+        </div>
+    </div>
+</div>
         <div class="bg-white rounded-3xl shadow border border-slate-200 p-6">
             <h2 class="text-xl font-bold text-slate-900 mb-4">Patient Context</h2>
 
