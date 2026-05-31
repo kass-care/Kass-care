@@ -968,6 +968,451 @@ $predictedDenialFix = match ($predictedDenialReason) {
     </div>
 
 </div>
+      @php
+    $payerRuleWarnings = [];
+
+    if (!empty($documentationGaps)) {
+        $payerRuleWarnings[] = 'Documentation gaps may trigger payer review.';
+    }
+
+    if (empty($icdSuggestions)) {
+        $payerRuleWarnings[] = 'Diagnosis support should be verified before submission.';
+    }
+
+    if (($medicalNecessityScore ?? 0) < 85) {
+        $payerRuleWarnings[] = 'Medical necessity support may be questioned.';
+    }
+
+    $payerRules = [
+        'Medicare' => [
+            'Medical necessity must be clearly supported.',
+            'Assessment and plan should justify the CPT level.',
+            'Objective findings should support reported symptoms.',
+        ],
+        'UnitedHealthcare' => [
+            'Diagnosis support should match the billed CPT level.',
+            'Follow-up plan should be documented.',
+            'Documentation gaps may delay claim review.',
+        ],
+        'Aetna' => [
+            'Objective findings and vitals should support the visit.',
+            'Medical necessity should be clear in assessment.',
+            'Coding should match diagnosis documentation.',
+        ],
+        'Humana' => [
+            'Risk and chronic condition support should be documented.',
+            'Assessment should connect symptoms to plan.',
+            'ICD support should be reviewed before submission.',
+        ],
+        'Blue Cross' => [
+            'SOAP documentation should be complete.',
+            'Chief complaint, assessment, and plan should be present.',
+            'Payer review may focus on documentation completeness.',
+        ],
+    ];
+@endphp
+
+<div class="mt-5 rounded-2xl border border-sky-200 bg-sky-50 p-5">
+    <p class="text-xs uppercase font-bold text-sky-700">
+        Payer-Specific Documentation Rules Engine
+    </p>
+
+    <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+        @foreach($payerRules as $payer => $rules)
+            <div class="rounded-xl bg-white border border-sky-100 p-4">
+                <p class="font-black text-sky-800">
+                    {{ $payer }}
+                </p>
+
+                <ul class="mt-3 space-y-2 text-sm text-slate-700">
+                    @foreach($rules as $rule)
+                        <li>• {{ $rule }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endforeach
+    </div>
+
+    @if(!empty($payerRuleWarnings))
+        <div class="mt-4 rounded-xl bg-white border border-amber-200 p-4">
+            <p class="text-xs uppercase font-bold text-amber-700">
+                Current Claim Watch Items
+            </p>
+
+            <div class="mt-3 space-y-2">
+                @foreach($payerRuleWarnings as $warning)
+                    <p class="text-sm font-bold text-amber-900">
+                        ⚠ {{ $warning }}
+                    </p>
+                @endforeach
+            </div>
+        </div>
+    @endif
+</div>
+    @php
+    $priorAuthScore = 100;
+    $priorAuthItems = [];
+
+    if (empty($icdSuggestions)) {
+        $priorAuthScore -= 25;
+        $priorAuthItems[] = 'Diagnosis support should be confirmed before authorization request.';
+    }
+
+    if (empty($note->assessment)) {
+        $priorAuthScore -= 25;
+        $priorAuthItems[] = 'Assessment is needed to justify medical necessity.';
+    }
+
+    if (empty($note->plan)) {
+        $priorAuthScore -= 25;
+        $priorAuthItems[] = 'Treatment or follow-up plan is needed for authorization support.';
+    }
+
+    if (!empty($documentationGaps)) {
+        $priorAuthScore -= 10;
+        $priorAuthItems[] = 'Documentation gaps should be corrected before authorization submission.';
+    }
+
+    $priorAuthScore = max(0, $priorAuthScore);
+
+    $priorAuthStatus = match (true) {
+        $priorAuthScore >= 90 => 'AUTH READY',
+        $priorAuthScore >= 75 => 'REVIEW BEFORE AUTH',
+        default => 'AUTH RISK',
+    };
+
+    $priorAuthApprovalProbability = max(0, min(100, $priorAuthScore + 2));
+@endphp
+
+<div class="mt-5 rounded-2xl border border-purple-200 bg-purple-50 p-5">
+    <p class="text-xs uppercase font-bold text-purple-700">
+        Prior Authorization Readiness Engine
+    </p>
+
+    <div class="mt-3 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+            <p class="text-3xl font-black text-purple-800">
+                {{ $priorAuthScore }}%
+            </p>
+
+            <p class="mt-1 text-sm font-bold text-slate-700">
+                {{ $priorAuthStatus }}
+            </p>
+        </div>
+
+        <div class="rounded-xl bg-white border border-purple-100 px-4 py-3 md:max-w-md">
+            <p class="text-sm font-bold text-slate-800">
+                Likelihood of Authorization Approval:
+                <span class="text-purple-700">{{ $priorAuthApprovalProbability }}%</span>
+            </p>
+        </div>
+    </div>
+
+    <div class="mt-4 rounded-xl bg-white border border-purple-100 p-4">
+        <p class="text-xs uppercase font-bold text-purple-700">
+            Authorization Support Checklist
+        </p>
+
+        <div class="mt-3 space-y-2 text-sm font-bold text-slate-700">
+            @if(!empty($icdSuggestions))
+                <p>✓ Diagnosis support present</p>
+            @endif
+
+            @if(!empty($note->assessment))
+                <p>✓ Assessment documented</p>
+            @endif
+
+            @if(!empty($note->plan))
+                <p>✓ Treatment / follow-up plan documented</p>
+            @endif
+
+            @if(empty($priorAuthItems))
+                <p class="text-emerald-700">✅ Prior authorization documentation appears strong for review.</p>
+            @else
+                @foreach($priorAuthItems as $item)
+                    <p class="text-amber-800">⚠ {{ $item }}</p>
+                @endforeach
+            @endif
+        </div>
+    </div>
+     @php
+    $claimScrubberScore = 100;
+
+    if (empty($icdSuggestions)) {
+        $claimScrubberScore -= 15;
+    }
+
+    if (empty($cpt)) {
+        $claimScrubberScore -= 15;
+    }
+
+    if (empty($pos)) {
+        $claimScrubberScore -= 10;
+    }
+
+    if (empty($note->assessment)) {
+        $claimScrubberScore -= 20;
+    }
+
+    if (empty($note->plan)) {
+        $claimScrubberScore -= 20;
+    }
+
+    if (!empty($documentationGaps)) {
+        $claimScrubberScore -= 10;
+    }
+
+    $claimScrubberScore = max(0, $claimScrubberScore);
+
+    $claimScrubberStatus = match (true) {
+        $claimScrubberScore >= 90 => 'CLEAN CLAIM',
+        $claimScrubberScore >= 75 => 'MINOR CORRECTIONS',
+        default => 'SCRUB REQUIRED',
+    };
+@endphp
+
+<div class="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+
+    <p class="text-xs uppercase font-bold text-emerald-700">
+        Claim Scrubber Engine
+    </p>
+
+    <div class="mt-3 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+
+        <div>
+            <p class="text-4xl font-black text-emerald-800">
+                {{ $claimScrubberScore }}%
+            </p>
+
+            <p class="text-sm font-bold text-slate-700">
+                {{ $claimScrubberStatus }}
+            </p>
+        </div>
+
+        <div class="rounded-xl bg-white border border-emerald-100 px-4 py-3">
+            <p class="font-bold text-emerald-800">
+                Final Claim Submission Readiness
+            </p>
+        </div>
+
+    </div>
+
+    <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+
+        <div class="rounded-xl bg-white p-3 border">
+            ✓ ICD Validation
+        </div>
+
+        <div class="rounded-xl bg-white p-3 border">
+            ✓ CPT Validation
+        </div>
+
+        <div class="rounded-xl bg-white p-3 border">
+            ✓ POS Validation
+        </div>
+
+        <div class="rounded-xl bg-white p-3 border">
+            ✓ Assessment Review
+        </div>
+
+        <div class="rounded-xl bg-white p-3 border">
+            ✓ Plan Review
+        </div>
+
+        <div class="rounded-xl bg-white p-3 border">
+            ✓ Documentation Gap Check
+        </div>
+
+    </div>
+
+</div>
+</div>
+@php
+    $medicalNecessityIntelligenceScore = 100;
+    $medicalNecessityWeaknesses = [];
+
+    if (empty($note->chief_complaint)) {
+        $medicalNecessityIntelligenceScore -= 20;
+        $medicalNecessityWeaknesses[] = 'Chief complaint is missing.';
+    }
+
+    if (empty($note->assessment)) {
+        $medicalNecessityIntelligenceScore -= 25;
+        $medicalNecessityWeaknesses[] = 'Assessment is missing.';
+    }
+
+    if (empty($note->plan)) {
+        $medicalNecessityIntelligenceScore -= 25;
+        $medicalNecessityWeaknesses[] = 'Treatment or monitoring plan is missing.';
+    }
+
+    if (empty($icdSuggestions)) {
+        $medicalNecessityIntelligenceScore -= 15;
+        $medicalNecessityWeaknesses[] = 'Diagnosis support is weak or missing.';
+    }
+
+    if (!empty($documentationGaps)) {
+        $medicalNecessityIntelligenceScore -= 10;
+        foreach ($documentationGaps as $gap) {
+            $medicalNecessityWeaknesses[] = $gap;
+        }
+    }
+
+    $medicalNecessityIntelligenceScore = max(0, $medicalNecessityIntelligenceScore);
+
+    $medicalNecessityIntelligenceStatus = match (true) {
+        $medicalNecessityIntelligenceScore >= 90 => 'STRONG SUPPORT',
+        $medicalNecessityIntelligenceScore >= 75 => 'REVIEW RECOMMENDED',
+        default => 'WEAK SUPPORT',
+    };
+
+    $auditorQuestion = !empty($documentationGaps)
+        ? 'Where is the objective documentation supporting this symptom or service level?'
+        : 'Does the note clearly support the billed service level and treatment plan?';
+@endphp
+
+<div class="mt-5 rounded-2xl border border-rose-200 bg-rose-50 p-5">
+    <p class="text-xs uppercase font-bold text-rose-700">
+        Medical Necessity Intelligence Engine
+    </p>
+
+    <div class="mt-3 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+            <p class="text-4xl font-black text-rose-800">
+                {{ $medicalNecessityIntelligenceScore }}%
+            </p>
+
+            <p class="text-sm font-bold text-slate-700">
+                {{ $medicalNecessityIntelligenceStatus }}
+            </p>
+        </div>
+
+        <div class="rounded-xl bg-white border border-rose-100 px-4 py-3 md:max-w-md">
+            <p class="text-xs uppercase font-bold text-rose-700">
+                Auditor Question
+            </p>
+            <p class="mt-2 text-sm font-bold text-slate-800">
+                {{ $auditorQuestion }}
+            </p>
+        </div>
+    </div>
+
+    <div class="mt-4 rounded-xl bg-white border border-rose-100 p-4">
+        <p class="text-xs uppercase font-bold text-rose-700">
+            Medical Necessity Support
+        </p>
+
+        <div class="mt-3 space-y-2 text-sm font-bold text-slate-700">
+            @if(!empty($note->chief_complaint))
+                <p>✓ Symptom / reason for visit documented</p>
+            @endif
+
+            @if(!empty($note->assessment))
+                <p>✓ Assessment supports clinical decision-making</p>
+            @endif
+
+            @if(!empty($note->plan))
+                <p>✓ Plan supports continued treatment or monitoring</p>
+            @endif
+
+            @if(!empty($icdSuggestions))
+                <p>✓ Diagnosis support present</p>
+            @endif
+
+            @foreach($medicalNecessityWeaknesses as $weakness)
+                <p class="text-amber-800">⚠ {{ $weakness }}</p>
+            @endforeach
+        </div>
+    </div>
+</div>
+
+@php
+    $documentationCompletenessScore = 100;
+    $missingDocumentationElements = [];
+
+    if (empty($note->chief_complaint)) {
+        $documentationCompletenessScore -= 15;
+        $missingDocumentationElements[] = 'Chief complaint';
+    }
+
+    if (empty($note->subjective)) {
+        $documentationCompletenessScore -= 10;
+        $missingDocumentationElements[] = 'Subjective findings';
+    }
+
+    if (empty($note->objective)) {
+        $documentationCompletenessScore -= 15;
+        $missingDocumentationElements[] = 'Objective findings';
+    }
+
+    if (empty($note->assessment)) {
+        $documentationCompletenessScore -= 20;
+        $missingDocumentationElements[] = 'Assessment';
+    }
+
+    if (empty($note->plan)) {
+        $documentationCompletenessScore -= 20;
+        $missingDocumentationElements[] = 'Plan';
+    }
+
+    if (empty($icdSuggestions)) {
+        $documentationCompletenessScore -= 15;
+        $missingDocumentationElements[] = 'ICD-10 diagnosis support';
+    }
+
+    if (!empty($documentationGaps)) {
+        $documentationCompletenessScore -= 5;
+        foreach ($documentationGaps as $gap) {
+            $missingDocumentationElements[] = $gap;
+        }
+    }
+
+    $documentationCompletenessScore = max(0, $documentationCompletenessScore);
+
+    $documentationCompletenessStatus = match (true) {
+        $documentationCompletenessScore >= 90 => 'COMPLETE',
+        $documentationCompletenessScore >= 75 => 'NEEDS REVIEW',
+        default => 'INCOMPLETE',
+    };
+@endphp
+
+<div class="mt-5 rounded-2xl border border-cyan-200 bg-cyan-50 p-5">
+    <p class="text-xs uppercase font-bold text-cyan-700">
+        Documentation Completeness Predictor
+    </p>
+
+    <div class="mt-3 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+            <p class="text-4xl font-black text-cyan-800">
+                {{ $documentationCompletenessScore }}%
+            </p>
+
+            <p class="text-sm font-bold text-slate-700">
+                {{ $documentationCompletenessStatus }}
+            </p>
+        </div>
+
+        <div class="rounded-xl bg-white border border-cyan-100 px-4 py-3 md:max-w-md">
+            <p class="text-xs uppercase font-bold text-cyan-700">
+                Predicted Missing Elements
+            </p>
+
+            <div class="mt-2 space-y-1 text-sm font-bold text-slate-700">
+                @if(empty($missingDocumentationElements))
+                    <p class="text-emerald-700">✅ No missing documentation elements detected.</p>
+                @else
+                    @foreach($missingDocumentationElements as $element)
+                        <p class="text-amber-800">⚠ {{ $element }}</p>
+                    @endforeach
+                @endif
+            </div>
+        </div>
+    </div>
+
+    <p class="mt-4 text-sm text-slate-700">
+        This predictor estimates whether the note contains the key clinical, coding, payer, and audit-support elements needed before claim submission.
+    </p>
+</div>
 
      <div class="bg-white rounded-3xl shadow border border-cyan-200 p-6">
     <p class="text-xs uppercase font-bold text-cyan-700">AI Documentation Assistant</p>
