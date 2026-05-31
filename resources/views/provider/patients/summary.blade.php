@@ -107,7 +107,80 @@
             </div>
         </div>
     </div>
+          @php
+    $patientIntelligenceStatus = $riskLevel ?? 'Stable';
+    $patientIntelligenceItems = [];
 
+    if (($snapshot['diagnosisCount'] ?? 0) === 0) {
+        $patientIntelligenceItems[] = 'No active diagnoses recorded yet.';
+    }
+
+    if (($snapshot['medicationCount'] ?? 0) === 0) {
+        $patientIntelligenceItems[] = 'No active medications recorded yet.';
+    }
+
+    if (($snapshot['visitCount'] ?? 0) === 0) {
+        $patientIntelligenceItems[] = 'No provider visits recorded yet.';
+    }
+
+    if (!empty($snapshot['last_visit'])) {
+        $patientIntelligenceItems[] = 'Last provider visit recorded: ' . $snapshot['last_visit'];
+    }
+
+    $providerAttention = $riskLevel === 'High'
+        ? 'Recommended'
+        : (($riskLevel === 'Moderate') ? 'Monitor' : 'Routine');
+
+    $suggestedNextStep = $riskLevel === 'High'
+        ? 'Review recent vitals, care logs, medications, and provider notes.'
+        : (($riskLevel === 'Moderate')
+            ? 'Monitor for changes and review recent caregiver documentation.'
+            : 'Continue routine follow-up and care coordination.');
+@endphp
+
+<div class="bg-gradient-to-br from-indigo-950 via-indigo-900 to-slate-900 rounded-2xl shadow-sm border border-indigo-800 p-6 mb-6 text-white">
+    <p class="text-xs uppercase tracking-widest font-black text-indigo-200">
+        🧠 KassCare Patient Intelligence
+    </p>
+
+    <div class="mt-3 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+            <h2 class="text-2xl font-black">
+                Patient Status: {{ $patientIntelligenceStatus }}
+            </h2>
+
+            <p class="mt-2 text-indigo-100">
+                KassCare is watching clinical activity, documentation, visits, and care signals for this patient.
+            </p>
+        </div>
+
+        <div class="rounded-2xl bg-white/10 border border-white/10 px-5 py-4">
+            <p class="text-xs uppercase font-bold text-indigo-200">Provider Attention</p>
+            <p class="mt-1 text-2xl font-black">{{ $providerAttention }}</p>
+        </div>
+    </div>
+
+    <div class="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="rounded-2xl bg-white/10 border border-white/10 p-4">
+            <p class="text-sm font-black text-indigo-100">What KassCare Noticed</p>
+
+            <div class="mt-3 space-y-2 text-sm text-white">
+                @forelse($patientIntelligenceItems as $item)
+                    <p>• {{ $item }}</p>
+                @empty
+                    <p>• No major intelligence signals detected yet.</p>
+                @endforelse
+            </div>
+        </div>
+
+        <div class="rounded-2xl bg-white/10 border border-white/10 p-4">
+            <p class="text-sm font-black text-indigo-100">Suggested Next Step</p>
+            <p class="mt-3 text-sm text-white">
+                {{ $suggestedNextStep }}
+            </p>
+        </div>
+    </div>
+</div>
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-xl font-bold text-gray-900">Clinical Snapshot</h2>
