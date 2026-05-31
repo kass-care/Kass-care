@@ -49,7 +49,36 @@
             </div>
         </div>
     @endif
+          <style>
+    @keyframes kasscareTicker {
+        0% { transform: translateX(100%); }
+        100% { transform: translateX(-100%); }
+    }
 
+    .kasscare-ticker-track {
+        animation: kasscareTicker 28s linear infinite;
+    }
+</style>
+
+<div class="mb-8 overflow-hidden rounded-2xl border border-cyan-400/30 bg-white/10 shadow-xl">
+    <div class="bg-gradient-to-r from-indigo-700 via-cyan-600 to-emerald-600 px-6 py-3">
+        <div class="overflow-hidden whitespace-nowrap">
+            <div class="kasscare-ticker-track inline-block text-sm font-black tracking-wide text-white">
+                🚨 {{ ($expiredDocuments ?? 0) + ($expiringSoonDocuments ?? 0) }} Compliance Item(s) Need Review
+                &nbsp; • &nbsp;
+                  👥 {{ $patients ?? 0 }} Active Client(s)
+		 &nbsp; • &nbsp;
+	  	👨‍⚕️ {{ $caregivers ?? 0 }} Caregiver(s)
+	  	&nbsp; • &nbsp;
+	   	📅 {{ $visits ?? 0 }} Scheduled Visit(s)
+	    	&nbsp; • &nbsp;
+	    	🩺 {{ $providers ?? 0 }} Linked Provider(s)
+                &nbsp; • &nbsp;
+                ✅ KassCare Facility Intelligence Monitoring Active
+            </div>
+        </div>
+    </div>
+</div>
     {{-- Header --}}
     <div class="mb-10 flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
         <div>
@@ -93,6 +122,100 @@
             </form>
         </div>
     </div>
+
+@php
+    $facilityHealthScore = 100;
+
+    $facilityHealthScore -= (($expiredDocuments ?? 0) * 10);
+    $facilityHealthScore -= (($expiringSoonDocuments ?? 0) * 5);
+
+    $facilityHealthScore = max(0, min(100, $facilityHealthScore));
+
+    $facilityStatus = match (true) {
+        $facilityHealthScore >= 90 => 'EXCELLENT',
+        $facilityHealthScore >= 75 => 'GOOD',
+        $facilityHealthScore >= 60 => 'WATCH',
+        default => 'ACTION NEEDED',
+    };
+
+    $facilityRecommendation = match (true) {
+        ($expiredDocuments ?? 0) > 0 => 'Renew compliance documents immediately.',
+        ($expiringSoonDocuments ?? 0) > 0 => 'Schedule compliance renewals this week.',
+        default => 'Facility operations appear healthy and compliant.',
+    };
+@endphp
+
+<div class="mb-8 rounded-3xl border border-indigo-500/20 bg-gradient-to-r from-indigo-950 via-slate-900 to-cyan-950 p-8 shadow-2xl">
+
+    <p class="text-xs uppercase tracking-[0.35em] font-black text-cyan-300">
+        🧠 KassCare Facility Intelligence
+    </p>
+
+    <div class="mt-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+
+        <div>
+            <h2 class="text-3xl font-black text-white">
+                Facility Status: {{ $facilityStatus }}
+            </h2>
+
+            <p class="mt-2 text-slate-300 max-w-3xl">
+                KassCare is monitoring compliance, staffing, residents, visits,
+                provider activity, and operational readiness in real time.
+            </p>
+        </div>
+
+        <div class="rounded-3xl bg-white/10 border border-white/10 px-8 py-6 text-center">
+            <p class="text-xs uppercase font-bold text-cyan-200">
+                Facility Health Score
+            </p>
+
+            <p class="mt-2 text-5xl font-black text-white">
+                {{ $facilityHealthScore }}%
+            </p>
+        </div>
+
+    </div>
+
+    <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+
+        <div class="rounded-2xl bg-white/10 border border-white/10 p-5">
+            <p class="text-xs uppercase font-bold text-cyan-200">
+                Compliance
+            </p>
+
+            <p class="mt-3 text-3xl font-black text-white">
+                {{ ($expiredDocuments ?? 0) + ($expiringSoonDocuments ?? 0) }}
+            </p>
+
+            <p class="text-sm text-slate-300">
+                Document alerts detected.
+            </p>
+        </div>
+
+        <div class="rounded-2xl bg-white/10 border border-white/10 p-5">
+            <p class="text-xs uppercase font-bold text-cyan-200">
+                Recommendation
+            </p>
+
+            <p class="mt-3 text-sm font-semibold text-white">
+                {{ $facilityRecommendation }}
+            </p>
+        </div>
+
+        <div class="rounded-2xl bg-white/10 border border-white/10 p-5">
+            <p class="text-xs uppercase font-bold text-cyan-200">
+                KassCare Insight
+            </p>
+
+            <p class="mt-3 text-sm font-semibold text-white">
+                Strong facilities maintain compliance, complete visits, and respond quickly to alerts.
+            </p>
+        </div>
+
+    </div>
+
+</div>
+
               @if(($expiredDocuments ?? 0) > 0 || ($expiringSoonDocuments ?? 0) > 0)
     <div class="mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
         @if(($expiredDocuments ?? 0) > 0)

@@ -141,7 +141,88 @@
                     @endif
                 </div>
             </div>
+               @php
+    $copilotAttentionCount = ($flaggedCount ?? 0)
+        + ($highBpCount ?? 0)
+        + ($lowOxygenCount ?? 0)
+        + ($feverCount ?? 0)
+        + ($unreadProviderMessages ?? 0);
 
+    $copilotStatus = $copilotAttentionCount > 0
+        ? 'Provider attention recommended'
+        : 'No urgent clinical activity detected';
+
+    $copilotFirstAction = match (true) {
+        ($lowOxygenCount ?? 0) > 0 => 'Review low oxygen alerts first.',
+        ($highBpCount ?? 0) > 0 => 'Review high blood pressure alerts first.',
+        ($feverCount ?? 0) > 0 => 'Review fever alerts first.',
+        ($unreadProviderMessages ?? 0) > 0 => 'Review unread facility messages.',
+        ($flaggedCount ?? 0) > 0 => 'Review flagged patient activity.',
+        default => 'Continue routine patient review and facility rounding.',
+    };
+@endphp
+
+<div class="rounded-3xl border border-indigo-200 bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-900 p-6 shadow-sm text-white">
+    <p class="text-xs uppercase tracking-[0.35em] font-black text-indigo-200">
+        🧠 KassCare Copilot
+    </p>
+
+    <div class="mt-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+            <h2 class="text-2xl font-black">
+                {{ $copilotStatus }}
+            </h2>
+
+            <p class="mt-2 text-indigo-100">
+                KassCare is scanning alerts, vitals, messages, and clinical activity across your assigned facilities.
+            </p>
+        </div>
+
+        <div class="rounded-2xl bg-white/10 border border-white/10 px-5 py-4">
+            <p class="text-xs uppercase font-bold text-indigo-200">Attention Signals</p>
+            <p class="mt-1 text-3xl font-black">{{ $copilotAttentionCount }}</p>
+        </div>
+    </div>
+
+    <div class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="rounded-2xl bg-white/10 border border-white/10 p-4">
+            <p class="text-sm font-black text-indigo-100">What needs attention</p>
+
+            <div class="mt-3 space-y-2 text-sm">
+                @if(($lowOxygenCount ?? 0) > 0)
+                    <p>• {{ $lowOxygenCount }} low oxygen alert(s)</p>
+                @endif
+
+                @if(($highBpCount ?? 0) > 0)
+                    <p>• {{ $highBpCount }} high blood pressure alert(s)</p>
+                @endif
+
+                @if(($feverCount ?? 0) > 0)
+                    <p>• {{ $feverCount }} fever alert(s)</p>
+                @endif
+
+                @if(($unreadProviderMessages ?? 0) > 0)
+                    <p>• {{ $unreadProviderMessages }} unread facility message(s)</p>
+                @endif
+
+                @if(($flaggedCount ?? 0) > 0)
+                    <p>• {{ $flaggedCount }} flagged clinical item(s)</p>
+                @endif
+
+                @if($copilotAttentionCount === 0)
+                    <p>• No urgent provider action detected right now.</p>
+                @endif
+            </div>
+        </div>
+
+        <div class="rounded-2xl bg-white/10 border border-white/10 p-4">
+            <p class="text-sm font-black text-indigo-100">Recommended first action</p>
+            <p class="mt-3 text-sm">
+                {{ $copilotFirstAction }}
+            </p>
+        </div>
+    </div>
+</div> 
             {{-- Revenue Snapshot --}}
             <div class="rounded-3xl border border-emerald-200 bg-gradient-to-r from-emerald-50 via-white to-indigo-50 p-6 shadow-sm">
                 <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -186,9 +267,9 @@
                         <p class="mt-3 text-4xl font-black text-red-700">{{ $deniedClaims }}</p>
                     </div>
 
-                    <div class="rounded-2xl bg-indigo-700 p-5 shadow-sm">
+                    <div class="rounded-2xl bg-indigo-700 p-5 shadow-sm overflow-hidden min-w-0">
                         <p class="text-xs uppercase tracking-widest text-indigo-100 font-bold">Revenue</p>
-                        <p class="mt-3 text-4xl font-black text-white">
+                        <p class="mt-3 text-2xl xl:text-3xl font-black text-white whitespace-nowrap">
                             ${{ number_format($totalRevenue, 2) }}
                         </p>
                     </div>
