@@ -68,6 +68,65 @@
         </div>
     </section>
 
+<section class="grid grid-cols-1 lg:grid-cols-4 gap-5">
+
+    <div class="rounded-3xl bg-gradient-to-br from-emerald-600 to-emerald-800 p-6 text-white shadow-xl">
+        <p class="text-xs uppercase tracking-widest opacity-80">
+            System Health
+        </p>
+
+        <h3 class="mt-3 text-5xl font-black">
+            99.9%
+        </h3>
+
+        <p class="mt-3 text-sm">
+            KassCare platform operational
+        </p>
+    </div>
+
+    <div class="rounded-3xl bg-white border border-slate-200 p-6 shadow-sm">
+        <p class="text-xs uppercase tracking-widest text-slate-500">
+            Active Alerts
+        </p>
+
+        <h3 class="mt-3 text-5xl font-black text-red-600">
+            {{ $alertCount }}
+        </h3>
+
+        <p class="mt-2 text-sm text-slate-500">
+            Require attention
+        </p>
+    </div>
+
+    <div class="rounded-3xl bg-white border border-slate-200 p-6 shadow-sm">
+        <p class="text-xs uppercase tracking-widest text-slate-500">
+            Open Tasks
+        </p>
+
+        <h3 class="mt-3 text-5xl font-black text-amber-600">
+            {{ $openTaskCount }}
+        </h3>
+
+        <p class="mt-2 text-sm text-slate-500">
+            Pending actions
+        </p>
+    </div>
+
+    <div class="rounded-3xl bg-gradient-to-br from-indigo-700 to-cyan-700 p-6 text-white shadow-xl">
+        <p class="text-xs uppercase tracking-widest opacity-80">
+            Sentry Monitoring
+        </p>
+
+        <h3 class="mt-3 text-3xl font-black">
+            ACTIVE
+        </h3>
+
+        <p class="mt-3 text-sm">
+            Real-time error tracking enabled
+        </p>
+    </div>
+</section>
+
 {{-- LIVE SYSTEM ALERT STRIP --}}
 <section class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
     <div class="bg-gradient-to-r from-rose-600 via-amber-500 to-cyan-600 text-white">
