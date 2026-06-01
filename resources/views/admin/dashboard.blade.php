@@ -111,20 +111,26 @@
             Pending actions
         </p>
     </div>
+<a href="https://kasscare-health.sentry.io/issues/"
+   target="_blank"
+   class="block rounded-3xl bg-gradient-to-br from-indigo-700 to-cyan-700 p-6 text-white shadow-xl hover:scale-[1.02] transition">
+    <p class="text-xs uppercase tracking-widest opacity-80">
+        Sentry Monitoring
+    </p>
 
-    <div class="rounded-3xl bg-gradient-to-br from-indigo-700 to-cyan-700 p-6 text-white shadow-xl">
-        <p class="text-xs uppercase tracking-widest opacity-80">
-            Sentry Monitoring
-        </p>
+    <h3 class="mt-3 text-3xl font-black">
+        ACTIVE
+    </h3>
 
-        <h3 class="mt-3 text-3xl font-black">
-            ACTIVE
-        </h3>
+    <p class="mt-3 text-sm">
+        Real-time error tracking enabled
+    </p>
 
-        <p class="mt-3 text-sm">
-            Real-time error tracking enabled
-        </p>
-    </div>
+    <p class="mt-4 text-xs font-bold text-cyan-100">
+        Open Sentry Dashboard ↗
+    </p>
+</a>
+
 </section>
 
 {{-- LIVE SYSTEM ALERT STRIP --}}
