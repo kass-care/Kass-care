@@ -175,6 +175,20 @@
         : now()->format('F j, Y g:i A');
 
     $rxNumber = 'RX-' . str_pad($order->id, 6, '0', STR_PAD_LEFT);
+
+    $clientDob = $order->client->date_of_birth
+        ?? $order->client->dob
+        ?? $order->client->birth_date
+        ?? null;
+
+    $clientDobFormatted = $clientDob
+        ? \Carbon\Carbon::parse($clientDob)->format('m/d/Y')
+        : 'Not provided';
+
+    $clientAddress = $order->client->address
+        ?? $order->client->street_address
+        ?? $order->client->full_address
+        ?? 'Not provided';
 @endphp
 
 <div class="top-bar">
@@ -197,6 +211,14 @@
         <tr>
             <td class="label">Patient Name</td>
             <td class="value">{{ ucwords(strtolower($clientName)) }}</td>
+        </tr>
+        <tr>
+            <td class="label">Date of Birth</td>
+            <td class="value">{{ $clientDobFormatted }}</td>
+        </tr>
+        <tr>
+            <td class="label">Patient Address</td>
+            <td class="value">{{ $clientAddress }}</td>
         </tr>
         <tr>
             <td class="label">Facility</td>
