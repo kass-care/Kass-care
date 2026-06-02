@@ -153,6 +153,14 @@ class PharmacyOrderController extends Controller
 
         return $pdf->download('prescription-' . $order->id . '.pdf');
     }
+public function downloadPremiumPdf(PharmacyOrder $order)
+    {
+        $order->load(['client', 'provider']);
+
+        $pdf = Pdf::loadView('provider.pharmacy.premium-pdf', compact('order'));
+
+        return $pdf->download('kasscare-premium-prescription-' . $order->id . '.pdf');
+    }
 
     public function emailPrescription(PharmacyOrder $order)
     {

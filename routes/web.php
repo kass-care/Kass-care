@@ -493,7 +493,8 @@ Route::get('/notes/previous/{visitId}', [\App\Http\Controllers\ProviderNoteContr
     ->name('pharmacy.show');
 
         Route::get('/pharmacy/{order}/pdf', [PharmacyOrderController::class, 'downloadPdf'])->name('pharmacy.pdf');
-        Route::post('/pharmacy/{order}/email', [PharmacyOrderController::class, 'emailPrescription'])->name('pharmacy.email');
+       Route::get('/pharmacy/{order}/premium-pdf', [PharmacyOrderController::class, 'downloadPremiumPdf'])->name('pharmacy.premium-pdf');
+	 Route::post('/pharmacy/{order}/email', [PharmacyOrderController::class, 'emailPrescription'])->name('pharmacy.email');
 
         Route::get('/diagnoses', [DiagnosisController::class, 'index'])->name('diagnosis.index');
 
