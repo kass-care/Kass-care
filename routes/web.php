@@ -69,6 +69,7 @@ Route::post('/register-facility', [FacilityOnboardingController::class, 'store']
     ->name('register-facility.store');
 
 Route::view('/terms', 'legal.terms')->name('terms');
+Route::view('/privacy', 'privacy')->name('privacy');
 
 Route::get('/', function () {
     return view('welcome');
