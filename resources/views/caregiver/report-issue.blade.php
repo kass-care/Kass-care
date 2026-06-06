@@ -41,33 +41,92 @@
                     </div>
                 </div>
 
-                <form method="POST" action="{{ route('caregiver.visits.report-issue.store', $visit) }}" class="space-y-5">
-                    @csrf
+                   
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="mb-2 block text-sm font-bold text-slate-700">
+                                Incident Type
+                            </label>
+
+                            <select name="incident_type"
+                                    required
+                                    class="w-full rounded-2xl border border-slate-300 px-4 py-3 focus:ring-2 focus:ring-red-500">
+                                <option value="">Select incident type</option>
+                                <option value="Fall">Fall</option>
+                                <option value="Medication Error">Medication Error</option>
+                                <option value="Injury">Injury</option>
+                                <option value="Behavior Incident">Behavior Incident</option>
+                                <option value="Elopement / Wandering">Elopement / Wandering</option>
+                                <option value="Hospital Transfer">Hospital Transfer</option>
+                                <option value="Abuse / Neglect Concern">Abuse / Neglect Concern</option>
+                                <option value="Clinical Change">Clinical Change</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="mb-2 block text-sm font-bold text-slate-700">
+                                Severity
+                            </label>
+
+                            <select name="severity"
+                                    required
+                                    class="w-full rounded-2xl border border-slate-300 px-4 py-3 focus:ring-2 focus:ring-red-500">
+                                <option value="">Select severity</option>
+                                <option value="Low">Low</option>
+                                <option value="Moderate">Moderate</option>
+                                <option value="High">High</option>
+                                <option value="Critical">Critical</option>
+                            </select>
+                        </div>
+                    </div>
 
                     <div>
                         <label class="mb-2 block text-sm font-bold text-slate-700">
-                            Subject
+                            Location of Incident
                         </label>
 
                         <input type="text"
-                               name="subject"
-                               value="{{ old('subject', 'Urgent clinical concern') }}"
+                               name="incident_location"
+                               value="{{ old('incident_location') }}"
+                               placeholder="Example: bedroom, bathroom, hallway, dining room"
                                class="w-full rounded-2xl border border-slate-300 px-4 py-3 focus:ring-2 focus:ring-red-500">
                     </div>
 
                     <div>
                         <label class="mb-2 block text-sm font-bold text-slate-700">
-                            What happened?
+                            Witnesses
+                        </label>
+
+                        <input type="text"
+                               name="witnesses"
+                               value="{{ old('witnesses') }}"
+                               placeholder="Names of witnesses, if any"
+                               class="w-full rounded-2xl border border-slate-300 px-4 py-3 focus:ring-2 focus:ring-red-500">
+                    </div>
+
+                    <div>
+                        <label class="mb-2 block text-sm font-bold text-slate-700">
+                            Immediate Action Taken
+                        </label>
+
+                        <textarea name="immediate_action"
+                                  rows="3"
+                                  class="w-full rounded-2xl border border-slate-300 px-4 py-3 focus:ring-2 focus:ring-red-500"
+                                  placeholder="Example: assisted resident, checked vitals, notified supervisor, called 911, monitored condition">{{ old('immediate_action') }}</textarea>
+                    </div>
+
+                    <div>
+                        <label class="mb-2 block text-sm font-bold text-slate-700">
+                            Incident Narrative
                         </label>
 
                         <textarea name="message"
                                   rows="7"
                                   required
                                   class="w-full rounded-2xl border border-slate-300 px-4 py-3 focus:ring-2 focus:ring-red-500"
-                                  placeholder="Describe the concern, symptoms, vitals, behavior change, medication issue, fall risk, etc.">{{ old('message') }}</textarea>
-                    </div>
-
-                    <button type="submit"
+                                  placeholder="Describe what happened, symptoms, vitals, behavior change, medication issue, fall details, or other concern.">{{ old('message') }}</textarea>
+                    </div>                    <button type="submit"
                             class="rounded-2xl bg-red-600 px-6 py-3 font-bold text-white shadow hover:bg-red-700">
                         Send Urgent Report
                     </button>

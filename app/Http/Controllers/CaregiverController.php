@@ -285,11 +285,15 @@ if (!$hasCareLog) {
         $visit = $this->caregiverVisitQuery()
             ->with(['client', 'facility', 'provider'])
             ->findOrFail($visit->id);
-
         $data = $request->validate([
-            'subject' => ['nullable', 'string', 'max:255'],
-            'message' => ['required', 'string'],
-        ]);
+    'subject' => ['nullable', 'string', 'max:255'],
+    'incident_type' => ['required', 'string', 'max:100'],
+    'severity' => ['required', 'string', 'max:50'],
+    'incident_location' => ['nullable', 'string', 'max:255'],
+    'witnesses' => ['nullable', 'string', 'max:255'],
+    'immediate_action' => ['nullable', 'string'],
+    'message' => ['required', 'string'],
+]);
 
         $providerId = $visit->provider_id
             ?? $visit->client?->provider_id
@@ -301,14 +305,28 @@ if (!$hasCareLog) {
             return back()->with('error', 'No provider is linked to this patient or facility yet.');
         }
 
+        $incidentMessage =
+            "KassCare Incident Report\n\n" .
+            "Visit #: {$visit->id}\n" .
+            "Patient: " . ($visit->client->name ?? 'N/A') . "\n" .
+            "Facility: " . ($visit->facility->name ?? 'N/A') . "\n" .
+            "Incident Type: {$data['incident_type']}\n" .
+            "Severity: {$data['severity']}\n" .
+            "Location: " . ($data['incident_location'] ?? 'Not provided') . "\n" .
+            "Witnesses: " . ($data['witnesses'] ?? 'None reported') . "\n\n" .
+            "Immediate Action Taken:\n" .
+            ($data['immediate_action'] ?? 'Not documented') . "\n\n" .
+            "Incident Narrative:\n" .
+            $data['message'];
+
         ProviderMessage::create([
             'facility_id' => $visit->facility_id,
             'client_id' => $visit->client_id,
             'sender_id' => auth()->id(),
             'provider_id' => $providerId,
-            'subject' => $data['subject'] ?: 'Caregiver clinical concern',
-            'message' => "Caregiver reported an issue during Visit #{$visit->id}:\n\n" . $data['message'],
-            'priority' => 'urgent',
+            'subject' => $data['subject'] ?: 'KassCare Incident Report: ' . $data['incident_type'],
+            'message' => $incidentMessage,
+            'priority' => in_array($data['severity'], ['High', 'Critical']) ? 'urgent' : 'normal',
         ]);
 
         return redirect()
