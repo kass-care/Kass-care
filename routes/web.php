@@ -24,6 +24,7 @@ use App\Http\Controllers\DiagnosisController;
 use App\Http\Controllers\MedicationController;
 use App\Http\Controllers\PatientTimelineController;
 use App\Http\Controllers\PatientDocumentController;
+use App\Http\Controllers\AdmissionPacketController;
 
 use App\Http\Controllers\ProviderDashboardController;
 use App\Http\Controllers\ProviderPatientController;
@@ -169,6 +170,15 @@ Route::get('/caregiver-activity', [FacilityCaregiverActivityController::class, '
 
 Route::middleware(['auth', 'role:admin,provider'])->get('/facility-admin/home', [AdminDashboardController::class, 'facilityHome'])
     ->name('facility.admin.home');
+
+Route::middleware(['auth', 'role:admin,provider'])
+    ->prefix('facility')
+    ->name('facility.')
+    ->group(function () {
+        Route::get('/admission-packets', [AdmissionPacketController::class, 'index'])->name('admission-packets.index');
+        Route::get('/admission-packets/create', [AdmissionPacketController::class, 'create'])->name('admission-packets.create');
+        Route::post('/admission-packets', [AdmissionPacketController::class, 'store'])->name('admission-packets.store');
+    });
 
 
 Route::get('/facility/revenue', [\App\Http\Controllers\AdminDashboardController::class, 'revenue'])
