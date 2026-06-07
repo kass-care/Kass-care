@@ -118,7 +118,7 @@
 
     <a href="{{ route('register-facility') }}"
        class="rounded-2xl bg-emerald-700 px-7 py-4 text-sm font-black text-white shadow-2xl transition hover:bg-emerald-800">
-        🚀 Start 30-Day Free Trial
+        🚀 Start Guided Onboarding
     </a>
 
     <a href="{{ route('login') }}"
@@ -130,7 +130,7 @@
 
 <div class="mt-5">
     <p class="inline-flex items-center rounded-full border border-emerald-400/20 bg-emerald-400/10 px-5 py-2 text-sm font-bold text-emerald-200">
-        ✅ Full platform access • 30-Day Free Trial • No setup stress
+        ✅ Guided onboarding • Facility setup • Real workflow activation
     </p>
 </div>
 

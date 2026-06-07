@@ -47,17 +47,15 @@ class FacilityOnboardingController extends Controller
         DB::beginTransaction();
 
         try {
-            $trialEndsAt = now()->addDays(30);
-
             $facility = Facility::create([
                 'name' => $request->facility_name,
                 'email' => $request->facility_email,
                 'accepted_terms' => true,
                 'accepted_terms_at' => now(),
                 'contact_person' => $request->admin_name,
-                'subscription_status' => 'trialing',
-                'subscription_starts_at' => now(),
-                'subscription_ends_at' => $trialEndsAt,
+                'subscription_status' => 'pending',
+                'subscription_starts_at' => null,
+                'subscription_ends_at' => null,
                 'facility_limit' => $facilityLimit,
                 'plan' => $selectedPlan,
             ]);
@@ -69,10 +67,10 @@ class FacilityOnboardingController extends Controller
                 'role' => 'admin',
                 'facility_id' => $facility->id,
                 'plan' => $selectedPlan,
-                'subscription_status' => 'trialing',
-                'subscription_starts_at' => now(),
-                'subscription_ends_at' => $trialEndsAt,
-                'trial_ends_at' => $trialEndsAt,
+                'subscription_status' => 'pending',
+                'subscription_starts_at' => null,
+                'subscription_ends_at' => null,
+                'trial_ends_at' => null,
                 'facility_limit' => $facilityLimit,
             ]);
 
@@ -82,8 +80,8 @@ class FacilityOnboardingController extends Controller
             session(['facility_id' => $facility->id]);
 
               return redirect()
-    ->route('facility.admin.home')
-                ->with('success', 'Facility created successfully. Your 30-day free trial has started.');
+    ->route('billing.index')
+                ->with('success', 'Facility created successfully. Please activate your $79/month facility subscription to continue onboarding.');
         } catch (\Throwable $e) {
             DB::rollBack();
 

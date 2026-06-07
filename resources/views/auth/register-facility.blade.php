@@ -38,12 +38,11 @@
                 </div>
                     <div class="mt-6 rounded-2xl border border-emerald-300 bg-emerald-50 px-5 py-4 shadow-sm">
     <p class="text-lg font-black text-emerald-800">
-        🚀 Start Your 30-Day Free Trial
+        🚀 Guided Facility Onboarding
     </p>
 
     <p class="mt-1 text-sm font-semibold text-emerald-700">
-        Full access to provider workflows, patient tools, messaging,
-        compliance tracking, and clinical operations.
+        Activate your $79/month facility plan and receive guided onboarding support for your first resident, caregiver, and provider workflow.
     </p>
 </div>
                 <div class="rounded-2xl bg-cyan-500/10 border border-cyan-400/20 p-4">
