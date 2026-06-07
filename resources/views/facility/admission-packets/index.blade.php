@@ -81,7 +81,8 @@
                         };
                     @endphp
 
-                    <div class="p-5">
+                    <a href="{{ route('facility.admission-packets.show', $packet) }}"
+                       class="block p-5 transition hover:bg-indigo-50">
                         <div class="flex flex-wrap items-start justify-between gap-4">
                             <div>
                                 <div class="flex flex-wrap items-center gap-2">
@@ -102,9 +103,13 @@
                                 <p class="mt-1 text-xs font-semibold text-slate-400">
                                     Created {{ optional($packet->created_at)->format('M j, Y g:i A') }}
                                 </p>
+
+                                <p class="mt-3 text-xs font-black uppercase tracking-widest text-indigo-700">
+                                    View Agreement →
+                                </p>
                             </div>
                         </div>
-                    </div>
+                    </a>
                 @empty
                     <div class="p-10 text-center">
                         <p class="text-lg font-bold text-slate-700">No admission packets yet.</p>

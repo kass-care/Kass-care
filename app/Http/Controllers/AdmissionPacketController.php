@@ -65,6 +65,47 @@ class AdmissionPacketController extends Controller
             ->route('facility.admission-packets.index')
             ->with('success', 'Admission packet created successfully.');
     }
+    public function show(AdmissionPacket $admissionPacket)
+{
+    $facilityId = session('facility_id') ?? auth()->user()->facility_id;
+
+    abort_if(
+        $admissionPacket->facility_id != $facilityId,
+        403,
+        'Unauthorized.'
+    );
+
+    return view(
+        'facility.admission-packets.show',
+        compact('admissionPacket')
+    );
+}
+public function publicSign(string $token)
+{
+    $admissionPacket = AdmissionPacket::where('public_token', $token)->firstOrFail();
+
+    return view('facility.admission-packets.public-sign', compact('admissionPacket'));
+}
+
+public function publicStoreSignature(Request $request, string $token)
+{
+    $admissionPacket = AdmissionPacket::where('public_token', $token)->firstOrFail();
+
+    $data = $request->validate([
+        'signed_by' => ['required', 'string', 'max:255'],
+        'signature' => ['required', 'string', 'max:255'],
+        'agreement_acceptance' => ['accepted'],
+    ]);
+
+    $admissionPacket->update([
+        'signed_by' => $data['signed_by'],
+        'signature' => $data['signature'],
+        'signed_at' => now(),
+        'status' => 'signed',
+    ]);
+
+    return view('facility.admission-packets.signed', compact('admissionPacket'));
+}
 
     private function defaultAgreementText(): string
     {

@@ -102,6 +102,10 @@
                class="inline-flex items-center rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-900">
                 Dashboard
             </a>
+		<a href="{{ route('facility.admission-packets.index') }}"
+   class="inline-flex items-center rounded-2xl bg-cyan-400 px-5 py-3 text-sm font-black text-slate-950 shadow hover:bg-cyan-300">
+    📝 Admission Packets
+</a>
 
             @if(auth()->user()->facility_id)
                 <form method="POST" action="{{ route('select.facility', auth()->user()->facility_id) }}">

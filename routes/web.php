@@ -175,10 +175,19 @@ Route::middleware(['auth', 'role:admin,provider'])
     ->prefix('facility')
     ->name('facility.')
     ->group(function () {
-        Route::get('/admission-packets', [AdmissionPacketController::class, 'index'])->name('admission-packets.index');
+
+	Route::get('/admission-packets', [AdmissionPacketController::class, 'index'])->name('admission-packets.index');
         Route::get('/admission-packets/create', [AdmissionPacketController::class, 'create'])->name('admission-packets.create');
         Route::post('/admission-packets', [AdmissionPacketController::class, 'store'])->name('admission-packets.store');
+        Route::get('/admission-packets/{admissionPacket}', [AdmissionPacketController::class, 'show'])->name('admission-packets.show');	
     });
+
+
+Route::get('/sign/admission-packet/{token}', [AdmissionPacketController::class, 'publicSign'])
+    ->name('admission-packets.public-sign');
+
+Route::post('/sign/admission-packet/{token}', [AdmissionPacketController::class, 'publicStoreSignature'])
+    ->name('admission-packets.public-sign.store');
 
 
 Route::get('/facility/revenue', [\App\Http\Controllers\AdminDashboardController::class, 'revenue'])
