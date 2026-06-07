@@ -83,6 +83,10 @@
                        class="inline-flex items-center justify-center rounded-xl bg-amber-400 px-5 py-3 text-sm font-bold text-slate-900 shadow">
                         Open Care Logs
                     </a>
+		<a href="{{ route('caregiver.incidents.index') }}"
+   class="inline-flex items-center justify-center rounded-xl bg-red-600 px-5 py-3 text-sm font-bold text-white shadow hover:bg-red-700">
+    🚨 Incident Reports
+</a>
                 </div>
             </div>
         </div>

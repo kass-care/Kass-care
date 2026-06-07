@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CareLog;
 use App\Models\Caregiver;
 use App\Models\ProviderMessage;
+use App\Models\IncidentReport;
 use App\Models\User;
 use App\Models\Visit;
 use Carbon\Carbon;
@@ -304,6 +305,24 @@ if (!$hasCareLog) {
         if (!$providerId) {
             return back()->with('error', 'No provider is linked to this patient or facility yet.');
         }
+	IncidentReport::create([
+    'facility_id' => $visit->facility_id,
+    'client_id' => $visit->client_id,
+    'visit_id' => $visit->id,
+    'reported_by' => auth()->id(),
+
+    'incident_type' => $data['incident_type'],
+    'severity' => $data['severity'],
+    'location' => $data['incident_location'] ?? null,
+    'incident_datetime' => now(),
+
+    'description' => $data['message'],
+    'immediate_action' => $data['immediate_action'] ?? null,
+    'witnesses' => $data['witnesses'] ?? null,
+
+    'provider_notified' => true,
+    'status' => 'open',
+]);
 
         $incidentMessage =
             "KassCare Incident Report\n\n" .
@@ -316,7 +335,7 @@ if (!$hasCareLog) {
             "Witnesses: " . ($data['witnesses'] ?? 'None reported') . "\n\n" .
             "Immediate Action Taken:\n" .
             ($data['immediate_action'] ?? 'Not documented') . "\n\n" .
-            "Incident Narrative:\n" .
+	     "Incident Narrative:\n" .
             $data['message'];
 
         ProviderMessage::create([

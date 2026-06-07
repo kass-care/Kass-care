@@ -55,6 +55,7 @@ use App\Http\Controllers\Facility\PatientController;
 use App\Http\Controllers\Facility\CaregiverController as FacilityCaregiverController;
 use App\Http\Controllers\FacilityVisitController;
 use App\Http\Controllers\CaregiverEmarController;
+use App\Http\Controllers\IncidentReportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -729,6 +730,15 @@ Route::middleware(['auth', 'role:caregiver'])
 
         Route::get('/visits', [CaregiverController::class, 'visits'])
             ->name('visits');
+	
+	Route::get('/incidents', [IncidentReportController::class, 'caregiverIndex'])
+            ->name('incidents.index');
+
+        Route::get('/incidents/create', [IncidentReportController::class, 'caregiverCreate'])
+            ->name('incidents.create');
+
+        Route::post('/incidents', [IncidentReportController::class, 'caregiverStore'])
+            ->name('incidents.store');
 
         Route::get('/shifts', [CaregiverShiftController::class, 'index'])
             ->name('shifts.index');
