@@ -35,6 +35,52 @@
             </div>
         @endif
 
+        <div class="mb-8 grid gap-6 md:grid-cols-3">
+            @foreach($states as $state)
+                @php
+                    $matrix = $complianceMatrix[$state];
+                    $percent = $matrix['total_required'] > 0
+                        ? round(($matrix['total_loaded'] / $matrix['total_required']) * 100)
+                        : 0;
+                @endphp
+
+                <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-black uppercase tracking-[0.25em] text-slate-500">
+                                State Package
+                            </p>
+
+                            <h2 class="mt-2 text-3xl font-black text-slate-900">
+                                {{ $state }}
+                            </h2>
+                        </div>
+			<a href="{{ route('facility.document-templates.create') }}?state={{ $state }}"
+   class="mt-3 inline-block rounded-xl bg-indigo-700 px-3 py-2 text-xs font-black text-white">
+    ➕ Add Missing Document
+</a>
+
+                        <div class="rounded-full bg-indigo-100 px-4 py-2 text-sm font-black text-indigo-800">
+                            {{ $percent }}%
+                        </div>
+                    </div>
+
+                    <div class="mt-5 space-y-2">
+                        @foreach($requiredCategories as $category)
+                            @php
+                                $loaded = in_array($category, $matrix['loaded']);
+                            @endphp
+
+                            <div class="flex items-center justify-between rounded-xl {{ $loaded ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800' }} px-4 py-2 text-sm font-bold">
+                                <span>{{ $category }}</span>
+                                <span>{{ $loaded ? '✅' : '❌' }}</span>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endforeach
+        </div>
+
         <div class="rounded-3xl bg-white shadow-lg overflow-hidden">
 
             <div class="border-b border-slate-200 px-6 py-4">

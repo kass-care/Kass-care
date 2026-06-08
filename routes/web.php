@@ -26,6 +26,7 @@ use App\Http\Controllers\PatientTimelineController;
 use App\Http\Controllers\PatientDocumentController;
 use App\Http\Controllers\AdmissionPacketController;
 use App\Http\Controllers\DocumentTemplateController;
+use App\Http\Controllers\ComplianceMarketplaceController;
 
 use App\Http\Controllers\ProviderDashboardController;
 use App\Http\Controllers\ProviderPatientController;
@@ -200,6 +201,12 @@ Route::post('/admission-packets/{admissionPacket}/send-email', [AdmissionPacketC
 
         Route::post('/document-templates', [DocumentTemplateController::class, 'store'])
             ->name('document-templates.store');
+	Route::get('/compliance-marketplace', [ComplianceMarketplaceController::class, 'index'])
+    ->name('compliance-marketplace.index');
+
+Route::post('/compliance-marketplace/{state}/install', [ComplianceMarketplaceController::class, 'install'])
+    ->name('compliance-marketplace.install');
+
 
         Route::get('/document-templates/{documentTemplate}', [DocumentTemplateController::class, 'show'])
             ->name('document-templates.show');

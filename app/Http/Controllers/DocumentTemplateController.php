@@ -11,9 +11,39 @@ class DocumentTemplateController extends Controller
     {
         $templates = DocumentTemplate::latest()->paginate(20);
 
+        $requiredCategories = [
+            'Admission Agreement',
+            'Resident Rights',
+            'HIPAA Notice',
+            'Financial Agreement',
+            'Medication Consent',
+            'House Rules',
+        ];
+
+        $states = ['OR', 'WA', 'CA'];
+
+        $complianceMatrix = [];
+
+        foreach ($states as $state) {
+            $loadedCategories = DocumentTemplate::where('active', true)
+                ->where('state', $state)
+                ->pluck('category')
+                ->filter()
+                ->unique()
+                ->values()
+                ->toArray();
+
+            $complianceMatrix[$state] = [
+                'loaded' => $loadedCategories,
+                'missing' => array_values(array_diff($requiredCategories, $loadedCategories)),
+                'total_required' => count($requiredCategories),
+                'total_loaded' => count(array_intersect($requiredCategories, $loadedCategories)),
+            ];
+        }
+
         return view(
             'facility.document-templates.index',
-            compact('templates')
+            compact('templates', 'requiredCategories', 'states', 'complianceMatrix')
         );
     }
 
