@@ -57,4 +57,17 @@ public function generatePacket(DocumentTemplate $documentTemplate)
         'template_id' => $documentTemplate->id,
     ]);
 }
+public function state(string $state)
+{
+    $templates = DocumentTemplate::where('active', true)
+        ->where('state', strtoupper($state))
+        ->orderBy('category')
+        ->orderBy('title')
+        ->get();
+
+    return view('facility.document-templates.state', [
+        'state' => strtoupper($state),
+        'templates' => $templates,
+    ]);
+}
 }
