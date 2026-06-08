@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\AdmissionPacketDocument;
 
 class AdmissionPacket extends Model
 {
@@ -45,4 +46,10 @@ class AdmissionPacket extends Model
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+public function documents()
+{
+    return $this->hasMany(
+        AdmissionPacketDocument::class
+    )->orderBy('sort_order');
+}
 }

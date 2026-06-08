@@ -25,6 +25,7 @@ use App\Http\Controllers\MedicationController;
 use App\Http\Controllers\PatientTimelineController;
 use App\Http\Controllers\PatientDocumentController;
 use App\Http\Controllers\AdmissionPacketController;
+use App\Http\Controllers\DocumentTemplateController;
 
 use App\Http\Controllers\ProviderDashboardController;
 use App\Http\Controllers\ProviderPatientController;
@@ -175,13 +176,34 @@ Route::middleware(['auth', 'role:admin,provider'])
     ->prefix('facility')
     ->name('facility.')
     ->group(function () {
+Route::get('/admission-packets/{admissionPacket}/pdf', [AdmissionPacketController::class, 'downloadPdf'])
+    ->name('admission-packets.pdf');
+
+Route::post('/admission-packets/{admissionPacket}/send-email', [AdmissionPacketController::class, 'sendToFamily'])
+    ->name('admission-packets.send-email');
+
+    
 
 	Route::get('/admission-packets', [AdmissionPacketController::class, 'index'])->name('admission-packets.index');
         Route::get('/admission-packets/create', [AdmissionPacketController::class, 'create'])->name('admission-packets.create');
         Route::post('/admission-packets', [AdmissionPacketController::class, 'store'])->name('admission-packets.store');
         Route::get('/admission-packets/{admissionPacket}', [AdmissionPacketController::class, 'show'])->name('admission-packets.show');	
-    });
+        
+        Route::post('/document-templates/{documentTemplate}/generate-packet', [DocumentTemplateController::class, 'generatePacket'])
+    ->name('document-templates.generate-packet');
+  
+        Route::get('/document-templates', [DocumentTemplateController::class, 'index'])
+            ->name('document-templates.index');
 
+        Route::get('/document-templates/create', [DocumentTemplateController::class, 'create'])
+            ->name('document-templates.create');
+
+        Route::post('/document-templates', [DocumentTemplateController::class, 'store'])
+            ->name('document-templates.store');
+
+        Route::get('/document-templates/{documentTemplate}', [DocumentTemplateController::class, 'show'])
+            ->name('document-templates.show');
+	});
 
 Route::get('/sign/admission-packet/{token}', [AdmissionPacketController::class, 'publicSign'])
     ->name('admission-packets.public-sign');

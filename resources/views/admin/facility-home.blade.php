@@ -106,6 +106,10 @@
    class="inline-flex items-center rounded-2xl bg-cyan-400 px-5 py-3 text-sm font-black text-slate-950 shadow hover:bg-cyan-300">
     📝 Admission Packets
 </a>
+<a href="{{ route('facility.document-templates.index') }}"
+   class="inline-flex items-center rounded-2xl bg-emerald-500 px-5 py-3 text-sm font-black text-white shadow hover:bg-emerald-600">
+    🏥 Admissions Center
+</a>
 
             @if(auth()->user()->facility_id)
                 <form method="POST" action="{{ route('select.facility', auth()->user()->facility_id) }}">

@@ -33,6 +33,7 @@
 
             <form method="POST" action="{{ route('facility.admission-packets.store') }}" class="space-y-6 p-8">
                 @csrf
+		<input type="hidden" name="template_id" value="{{ $selectedTemplate?->id }}">
 
                 @if($errors->any())
                     <div class="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
@@ -93,9 +94,10 @@
 
                 <div>
                     <label class="mb-2 block text-sm font-bold text-slate-700">Agreement Text</label>
-                    <textarea name="document_text" rows="12"
-                              class="w-full rounded-2xl border border-slate-300 px-4 py-3"
-                              placeholder="Leave blank to use KassCare default admission agreement template.">{{ old('document_text') }}</textarea>
+		     <textarea name="document_text"
+          rows="10"
+          class="w-full rounded-2xl border border-slate-300 px-4 py-3"
+          placeholder="Leave blank to use KassCare default admission agreement template.">{{ old('document_text', $selectedTemplate?->content) }}</textarea>		
                     <p class="mt-2 text-xs text-slate-500">
                         This can be customized later for each facility's official admission agreement.
                     </p>
