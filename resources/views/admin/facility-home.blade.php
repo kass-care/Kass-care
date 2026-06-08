@@ -111,6 +111,11 @@
     🏥 Admissions Center
 </a>
 
+<a href="{{ route('facility.compliance-marketplace.index') }}"
+   class="inline-flex items-center rounded-2xl bg-violet-600 px-5 py-3 text-sm font-black text-white shadow hover:bg-violet-700">
+    📦 Compliance Marketplace
+</a>
+
             @if(auth()->user()->facility_id)
                 <form method="POST" action="{{ route('select.facility', auth()->user()->facility_id) }}">
                     @csrf
