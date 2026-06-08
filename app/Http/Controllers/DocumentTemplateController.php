@@ -81,6 +81,43 @@ class DocumentTemplateController extends Controller
             compact('documentTemplate')
         );
     }
+    public function edit(DocumentTemplate $documentTemplate)
+    {
+        return view('facility.document-templates.edit', compact('documentTemplate'));
+    }
+
+    public function update(Request $request, DocumentTemplate $documentTemplate)
+    {
+        $data = $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'state' => ['nullable', 'string', 'max:10'],
+            'category' => ['nullable', 'string', 'max:255'],
+            'content' => ['required'],
+            'active' => ['nullable'],
+        ]);
+
+        $documentTemplate->update([
+            'title' => $data['title'],
+            'state' => $data['state'] ?? null,
+            'category' => $data['category'] ?? null,
+            'content' => $data['content'],
+            'active' => $request->has('active'),
+        ]);
+
+        return redirect()
+            ->route('facility.document-templates.show', $documentTemplate)
+            ->with('success', 'Document template updated successfully.');
+    }
+
+    public function destroy(DocumentTemplate $documentTemplate)
+    {
+        $documentTemplate->delete();
+
+        return redirect()
+            ->route('facility.document-templates.index')
+            ->with('success', 'Document template deleted successfully.');
+    }
+
 public function generatePacket(DocumentTemplate $documentTemplate)
 {
     return redirect()->route('facility.admission-packets.create', [

@@ -210,6 +210,15 @@ Route::post('/compliance-marketplace/{state}/install', [ComplianceMarketplaceCon
 
         Route::get('/document-templates/{documentTemplate}', [DocumentTemplateController::class, 'show'])
             ->name('document-templates.show');
+	
+	Route::get('/document-templates/{documentTemplate}/edit', [DocumentTemplateController::class, 'edit'])
+    ->name('document-templates.edit');
+
+Route::put('/document-templates/{documentTemplate}', [DocumentTemplateController::class, 'update'])
+    ->name('document-templates.update');
+
+Route::delete('/document-templates/{documentTemplate}', [DocumentTemplateController::class, 'destroy'])
+    ->name('document-templates.destroy');
 	});
 
 Route::get('/sign/admission-packet/{token}', [AdmissionPacketController::class, 'publicSign'])

@@ -35,6 +35,21 @@
                 @csrf
 		<input type="hidden" name="template_id" value="{{ $selectedTemplate?->id }}">
 
+                <div>
+                    <label class="mb-2 block text-sm font-bold text-slate-700">Package State</label>
+                    <select name="package_state"
+                            required
+                            class="w-full rounded-2xl border border-slate-300 px-4 py-3">
+                        <option value="">Select state package</option>
+                        <option value="WA" @selected(old('package_state', $selectedTemplate?->state) == 'WA')>Washington</option>
+                        <option value="OR" @selected(old('package_state', $selectedTemplate?->state) == 'OR')>Oregon</option>
+                        <option value="CA" @selected(old('package_state', $selectedTemplate?->state) == 'CA')>California</option>
+                    </select>
+                    <p class="mt-2 text-xs text-slate-500">
+                        KassCare will generate documents only from this state package.
+                    </p>
+                </div>
+
                 @if($errors->any())
                     <div class="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
                         {{ $errors->first() }}

@@ -54,6 +54,7 @@ class AdmissionPacketController extends Controller
             'admission_date' => ['nullable', 'date'],
             'document_text' => ['nullable', 'string'],
             'template_id' => ['nullable', 'exists:document_templates,id'],
+            'package_state' => ['required', 'string', 'in:WA,OR,CA'],
         ]);
 
         $facilityId = session('facility_id') ?? auth()->user()->facility_id;
@@ -100,9 +101,12 @@ class AdmissionPacketController extends Controller
             'public_token' => Str::uuid(),
         ]);
 
-           $templates = DocumentTemplate::where('active', true)
-    ->orderBy('id')
-    ->get();
+        $packageState = $data['package_state'];
+
+        $templates = DocumentTemplate::where('active', true)
+            ->where('state', $packageState)
+            ->orderBy('id')
+            ->get();
 
 $sortOrder = 1;
 
@@ -154,13 +158,15 @@ public function publicStoreSignature(Request $request, string $token)
 
     $data = $request->validate([
         'signed_by' => ['required', 'string', 'max:255'],
-        'signature' => ['required', 'string', 'max:255'],
+        'signature' => ['nullable', 'string', 'max:255'],
+        'signature_image' => ['required', 'string'],
         'agreement_acceptance' => ['accepted'],
     ]);
 
     $admissionPacket->update([
         'signed_by' => $data['signed_by'],
-        'signature' => $data['signature'],
+        'signature' => $data['signature'] ?? $data['signed_by'],
+        'signature_image' => $data['signature_image'],
         'signed_at' => now(),
         'status' => 'signed',
     ]);

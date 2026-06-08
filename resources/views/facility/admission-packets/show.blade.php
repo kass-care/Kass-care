@@ -127,9 +127,15 @@ class="inline-flex items-center rounded-xl bg-red-700 px-5 py-3 text-sm font-bla
 
                     @if($admissionPacket->status === 'signed')
                         <div class="mt-6">
-                            <p class="text-2xl font-black text-slate-900">
-                                {{ $admissionPacket->signature }}
-                            </p>
+                            @if($admissionPacket->signature_image)
+                                <img src="{{ $admissionPacket->signature_image }}"
+                                     alt="Resident Signature"
+                                     class="h-20 max-w-xs rounded border bg-white p-2">
+                            @else
+                                <p class="text-2xl font-black text-slate-900">
+                                    {{ $admissionPacket->signature }}
+                                </p>
+                            @endif
 
                             <p class="mt-1 text-sm font-semibold text-slate-500">
                                 Signed {{ optional($admissionPacket->signed_at)->format('M d, Y g:i A') }}

@@ -7,25 +7,25 @@ use App\Models\AdmissionPacketDocument;
 
 class AdmissionPacket extends Model
 {
-    protected $fillable = [
-        'facility_id',
-        'client_id',
-        'created_by',
-        'packet_name',
-        'status',
-        'resident_name',
-        'representative_name',
-        'representative_relationship',
-        'monthly_rate',
-        'admission_date',
-        'document_text',
-        'signature',
-        'signed_by',
-        'signed_at',
-        'public_token',
-        'sent_at',
-    ];
-
+		protected $fillable = [
+    'facility_id',
+    'client_id',
+    'created_by',
+    'packet_name',
+    'status',
+    'resident_name',
+    'representative_name',
+    'representative_relationship',
+    'monthly_rate',
+    'admission_date',
+    'document_text',
+    'signature',
+    'signature_image',
+    'signed_by',
+    'signed_at',
+    'public_token',
+    'sent_at',
+];
     protected $casts = [
         'admission_date' => 'date',
         'signed_at' => 'datetime',

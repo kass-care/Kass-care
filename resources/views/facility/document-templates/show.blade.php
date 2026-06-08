@@ -30,16 +30,36 @@
                 {{ $documentTemplate->category ?? 'Template' }}
             </p>
 
-            <form method="POST"
-                  action="{{ route('facility.document-templates.generate-packet', $documentTemplate) }}"
-                  class="mt-6">
-                @csrf
+            <div class="mt-6 flex flex-wrap gap-3">
 
-                <button type="submit"
-                        class="rounded-2xl bg-emerald-700 px-6 py-3 font-black text-white shadow hover:bg-emerald-800">
-                    🚀 Generate Admission Packet
-                </button>
-            </form>
+                <form method="POST"
+                      action="{{ route('facility.document-templates.generate-packet', $documentTemplate) }}">
+                    @csrf
+
+                    <button type="submit"
+                            class="rounded-2xl bg-emerald-700 px-6 py-3 font-black text-white shadow hover:bg-emerald-800">
+                        🚀 Generate Admission Packet
+                    </button>
+                </form>
+
+                <a href="{{ route('facility.document-templates.edit', $documentTemplate) }}"
+                   class="rounded-2xl bg-indigo-700 px-6 py-3 font-black text-white shadow hover:bg-indigo-800">
+                    ✏️ Edit Template
+                </a>
+
+                <form method="POST"
+                      action="{{ route('facility.document-templates.destroy', $documentTemplate) }}"
+                      onsubmit="return confirm('Delete this template? This action cannot be undone.');">
+                    @csrf
+                    @method('DELETE')
+
+                    <button type="submit"
+                            class="rounded-2xl bg-red-700 px-6 py-3 font-black text-white shadow hover:bg-red-800">
+                        🗑 Delete Template
+                    </button>
+                </form>
+
+            </div>
 
             <div class="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-6">
                 <h2 class="mb-4 text-xl font-black text-slate-900">
