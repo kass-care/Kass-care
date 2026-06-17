@@ -15,23 +15,24 @@ class Medication extends Model
         'instructions',
         'status',
         'prescribed_by',
-       'route',
-'is_prn',
-'emar_times',
-'start_date',
-'end_date',
-'approval_status',
-'approved_by',
-'approved_at',
-'provider_note',
+        'route',
+        'is_prn',
+        'emar_times',
+        'start_date',
+        'end_date',
+        'approval_status',
+        'approved_by',
+        'approved_at',
+        'provider_note',
     ];
-protected $casts = [
-    'is_prn' => 'boolean',
-    'emar_times' => 'array',
-    'start_date' => 'date',
-    'end_date' => 'date',
-'approved_at' => 'datetime',
-];
+
+    protected $casts = [
+        'is_prn' => 'boolean',
+        'emar_times' => 'array',
+        'start_date' => 'date',
+        'end_date' => 'date',
+        'approved_at' => 'datetime',
+    ];
 
     public function client()
     {
@@ -47,8 +48,14 @@ protected $casts = [
     {
         return $this->belongsTo(User::class, 'prescribed_by');
     }
-public function administrations()
-{
-    return $this->hasMany(EmarAdministration::class);
-}
+
+    public function administrations()
+    {
+        return $this->hasMany(EmarAdministration::class);
+    }
+
+    public function medicationAdministrations()
+    {
+        return $this->hasMany(MedicationAdministration::class);
+    }
 }
