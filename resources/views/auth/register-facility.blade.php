@@ -156,6 +156,33 @@
         <p class="mt-2 text-sm text-red-300">{{ $message }}</p>
     @enderror
 </div>
+<label class="mt-4 flex items-start gap-3 rounded-2xl border border-cyan-500 bg-cyan-950/20 p-4 text-sm text-slate-200">
+    <input type="checkbox"
+           name="sms_consent"
+           value="1"
+           class="mt-1">
+
+    <span>
+        I agree to receive SMS notifications from KassCare regarding appointments,
+        visit updates, caregiver scheduling, account alerts, billing notifications,
+        and care coordination.
+
+        <br><br>
+
+        Message frequency varies. Message and data rates may apply.
+        Reply STOP to unsubscribe and HELP for assistance.
+
+        <br><br>
+
+        <a href="{{ route('privacy') }}" class="underline text-cyan-300">
+            Privacy Policy
+        </a>
+        &
+        <a href="{{ route('terms') }}" class="underline text-cyan-300">
+            Terms of Service
+        </a>
+    </span>
+</label>
                 <button
                     type="submit"
                     class="w-full rounded-2xl bg-indigo-600 py-3.5 font-bold text-white transition hover:bg-indigo-700"
