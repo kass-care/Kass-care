@@ -62,7 +62,7 @@
                         <div class="rounded-2xl bg-white/10 border border-white/10 px-4 py-3 text-white">
                             <div class="text-xs uppercase tracking-wide text-indigo-200">Date of Birth</div>
                             <div class="mt-1 text-base font-semibold">
-                                {{ !empty($patient->date_of_birth) ? \Carbon\Carbon::parse($patient->date_of_birth)->format('m/d/Y') : 'N/A' }}
+                                {{ !empty($patient->date_of_birth) ? \Carbon\Carbon::parse($patient->date_of_birth)->format('M d, Y') : 'N/A' }}
                             </div>
                         </div>
 
@@ -78,7 +78,7 @@
 
                         <div class="rounded-2xl bg-white/10 border border-white/10 px-4 py-3 text-white">
                             <div class="text-xs uppercase tracking-wide text-indigo-200">Facility</div>
-                            <div class="mt-1 text-base font-semibold">{{ $patient->facility->name ?? 'N/A' }}</div>
+                            <div class="mt-1 text-base font-semibold">{{ optional($patient->facility)->name ?? 'Independent Provider Patient' }}</div>
                         </div>
 
                         <div class="rounded-2xl bg-white/10 border border-white/10 px-4 py-3 text-white">

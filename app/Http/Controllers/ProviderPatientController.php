@@ -7,6 +7,8 @@ use App\Models\Client;
 use App\Models\ProviderMessage;
 use App\Models\ProviderNote;
 use App\Models\Visit;
+use App\Support\AuditLogger;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Schema;
 
@@ -27,14 +29,8 @@ class ProviderPatientController extends Controller
 
     private function patientBaseQuery()
     {
-        $query = Client::query();
-        $facilityId = $this->currentFacilityId();
-
-        if ($facilityId && Schema::hasColumn('clients', 'facility_id')) {
-            $query->where('facility_id', $facilityId);
-        }
-
-        return $query;
+        // Visibility is now enforced by the Client model global scope.
+        return Client::query();
     }
 
     private function patientDisplayName(Client $patient): string
@@ -143,7 +139,93 @@ class ProviderPatientController extends Controller
             ->get();
     }
 
-    public function index($id)
+
+    public function index()
+    {
+        $patients = $this->patientBaseQuery()
+            ->with(['facility','provider'])
+            ->latest('id')
+            ->get();
+
+        return view('provider.patients.index', compact('patients'));
+    }
+
+    public function create()
+    {
+        return view('provider.patients.create');
+    }
+
+    public function store(Request $request)
+    {
+        $provider = $this->currentUser();
+
+        abort_unless(
+            $provider->role === 'provider',
+            403,
+            'Only providers may create provider-owned patients.'
+        );
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:255'],
+            'date_of_birth' => ['nullable', 'date', 'before_or_equal:today'],
+            'gender' => ['nullable', 'string', 'max:50'],
+            'height' => ['nullable', 'numeric', 'min:12', 'max:96'],
+            'weight' => ['nullable', 'numeric', 'min:1', 'max:1500'],
+            'chief_complaint' => ['nullable', 'string'],
+            'medical_history' => ['nullable', 'string'],
+            'family_history' => ['nullable', 'string'],
+            'social_history' => ['nullable', 'string'],
+            'allergies' => ['nullable', 'string'],
+        ]);
+
+        $dateOfBirth = $validated['date_of_birth'] ?? null;
+
+        $patient = Client::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'] ?? null,
+            'phone' => $validated['phone'] ?? null,
+            'provider_id' => $provider->id,
+            'facility_id' => null,
+            'date_of_birth' => $dateOfBirth,
+            'age' => $dateOfBirth
+                ? Carbon::parse($dateOfBirth)->age
+                : null,
+            'gender' => $validated['gender'] ?? null,
+            'height' => $validated['height'] ?? null,
+            'weight' => $validated['weight'] ?? null,
+            'chief_complaint' => $validated['chief_complaint'] ?? null,
+            'medical_history' => $validated['medical_history'] ?? null,
+            'family_history' => $validated['family_history'] ?? null,
+            'social_history' => $validated['social_history'] ?? null,
+            'allergies' => $validated['allergies'] ?? null,
+        ]);
+
+        AuditLogger::log(
+            action: 'provider_patient_created',
+            description: 'Provider created an independent patient record',
+            targetType: 'client',
+            targetId: $patient->id,
+            clientId: $patient->id,
+            clientName: $patient->name,
+            meta: [
+                'provider_id' => $patient->provider_id,
+                'facility_id' => $patient->facility_id,
+                'mrn' => $patient->mrn,
+                'email' => $patient->email,
+                'date_of_birth' => $patient->date_of_birth,
+                'gender' => $patient->gender,
+                'bmi' => $patient->bmi,
+            ]
+        );
+
+        return redirect()
+            ->route('provider.patients.workspace', $patient->id)
+            ->with('success', 'Patient created successfully.');
+    }
+
+    public function workspace($id)
     {
         $patient = $this->patientBaseQuery()
             ->with(['facility', 'provider', 'diagnoses', 'medications', 'visits'])

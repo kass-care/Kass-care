@@ -32,6 +32,13 @@
             @auth
                 <div class="flex items-center gap-4 text-sm font-semibold">
                     <a href="{{ route('dashboard') }}" class="text-gray-700 hover:text-indigo-700">Dashboard</a>
+
+                    @if($role === 'provider' && Route::has('provider.patients.index'))
+                        <a href="{{ route('provider.patients.index') }}"
+                           class="text-gray-700 hover:text-indigo-700">
+                            My Patients
+                        </a>
+                    @endif
                                        
 @if($role === 'provider' && Route::has('coding.assistant'))
     <a href="{{ route('coding.assistant') }}"

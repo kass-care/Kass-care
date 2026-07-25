@@ -64,12 +64,12 @@
                     <div class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                         <div class="rounded-2xl bg-white/10 px-4 py-3">
                             <div class="text-xs uppercase tracking-wide text-indigo-100">Date of Birth</div>
-                            <div class="mt-1 text-sm font-semibold">{{ $patient->date_of_birth ?? 'Not recorded' }}</div>
+                            <div class="mt-1 text-sm font-semibold">{{ $patient->date_of_birth ? \Carbon\Carbon::parse($patient->date_of_birth)->format('M d, Y') : 'Not recorded' }}</div>
                         </div>
 
                         <div class="rounded-2xl bg-white/10 px-4 py-3">
                             <div class="text-xs uppercase tracking-wide text-indigo-100">Facility</div>
-                            <div class="mt-1 text-sm font-semibold">{{ optional($patient->facility)->name ?? 'Current facility context' }}</div>
+                            <div class="mt-1 text-sm font-semibold">{{ optional($patient->facility)->name ?? 'Independent Provider Patient' }}</div>
                         </div>
 
                         <div class="rounded-2xl bg-white/10 px-4 py-3">

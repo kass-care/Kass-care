@@ -526,7 +526,16 @@ Route::post('/messages/{message}/reply', [ProviderMessageController::class, 'rep
         Route::post('/communications', [CommunicationController::class, 'store'])
             ->name('communications.store');
 
-        Route::get('/patients/{id}', [ProviderPatientController::class, 'index'])
+        Route::get('/patients', [ProviderPatientController::class, 'index'])
+            ->name('patients.index');
+
+        Route::get('/patients/create', [ProviderPatientController::class, 'create'])
+            ->name('patients.create');
+
+        Route::post('/patients', [ProviderPatientController::class, 'store'])
+            ->name('patients.store');
+
+        Route::get('/patients/{id}', [ProviderPatientController::class, 'workspace'])
             ->name('patients.workspace');
 
         Route::get('/patients/{id}/summary', [ProviderPatientController::class, 'summary'])

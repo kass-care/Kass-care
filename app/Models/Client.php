@@ -47,7 +47,15 @@ class Client extends Model
     {
         static::creating(function ($client) {
             // Auto facility
-            if (Auth::check() && empty($client->facility_id)) {
+            // Independent provider patients intentionally keep facility_id = null.
+            if (
+                Auth::check()
+                && empty($client->facility_id)
+                && !(
+                    Auth::user()->role === 'provider'
+                    && !empty($client->provider_id)
+                )
+            ) {
                 $client->facility_id = session('facility_id') ?? Auth::user()->facility_id;
             }
 
@@ -86,9 +94,13 @@ class Client extends Model
             if ($user->role === 'provider') {
                 $selectedFacilityId = session('facility_id') ?? $user->facility_id;
 
-                if (!empty($selectedFacilityId)) {
-                    $query->where('facility_id', $selectedFacilityId);
-                }
+                $query->where(function ($providerQuery) use ($user, $selectedFacilityId) {
+                    $providerQuery->where('provider_id', $user->id);
+
+                    if (!empty($selectedFacilityId)) {
+                        $providerQuery->orWhere('facility_id', $selectedFacilityId);
+                    }
+                });
 
                 return;
             }

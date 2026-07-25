@@ -1,78 +1,99 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Provider Patients | Kass Care</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
+@extends('layouts.app')
 
-<body class="bg-slate-950 text-white min-h-screen">
+@section('content')
 
-<div class="max-w-7xl mx-auto px-6 py-10">
+<div class="max-w-7xl mx-auto py-8">
 
-    <div class="flex items-center justify-between mb-10">
+    <div class="flex items-center justify-between mb-6">
         <div>
-            <p class="text-xs uppercase tracking-[0.35em] text-indigo-300">Kass Care</p>
-            <h1 class="text-4xl font-bold mt-2">Provider Patients</h1>
-            <p class="text-slate-400 mt-2">
-                Clinical workspace for patient management.
+            <h1 class="text-3xl font-bold">
+                My Patients
+            </h1>
+
+            <p class="mt-1 text-sm text-gray-500">
+                {{ $patients->count() }} {{ \Illuminate\Support\Str::plural('patient', $patients->count()) }} visible
             </p>
         </div>
 
-        <a href="{{ route('provider.dashboard') }}"
-           class="px-5 py-3 rounded-2xl bg-white text-slate-900 font-semibold hover:bg-slate-100 transition">
-            Back to Dashboard
+        <a href="{{ route('provider.patients.create') }}"
+           class="px-4 py-2 rounded-lg bg-blue-600 text-white">
+            + New Patient
         </a>
     </div>
 
-    <div class="rounded-3xl bg-slate-900 border border-slate-800 p-8">
+    <div class="bg-white rounded-xl shadow overflow-hidden">
 
-        <table class="w-full text-left">
+        <table class="min-w-full">
 
-            <thead class="text-slate-400 border-b border-slate-800">
-                <tr>
-                    <th class="py-4">Patient</th>
-                    <th>Facility</th>
-                    <th>DOB</th>
-                    <th></th>
-                </tr>
+            <thead class="bg-gray-100">
+            <tr>
+                <th class="text-left p-4">MRN</th>
+                <th class="text-left p-4">Patient</th>
+                <th class="text-left p-4">Facility</th>
+                <th class="text-left p-4">Provider</th>
+                <th class="text-left p-4">Actions</th>
+            </tr>
             </thead>
 
-            <tbody class="divide-y divide-slate-800">
+            <tbody>
 
-                @forelse($patients ?? [] as $patient)
+            @forelse($patients as $patient)
 
-                <tr class="hover:bg-slate-800/40 transition">
-                    <td class="py-4 font-semibold">
-                        {{ $patient->first_name }} {{ $patient->last_name }}
+                <tr class="border-t">
+
+                    <td class="p-4">{{ $patient->mrn }}</td>
+
+                    <td class="p-4">{{ $patient->name }}</td>
+
+                    <td class="p-4">
+                        @if($patient->facility)
+                            <span class="font-medium text-gray-800">
+                                {{ $patient->facility->name }}
+                            </span>
+                        @else
+                            <span class="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800">
+                                Independent
+                            </span>
+                        @endif
                     </td>
 
-                    <td>
-                        {{ $patient->facility->name ?? '—' }}
+                    <td class="p-4">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span>
+                                {{ optional($patient->provider)->name ?? 'Unassigned' }}
+                            </span>
+
+                            @if((int) $patient->provider_id === (int) auth()->id())
+                                <span class="inline-flex items-center rounded-full bg-indigo-100 px-2.5 py-1 text-xs font-bold text-indigo-700">
+                                    Your Patient
+                                </span>
+                            @endif
+                        </div>
                     </td>
 
-                    <td>
-                        {{ $patient->dob ?? '—' }}
-                    </td>
+                    <td class="p-4 space-x-3">
 
-                    <td class="text-right">
-                        <a href="{{ route('provider.patients.workspace', $patient->id) }}"
-                           class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 transition text-sm font-semibold">
-                            Open Workspace
+                        <a href="{{ route('provider.patients.workspace',$patient) }}">
+                            Workspace
                         </a>
+
+                        <a href="{{ route('provider.patients.summary',$patient) }}">
+                            Summary
+                        </a>
+
                     </td>
+
                 </tr>
 
-                @empty
+            @empty
 
                 <tr>
-                    <td colspan="4" class="py-8 text-center text-slate-500">
-                        No patients available.
+                    <td colspan="5" class="p-8 text-center text-gray-500">
+                        No patients found.
                     </td>
                 </tr>
 
-                @endforelse
+            @endforelse
 
             </tbody>
 
@@ -82,5 +103,4 @@
 
 </div>
 
-</body>
-</html>
+@endsection
