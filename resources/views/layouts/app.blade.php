@@ -37,7 +37,7 @@
     <link href="https://fonts.bunny.net/css?family=atkinson-hyperlegible:400,400i,700|bricolage-grotesque:500,600,700&display=swap" rel="stylesheet">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <link rel="stylesheet" href="{{ asset('css/kasscare-theme.css') }}?v=2">
+    <link rel="stylesheet" href="{{ asset('css/kasscare-theme.css') }}?v=3">
     @stack('styles')
 </head>
 
@@ -87,13 +87,11 @@
                 <div class="kc-user-name">{{ $user->name ?? 'User' }}</div>
                 <div class="kc-user-role">{{ \App\Support\KassNav::roleLabel($role) }}</div>
             </div>
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button type="submit" class="kc-icon-btn" title="Sign out" aria-label="Sign out">
-                    <x-kc-icon name="logout" />
-                </button>
-            </form>
         </div>
+        <form method="POST" action="{{ route('logout') }}" class="kc-signout">
+            @csrf
+            <button type="submit"><x-kc-icon name="logout" /> Sign out</button>
+        </form>
     </aside>
     @endauth
 
@@ -120,6 +118,10 @@
                         @if($unread)<span class="kc-dot"></span>@endif
                     </a>
                 @endif
+                <form method="POST" action="{{ route('logout') }}" class="kc-topbar-signout">
+                    @csrf
+                    <button type="submit" class="kc-btn kc-btn--ghost kc-btn--sm"><x-kc-icon name="logout" /> Sign out</button>
+                </form>
             @else
                 <a href="{{ route('login') }}" class="kc-btn kc-btn--primary kc-btn--sm">Sign in</a>
             @endauth

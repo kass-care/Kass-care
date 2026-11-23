@@ -2,7 +2,7 @@
  * - Caches the theme, icons and an offline page so the app opens fast.
  * - Never caches patient pages: those always come fresh from the server.
  */
-const VERSION = 'kasscare-v2';
+const VERSION = 'kasscare-v3';
 const STATIC = ['/offline.html', '/css/kasscare-theme.css', '/icons/kasscare-192.png', '/manifest.webmanifest'];
 
 self.addEventListener('install', (event) => {

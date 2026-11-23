@@ -503,3 +503,15 @@ select.kc-input { appearance: auto; }
 .kc-install.is-shown { display: flex; }
 .kc-install p { margin: 0; flex: 1; font-size: 15px; }
 @media (min-width: 1024px) { .kc-install { margin: 20px 32px 0; } }
+
+/* Sign out: always visible in the menu, and in the top bar on computers */
+.kc-signout { margin: 0; padding: 0 14px 16px; }
+.kc-signout button {
+    width: 100%; min-height: 44px; display: flex; align-items: center; justify-content: center; gap: 8px;
+    border-radius: 10px; border: 1px solid rgba(255, 255, 255, .16); background: transparent;
+    color: #fff; font: inherit; font-weight: 700; font-size: 15px; cursor: pointer;
+}
+.kc-signout button:hover { background: rgba(255, 255, 255, .08); }
+.kc-signout svg { width: 18px; height: 18px; }
+.kc-topbar-signout { display: none; margin: 0; }
+@media (min-width: 1024px) { .kc-topbar-signout { display: block; } }
