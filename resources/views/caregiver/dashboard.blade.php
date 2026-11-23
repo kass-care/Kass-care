@@ -1,304 +1,191 @@
 @extends('layouts.app')
 
+@section('title', 'Today')
+
 @section('content')
 @php
     use Carbon\Carbon;
 
-    $todayVisits = $todayVisits ?? collect();
-    $assignedClients = $assignedClients ?? collect();
-    $visits = $visits ?? collect();
+    $todayVisits = collect($todayVisits ?? []);
+    $assignedClients = collect($assignedClients ?? []);
+    $visits = collect($visits ?? []);
     $completedVisitsCount = $completedVisitsCount ?? 0;
     $activeVisit = $activeVisit ?? null;
-    $recentVisits = $visits instanceof \Illuminate\Support\Collection ? $visits->take(8) : collect($visits)->take(8);
 
-    $resolveClientName = function ($client) {
-        if (!$client) return 'Unknown Client';
+    $clientName = function ($client) {
+        if (!$client) return 'Unknown client';
         if (!empty($client->full_name)) return $client->full_name;
         if (!empty($client->name)) return $client->name;
-
         $name = trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? ''));
-        return $name ?: 'Unknown Client';
+        return $name ?: 'Unknown client';
     };
 
-    $formatVisitTime = function ($visit) {
-        try {
-            $start = !empty($visit->start_time) ? Carbon::parse($visit->start_time)->format('g:i A') : null;
-            $end = !empty($visit->end_time) ? Carbon::parse($visit->end_time)->format('g:i A') : null;
-
-            if ($start && $end) return $start . ' - ' . $end;
-            return $start ?: ($end ?: 'N/A');
-        } catch (\Throwable $e) {
-            return 'N/A';
-        }
+    $time = function ($value) {
+        if (empty($value)) return null;
+        try { return Carbon::parse($value)->format('g:i A'); } catch (\Throwable $e) { return null; }
     };
 
-    $formatDateTime = function ($value, $fallback = 'N/A') {
-        if (empty($value)) return $fallback;
+    $statusKey = fn ($s) => str_replace(' ', '_', strtolower($s ?? 'scheduled'));
+    $statusText = fn ($s) => ucfirst(str_replace('_', ' ', $s ?? 'scheduled'));
 
-        try {
-            return Carbon::parse($value)->format('M d, Y h:i A');
-        } catch (\Throwable $e) {
-            return $fallback;
-        }
-    };
-
-    $displayStatus = function ($status) {
-        return ucfirst(str_replace('_', ' ', $status ?? 'scheduled'));
-    };
+    $sortedToday = $todayVisits->sortBy(fn ($v) => $v->start_time ?? '99:99')->values();
+    $nextVisit = $activeVisit ? null : $sortedToday->first(fn ($v) => $statusKey($v->status ?? '') === 'scheduled');
+    $doneToday = $sortedToday->filter(fn ($v) => $statusKey($v->status ?? '') === 'completed')->count();
+    $leftToday = $sortedToday->count() - $doneToday;
+    $firstName = explode(' ', trim(auth()->user()->name ?? 'there'))[0];
+    $hour = now()->hour;
+    $greeting = $hour < 12 ? 'Good morning' : ($hour < 17 ? 'Good afternoon' : 'Good evening');
 @endphp
 
-<div class="min-h-screen bg-slate-50 py-8">
-    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+<div class="kc-page">
 
-        <div class="mb-8 rounded-3xl border border-emerald-800 bg-gradient-to-r from-emerald-900 via-emerald-800 to-green-700 p-8 shadow-xl">
-            <div class="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-                <div>
-                    <p class="mb-2 text-xs font-bold uppercase tracking-[0.28em] text-emerald-200">
-                        KASS CARE
-                    </p>
+    <div class="kc-greeting">
+        <h1>{{ $greeting }}, {{ $firstName }}</h1>
+        <p>{{ now()->format('l, F j') }}</p>
+    </div>
 
-                    <h1 class="text-4xl font-extrabold tracking-tight text-white">
-                        Caregiver Command Center
-                    </h1>
-
-                    <p class="mt-2 text-base text-emerald-100">
-                        Welcome back, {{ auth()->user()->name ?? 'Caregiver' }}
-                    </p>
-
-                    <p class="mt-1 text-sm text-emerald-200">
-                        {{ now()->format('l, F j, Y') }}
-                    </p>
-                </div>
-
-                <div class="flex flex-wrap gap-3">
-                    <a href="{{ route('caregiver.visits') }}"
-                       class="inline-flex items-center justify-center rounded-xl bg-white px-5 py-3 text-sm font-bold text-emerald-800 shadow">
-                        Open Visits
-                    </a>
-
-                    <a href="{{ route('caregiver.care-logs.index') }}"
-                       class="inline-flex items-center justify-center rounded-xl bg-amber-400 px-5 py-3 text-sm font-bold text-slate-900 shadow">
-                        Open Care Logs
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <div class="mb-8 grid grid-cols-1 gap-6 md:grid-cols-3">
-            <div class="rounded-3xl border border-emerald-200 bg-white p-6 shadow-sm">
-                <p class="text-xs font-bold uppercase tracking-[0.20em] text-slate-500">Today's Visits</p>
-                <h2 class="mt-3 text-4xl font-extrabold text-emerald-800">{{ $todayVisits->count() }}</h2>
-                <p class="mt-2 text-sm text-slate-600">Visits scheduled for today</p>
-            </div>
-
-            <div class="rounded-3xl border border-blue-200 bg-white p-6 shadow-sm">
-                <p class="text-xs font-bold uppercase tracking-[0.20em] text-slate-500">Assigned Clients</p>
-                <h2 class="mt-3 text-4xl font-extrabold text-blue-800">{{ $assignedClients->count() }}</h2>
-                <p class="mt-2 text-sm text-slate-600">Clients linked to your care history</p>
-            </div>
-
-            <div class="rounded-3xl border border-indigo-200 bg-white p-6 shadow-sm">
-                <p class="text-xs font-bold uppercase tracking-[0.20em] text-slate-500">Completed Visits</p>
-                <h2 class="mt-3 text-4xl font-extrabold text-indigo-800">{{ $completedVisitsCount }}</h2>
-                <p class="mt-2 text-sm text-slate-600">Successfully completed visits</p>
-            </div>
-        </div>
-
-        @if ($activeVisit)
-            <div class="mb-8 rounded-3xl border border-emerald-700 bg-gradient-to-r from-emerald-800 to-green-700 p-6 text-white shadow-xl">
-                <div class="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-                    <div>
-                        <p class="text-xs font-bold uppercase tracking-[0.24em] text-emerald-200">
-                            Active Visit
-                        </p>
-
-                        <h2 class="mt-2 text-3xl font-extrabold">
-                            {{ $resolveClientName($activeVisit->client ?? null) }}
-                        </h2>
-
-                        <p class="mt-2 text-sm text-emerald-100">
-                            Status: {{ $displayStatus($activeVisit->status ?? 'in_progress') }}
-                        </p>
-
-                        <p class="mt-1 text-sm text-emerald-200">
-                            Checked in:
-                            {{ !empty($activeVisit->check_in_time) ? $formatDateTime($activeVisit->check_in_time) : 'N/A' }}
-                        </p>
-                    </div>
-
-                    <div class="flex flex-wrap gap-3">
-                        <a href="{{ route('caregiver.care-logs.create', ['visit_id' => $activeVisit->id]) }}"
-                           class="inline-flex items-center justify-center rounded-xl bg-white px-5 py-3 text-sm font-bold text-emerald-800 shadow">
-                            Open Care Log
-                        </a>
-
-                        <a href="{{ route('caregiver.checkout', $activeVisit->id) }}"
-                           class="inline-flex items-center justify-center rounded-xl bg-red-600 px-5 py-3 text-sm font-bold text-white shadow">
-                            Check Out
-                        </a>
-                    </div>
-                </div>
-            </div>
-        @endif
-
-        <div class="mb-8 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-            <div class="flex items-center justify-between border-b border-slate-200 px-6 py-5">
-                <div>
-                    <h3 class="text-2xl font-bold text-slate-900">Today's Assigned Visits</h3>
-                    <p class="mt-1 text-sm text-slate-500">Blue visit cards preserved and upgraded</p>
-                </div>
-
-                <span class="text-sm font-semibold text-emerald-700">
-                    {{ $todayVisits->count() }} visit(s)
-                </span>
-            </div>
-
-            <div class="grid grid-cols-1 gap-5 p-6 md:grid-cols-2">
-                @forelse ($todayVisits as $visit)
-                    <div class="rounded-3xl border border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 p-6 shadow-sm">
-                        <div class="flex items-start justify-between gap-4">
-                            <div>
-                                <p class="text-xs font-bold uppercase tracking-widest text-blue-600">
-                                    Assigned Visit
-                                </p>
-
-                                <h4 class="mt-2 text-2xl font-black text-slate-900">
-                                    {{ $resolveClientName($visit->client ?? null) }}
-                                </h4>
-
-                                <p class="mt-2 text-sm text-slate-600">
-                                    Time: {{ $formatVisitTime($visit) }}
-                                </p>
-
-                                <p class="mt-1 text-sm text-slate-600">
-                                    Status:
-                                    <span class="font-bold">{{ $displayStatus($visit->status ?? 'scheduled') }}</span>
-                                </p>
-                            </div>
-
-                            <span class="rounded-full bg-white px-3 py-1 text-xs font-bold text-blue-700 shadow">
-                                #{{ $visit->id }}
-                            </span>
-                        </div>
-
-                        <div class="mt-5 flex flex-wrap gap-2">
-                            @if (($visit->status ?? '') === 'scheduled')
-                                <a href="{{ route('caregiver.checkin', $visit->id) }}"
-                                   class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white shadow">
-                                    Check In
-                                </a>
-                            @elseif (($visit->status ?? '') === 'in_progress')
-                                <a href="{{ route('caregiver.care-logs.create', ['visit_id' => $visit->id]) }}"
-                                   class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white shadow">
-                                    Care Log
-                                </a>
-
-                                <a href="{{ route('caregiver.checkout', $visit->id) }}"
-                                   class="rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white shadow">
-                                    Check Out
-                                </a>
-                            @elseif (($visit->status ?? '') === 'completed')
-                                <span class="rounded-xl bg-emerald-100 px-4 py-2 text-sm font-bold text-emerald-700">
-                                    Done
-                                </span>
-                            @else
-                                <span class="rounded-xl bg-slate-100 px-4 py-2 text-sm font-bold text-slate-700">
-                                    {{ $displayStatus($visit->status ?? 'scheduled') }}
-                                </span>
-                            @endif
-                        </div>
-                    </div>
-                @empty
-                    <div class="rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-10 text-center text-slate-500 md:col-span-2">
-                        No visits today.
-                    </div>
-                @endforelse
-            </div>
-        </div>
-
-        <div class="mb-8 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-            <div class="border-b border-slate-200 px-6 py-5">
-                <h3 class="text-2xl font-bold text-slate-900">Assigned Clients</h3>
-                <p class="mt-1 text-sm text-slate-500">Clients connected to your visit history</p>
-            </div>
-
-            <div class="grid grid-cols-1 gap-5 p-6 md:grid-cols-2">
-                @forelse ($assignedClients->take(8) as $client)
-                    <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                        <h4 class="text-xl font-bold text-slate-900">
-                            {{ $client->name ?? $resolveClientName($client) }}
-                        </h4>
-
-                        <p class="mt-2 text-sm text-slate-600">
-                            Latest status: {{ $displayStatus($client->latest_status ?? 'n/a') }}
-                        </p>
-
-                        <p class="mt-1 text-sm text-slate-500">
-                            Last activity:
-                            {{ !empty($client->latest_visit_date) ? $formatDateTime($client->latest_visit_date) : 'N/A' }}
-                        </p>
-
-                        <a href="{{ route('caregiver.visits') }}"
-                           class="mt-4 inline-flex rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-bold text-blue-700">
-                            Open Visit
-                        </a>
-                    </div>
-                @empty
-                    <div class="rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-10 text-center text-slate-500 md:col-span-2">
-                        No assigned clients found yet.
-                    </div>
-                @endforelse
-            </div>
-        </div>
-
-        <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-            <div class="flex items-center justify-between border-b border-slate-200 px-6 py-5">
-                <div>
-                    <h3 class="text-2xl font-bold text-slate-900">Recent Visit History</h3>
-                    <p class="mt-1 text-sm text-slate-500">Latest activity from your visit records</p>
-                </div>
-
-                <a href="{{ route('caregiver.care-logs.index') }}"
-                   class="text-sm font-bold text-indigo-700 hover:text-indigo-900">
-                    View Care Logs →
+    {{-- The one thing to do right now --}}
+    @if ($activeVisit)
+        <section class="kc-focus kc-focus--live" aria-label="Visit in progress">
+            <p class="kc-focus-label">You are with</p>
+            <h2>{{ $clientName($activeVisit->client ?? null) }}</h2>
+            <p class="kc-focus-meta">
+                Checked in {{ $time($activeVisit->check_in_time ?? null) ?? 'earlier' }}
+            </p>
+            <div class="kc-focus-actions">
+                <a href="{{ route('caregiver.care-logs.create', ['visit_id' => $activeVisit->id]) }}" class="kc-btn kc-btn--light">
+                    <x-kc-icon name="clipboard" /> Write care log
+                </a>
+                <a href="{{ route('caregiver.checkout', $activeVisit->id) }}" class="kc-btn kc-btn--danger">
+                    <x-kc-icon name="logout" /> Check out
                 </a>
             </div>
+        </section>
+    @elseif ($nextVisit)
+        <section class="kc-focus" aria-label="Next visit">
+            <p class="kc-focus-label">Next visit{{ $time($nextVisit->start_time ?? null) ? ' at ' . $time($nextVisit->start_time) : '' }}</p>
+            <h2>{{ $clientName($nextVisit->client ?? null) }}</h2>
+            <p class="kc-focus-meta">Check in when you arrive at the client's home.</p>
+            <div class="kc-focus-actions">
+                <a href="{{ route('caregiver.checkin', $nextVisit->id) }}" class="kc-btn kc-btn--primary" style="background:#fff;color:var(--kc-ink)">
+                    <x-kc-icon name="login" /> Check in
+                </a>
+                <a href="{{ route('caregiver.visits') }}" class="kc-btn kc-btn--ghost" style="color:#fff;border-color:rgba(255,255,255,.25)">
+                    All visits
+                </a>
+            </div>
+        </section>
+    @else
+        <section class="kc-focus" aria-label="Your day">
+            <p class="kc-focus-label">{{ $sortedToday->count() ? 'All done for today' : 'Nothing scheduled' }}</p>
+            <h2>{{ $sortedToday->count() ? 'Great work today.' : 'No visits today.' }}</h2>
+            <p class="kc-focus-meta">New visits from your facility will show up here.</p>
+            <div class="kc-focus-actions">
+                <a href="{{ route('caregiver.visits') }}" class="kc-btn kc-btn--light">
+                    <x-kc-icon name="calendar" /> See all visits
+                </a>
+            </div>
+        </section>
+    @endif
 
-            <div class="p-6 space-y-4">
-                @forelse ($recentVisits as $visit)
-                    <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <ul class="kc-stats">
+        <li><strong>{{ $sortedToday->count() }}</strong> visits today</li>
+        <li><strong>{{ max($leftToday, 0) }}</strong> still to go</li>
+        <li><strong>{{ $completedVisitsCount }}</strong> completed in total</li>
+    </ul>
+
+    <div class="kc-grid kc-grid--2-1">
+
+        {{-- Today's schedule, in time order --}}
+        <section class="kc-card">
+            <div class="kc-card-head">
+                <h2>Today's schedule</h2>
+                <a href="{{ route('caregiver.visits') }}">All visits</a>
+            </div>
+
+            @if ($sortedToday->isEmpty())
+                <div class="kc-empty">
+                    <strong>No visits scheduled today</strong>
+                    Enjoy the rest. Check back later for new assignments.
+                </div>
+            @else
+                <ol class="kc-timeline">
+                    @foreach ($sortedToday as $visit)
+                        @php $key = $statusKey($visit->status ?? 'scheduled'); @endphp
+                        <li>
+                            <div class="kc-time">
+                                {{ $time($visit->start_time ?? null) ?? 'Any time' }}
+                                @if($time($visit->end_time ?? null))<small>to {{ $time($visit->end_time) }}</small>@endif
+                            </div>
                             <div>
-                                <h4 class="text-xl font-bold text-slate-900">
-                                    {{ $resolveClientName($visit->client ?? null) }}
-                                </h4>
+                                <p class="kc-visit-name">{{ $clientName($visit->client ?? null) }}</p>
+                                <span class="kc-pill kc-pill--{{ $key }}">{{ $statusText($visit->status ?? 'scheduled') }}</span>
 
-                                <p class="mt-1 text-sm text-slate-700">
-                                    Status:
-                                    <span class="font-semibold">
-                                        {{ $displayStatus($visit->status ?? 'n/a') }}
-                                    </span>
-                                </p>
-
-                                <div class="mt-1 text-sm font-medium text-slate-500">
-                                    {{ !empty($visit->updated_at) ? Carbon::parse($visit->updated_at)->diffForHumans() : 'N/A' }}
+                                <div class="kc-visit-actions">
+                                    @if ($key === 'scheduled')
+                                        <a href="{{ route('caregiver.checkin', $visit->id) }}" class="kc-btn kc-btn--primary kc-btn--sm">Check in</a>
+                                    @elseif ($key === 'in_progress')
+                                        <a href="{{ route('caregiver.care-logs.create', ['visit_id' => $visit->id]) }}" class="kc-btn kc-btn--ghost kc-btn--sm">Care log</a>
+                                        <a href="{{ route('caregiver.checkout', $visit->id) }}" class="kc-btn kc-btn--danger kc-btn--sm">Check out</a>
+                                    @endif
+                                    @if (in_array($key, ['scheduled', 'in_progress']) && Route::has('caregiver.visits.report-issue'))
+                                        <a href="{{ route('caregiver.visits.report-issue', $visit->id) }}" class="kc-btn kc-btn--ghost kc-btn--sm">Report a problem</a>
+                                    @endif
                                 </div>
                             </div>
+                        </li>
+                    @endforeach
+                </ol>
+            @endif
+        </section>
 
-                            <a href="{{ route('caregiver.visits') }}"
-                               class="inline-flex items-center rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-bold text-indigo-700">
-                                Open Visit
-                            </a>
-                        </div>
-                    </div>
-                @empty
-                    <div class="rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-10 text-center text-slate-500">
-                        No visit history yet.
-                    </div>
-                @endforelse
-            </div>
+        <div class="kc-grid">
+            {{-- Clients --}}
+            <section class="kc-card">
+                <div class="kc-card-head"><h2>My clients</h2></div>
+                @if ($assignedClients->isEmpty())
+                    <div class="kc-empty">Clients appear here after your first visit.</div>
+                @else
+                    <ul class="kc-list">
+                        @foreach ($assignedClients->take(6) as $client)
+                            <li>
+                                <div class="kc-list-main">
+                                    <p class="kc-list-title">{{ $client->name ?? $clientName($client) }}</p>
+                                    <p class="kc-list-sub">
+                                        Last visit
+                                        {{ !empty($client->latest_visit_date) ? Carbon::parse($client->latest_visit_date)->format('M j') : 'not yet' }}
+                                    </p>
+                                </div>
+                                <span class="kc-pill kc-pill--{{ $statusKey($client->latest_status ?? '') }}">{{ $statusText($client->latest_status ?? 'n/a') }}</span>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+            </section>
+
+            {{-- Recent activity --}}
+            <section class="kc-card">
+                <div class="kc-card-head">
+                    <h2>Recent visits</h2>
+                    <a href="{{ route('caregiver.care-logs.index') }}">Care logs</a>
+                </div>
+                @if ($visits->isEmpty())
+                    <div class="kc-empty">Your visit history will show here.</div>
+                @else
+                    <ul class="kc-list">
+                        @foreach ($visits->take(5) as $visit)
+                            <li>
+                                <div class="kc-list-main">
+                                    <p class="kc-list-title">{{ $clientName($visit->client ?? null) }}</p>
+                                    <p class="kc-list-sub">{{ !empty($visit->updated_at) ? Carbon::parse($visit->updated_at)->diffForHumans() : '' }}</p>
+                                </div>
+                                <span class="kc-pill kc-pill--{{ $statusKey($visit->status ?? '') }}">{{ $statusText($visit->status ?? 'n/a') }}</span>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+            </section>
         </div>
-
     </div>
 </div>
 @endsection
