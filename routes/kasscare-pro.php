@@ -8,6 +8,7 @@
 | Loaded at the end of routes/web.php.
 */
 
+use App\Http\Controllers\KassPro\CensusController;
 use App\Http\Controllers\KassPro\CredentialController;
 use App\Http\Controllers\KassPro\FamilyAccessController;
 use App\Http\Controllers\KassPro\FamilyPortalController;
@@ -33,3 +34,8 @@ Route::middleware(['auth', 'role:admin,super_admin'])
         Route::post('/credentials', [CredentialController::class, 'store'])->name('credentials.store');
         Route::delete('/credentials/{credential}', [CredentialController::class, 'destroy'])->name('credentials.destroy');
     });
+
+// Census board (agency staff and providers working in a facility)
+Route::middleware(['auth', 'role:admin,super_admin,provider'])
+    ->get('/census', [CensusController::class, 'index'])
+    ->name('kc.census');

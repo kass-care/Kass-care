@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
+<x-patient-identity-bar :client="$patient ?? null" />
 @php
     $providerNotes = $providerNotes ?? collect();
     $snapshot = $snapshot ?? [];

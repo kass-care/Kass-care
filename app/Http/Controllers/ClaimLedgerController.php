@@ -36,13 +36,13 @@ class ClaimLedgerController extends Controller
 
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
-                $q->where('payer_name', 'like', "%{$search}%")
-                    ->orWhere('claim_number', 'like', "%{$search}%")
-                    ->orWhere('status', 'like', "%{$search}%")
+                $q->whereLike('payer_name', "%{$search}%")
+                    ->orWhereLike('claim_number', "%{$search}%")
+                    ->orWhereLike('status', "%{$search}%")
                     ->orWhereHas('client', function ($clientQuery) use ($search) {
-                        $clientQuery->where('name', 'like', "%{$search}%")
-                            ->orWhere('email', 'like', "%{$search}%")
-                            ->orWhere('phone', 'like', "%{$search}%");
+                        $clientQuery->whereLike('name', "%{$search}%")
+                            ->orWhereLike('email', "%{$search}%")
+                            ->orWhereLike('phone', "%{$search}%");
                     });
             });
         }

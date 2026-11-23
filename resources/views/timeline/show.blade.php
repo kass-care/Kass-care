@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
+<x-patient-identity-bar :client="$client ?? null" />
 <div class="max-w-6xl mx-auto py-8 px-4">
     <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>

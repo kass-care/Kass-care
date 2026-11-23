@@ -17,7 +17,7 @@
     <link href="https://fonts.bunny.net/css?family=atkinson-hyperlegible:400,400i,700|bricolage-grotesque:500,600,700&display=swap" rel="stylesheet">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <link rel="stylesheet" href="{{ asset('css/kasscare-theme.css') }}?v=3">
+    <link rel="stylesheet" href="{{ asset('css/kasscare-theme.css') }}?v=4">
 </head>
 <body class="kc-body">
 <div class="kc-auth">

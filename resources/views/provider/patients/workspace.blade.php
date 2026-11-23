@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
+<x-patient-identity-bar :client="$patient ?? null" />
 @php
     $latestVisit = $patient->visits->last() ?? $visits->first() ?? null;
     $communications = \App\Models\Communication::where('client_id', $patient->id)->latest()->get();
@@ -13,7 +14,7 @@
             <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div class="flex items-center gap-4">
                     <img
-                        src="{{ optional($patient)->photo ? asset('storage/' . $patient->photo) : 'https://ui-avatars.com/api/?name=' . urlencode($patient->name ?? 'Patient') }}"
+                        src="{{ optional($patient)->photo_url }}"
                         class="h-16 w-16 rounded-full object-cover border border-indigo-200 shadow"
                         alt="Patient photo"
                     >

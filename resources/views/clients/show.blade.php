@@ -2,6 +2,7 @@
 
 @section('content')
 
+<x-patient-identity-bar :client="$client ?? null" />
 @php
     $latestVisit = $client->visits->sortByDesc(function ($visit) {
         return $visit->visit_date ?? $visit->created_at;

@@ -80,6 +80,8 @@
                     {{-- PATIENT HEADER --}}
                     <div class="bg-slate-900 px-6 py-5 text-white">
                         <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                            <div style="display:flex;gap:16px;align-items:center">
+                            <img src="{{ $client->photo_url }}" alt="Photo of {{ $client->name ?? 'patient' }}" style="width:72px;height:72px;border-radius:16px;object-fit:cover;border:3px solid rgba(255,255,255,.25);flex:none">
                             <div>
                                 <p class="text-xs font-black uppercase tracking-[0.25em] text-emerald-300">
                                     Patient Medication Pass
@@ -95,6 +97,12 @@
                                         · DOB: {{ \Carbon\Carbon::parse($client->date_of_birth)->format('m/d/Y') }}
                                     @endif
                                 </p>
+                                @if(!empty($client->allergies) && !in_array(strtolower(trim($client->allergies)), ['none','nka','nkda','no known allergies','n/a','na'], true))
+                                    <p style="margin-top:6px;display:inline-block;background:#fbe6e2;color:#9a2c1b;font-weight:700;font-size:14px;padding:4px 10px;border-radius:8px">
+                                        ⚠ Allergies: {{ \Illuminate\Support\Str::limit($client->allergies, 80) }}
+                                    </p>
+                                @endif
+                            </div>
                             </div>
 
                             <div class="rounded-2xl bg-emerald-600 px-5 py-3 text-center shadow">

@@ -174,6 +174,16 @@ class Client extends Model
             return asset('storage/' . $this->photo);
         }
 
-        return 'https://ui-avatars.com/api/?name=' . urlencode($this->name ?? 'Patient');
+        // Initials drawn locally: patient names are never sent to outside services.
+        $initials = collect(explode(' ', trim($this->name ?? 'Patient')))
+            ->filter()->take(2)
+            ->map(fn ($p) => mb_strtoupper(mb_substr($p, 0, 1)))
+            ->implode('') ?: 'P';
+        $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">'
+            . '<rect width="128" height="128" rx="28" fill="#e3f1ec"/>'
+            . '<text x="64" y="78" font-family="Arial, sans-serif" font-size="48" font-weight="700" text-anchor="middle" fill="#0a5e52">'
+            . e($initials) . '</text></svg>';
+
+        return 'data:image/svg+xml;base64,' . base64_encode($svg);
     }
 }

@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
+<x-patient-identity-bar :client="$patient ?? null" />
 <div class="max-w-7xl mx-auto py-8 px-4">
     <div class="mb-6">
         <h1 class="text-3xl font-bold text-gray-900">Patient Summary</h1>

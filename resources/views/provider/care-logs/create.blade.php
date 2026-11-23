@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
+<div class="kc-page" style="padding-bottom:0"><x-patient-identity-bar :client="optional($selectedVisit ?? null)->client" /></div>
 <div class="max-w-4xl mx-auto px-6 py-8">
     <h1 class="text-2xl font-bold text-slate-800 mb-6">
         New Care Log

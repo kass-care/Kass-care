@@ -46,6 +46,7 @@ class KassNav
             'provider' => [
                 'Clinical' => [
                     ['Home', 'home', ['provider.dashboard']],
+                    ['Census', 'grid', ['kc.census']],
                     ['My patients', 'users', ['provider.patients.index']],
                     ['Rounds', 'stethoscope', ['provider.rounds.index']],
                     ['Calendar', 'calendar', ['provider.calendar']],
@@ -70,6 +71,7 @@ class KassNav
             'admin' => [
                 'Facility' => [
                     ['Home', 'home', ['facility.admin.home', 'dashboard']],
+                    ['Census', 'grid', ['kc.census']],
                     ['Patients', 'users', ['facility.patients.index']],
                     ['Caregivers', 'heart', ['facility.caregivers.index']],
                     ['Providers', 'stethoscope', ['providers.index']],
@@ -108,6 +110,7 @@ class KassNav
                     ['Tasks', 'check-square', ['admin.tasks.index']],
                 ],
                 'Selected facility' => [
+                    ['Census', 'grid', ['kc.census']],
                     ['Caregivers', 'heart', ['admin.caregivers.index']],
                     ['Clients', 'users', ['admin.clients.index']],
                     ['Visits', 'calendar', ['admin.visits.index']],

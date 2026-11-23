@@ -11,7 +11,7 @@
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=atkinson-hyperlegible:400,700|bricolage-grotesque:500,600,700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ asset('css/kasscare-theme.css') }}?v=3">
+    <link rel="stylesheet" href="{{ asset('css/kasscare-theme.css') }}?v=4">
     <style>
         .lp { color: var(--kc-text); }
         .lp a:not(.kc-btn) { color: inherit; }

@@ -30,11 +30,11 @@ class PharmacyOrderController extends Controller
                 $search = $request->search;
 
                 $query->where(function ($q) use ($search) {
-                    $q->where('medication_name', 'like', "%{$search}%")
-                        ->orWhere('pharmacy_name', 'like', "%{$search}%")
-                        ->orWhere('pharmacy_email', 'like', "%{$search}%")
+                    $q->whereLike('medication_name', "%{$search}%")
+                        ->orWhereLike('pharmacy_name', "%{$search}%")
+                        ->orWhereLike('pharmacy_email', "%{$search}%")
                         ->orWhereHas('client', function ($clientQuery) use ($search) {
-                            $clientQuery->where('name', 'like', "%{$search}%");
+                            $clientQuery->whereLike('name', "%{$search}%");
                         });
                 });
             })

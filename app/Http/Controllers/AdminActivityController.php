@@ -16,12 +16,12 @@ class AdminActivityController extends Controller
 
         if ($search !== '') {
             $baseQuery->where(function ($q) use ($search) {
-                $q->where('user_name', 'like', "%{$search}%")
-                    ->orWhere('user_role', 'like', "%{$search}%")
-                    ->orWhere('action', 'like', "%{$search}%")
-                    ->orWhere('client_name', 'like', "%{$search}%")
-                    ->orWhere('ip_address', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%");
+                $q->whereLike('user_name', "%{$search}%")
+                    ->orWhereLike('user_role', "%{$search}%")
+                    ->orWhereLike('action', "%{$search}%")
+                    ->orWhereLike('client_name', "%{$search}%")
+                    ->orWhereLike('ip_address', "%{$search}%")
+                    ->orWhereLike('description', "%{$search}%");
             });
         }
 

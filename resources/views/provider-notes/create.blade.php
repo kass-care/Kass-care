@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
+<div class="kc-page" style="padding-bottom:0"><x-patient-identity-bar :client="optional($visit ?? null)->client" /></div>
 <div class="min-h-screen bg-slate-50 py-10">
     <div class="max-w-4xl mx-auto px-6">
 

@@ -1,53 +1,59 @@
 @props([
     'client' => null,
     'visit' => null,
+    'sticky' => true,
 ])
-
-@php
-    $name = $client->name
-        ?? trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? ''))
-        ?: 'Patient';
-
-    $photo = $client->photo ?? null;
-    $dob = $client->dob ?? $client->date_of_birth ?? null;
-@endphp
-
+{{--
+    Patient identity banner (photo, name, room, MRN, age, allergies).
+    Stays at the top of the screen while staff scroll, so they always
+    know which patient they are charting on.
+--}}
 @if($client)
-    <div class="sticky top-0 z-40 mb-6 rounded-3xl border border-indigo-500/20 bg-slate-950/95 p-5 shadow-2xl backdrop-blur-xl">
-        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div class="flex items-center gap-4">
-                <div class="h-20 w-20 overflow-hidden rounded-2xl border-2 border-indigo-500 bg-slate-900">
-                    @if($photo)
-                        <img src="{{ asset('storage/' . $photo) }}" class="h-full w-full object-cover" alt="Patient photo">
-                    @else
-                        <div class="flex h-full w-full items-center justify-center text-3xl font-black text-indigo-300">
-                            {{ strtoupper(substr($name, 0, 1)) }}
-                        </div>
-                    @endif
-                </div>
+    @php
+        $name = $client->name
+            ?? trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? ''))
+            ?: 'Patient';
+        $photo = $client->photo ?? null;
+        $dobRaw = $client->date_of_birth ?? $client->dob ?? null;
+        $dob = null;
+        $age = $client->age ?? null;
+        try {
+            if ($dobRaw) {
+                $dobDate = \Carbon\Carbon::parse($dobRaw);
+                $dob = $dobDate->format('M j, Y');
+                $age = $dobDate->age;
+            }
+        } catch (\Throwable $e) {}
+        $allergies = trim((string) ($client->allergies ?? ''));
+        $noAllergies = $allergies === '' || in_array(strtolower($allergies), ['none', 'nka', 'nkda', 'no known allergies', 'n/a', 'na'], true);
+        $initials = collect(explode(' ', $name))->filter()->take(2)->map(fn ($p) => mb_strtoupper(mb_substr($p, 0, 1)))->implode('');
+    @endphp
 
-                <div>
-                    <p class="text-xs uppercase tracking-[0.3em] text-indigo-300">Active Patient</p>
-                    <h2 class="text-2xl font-black text-white">{{ $name }}</h2>
+    <div class="kc-pid {{ $sticky ? 'kc-pid--sticky' : '' }}" role="region" aria-label="Patient: {{ $name }}">
+        @if($photo)
+            <img class="kc-pid-photo" src="{{ asset('storage/' . $photo) }}" alt="Photo of {{ $name }}">
+        @else
+            <span class="kc-pid-photo kc-pid-photo--empty" aria-hidden="true">{{ $initials ?: 'P' }}</span>
+        @endif
 
-                    <div class="mt-2 flex flex-wrap gap-2 text-xs text-slate-300">
-                        @if($dob)
-                            <span class="rounded-full bg-slate-800 px-3 py-1">
-                                DOB: {{ \Carbon\Carbon::parse($dob)->format('M d, Y') }}
-                            </span>
-                            <span class="rounded-full bg-slate-800 px-3 py-1">
-                                Age: {{ \Carbon\Carbon::parse($dob)->age }}
-                            </span>
-                        @endif
-
-                        @if($visit)
-                            <span class="rounded-full bg-emerald-500/20 px-3 py-1 text-emerald-300">
-                                Visit #{{ $visit->id }}
-                            </span>
-                        @endif
-                    </div>
-                </div>
+        <div class="kc-pid-main">
+            <div class="kc-pid-name">{{ $name }}</div>
+            <div class="kc-pid-facts">
+                @if(!empty($client->room))<span><b>Room</b> {{ $client->room }}</span>@endif
+                @if($age)<span><b>Age</b> {{ $age }}</span>@endif
+                @if($dob)<span><b>DOB</b> {{ $dob }}</span>@endif
+                @if(!empty($client->gender))<span>{{ ucfirst($client->gender) }}</span>@endif
+                @if(!empty($client->mrn))<span><b>MRN</b> {{ $client->mrn }}</span>@endif
             </div>
+        </div>
+
+        <div class="kc-pid-allergy {{ $noAllergies ? 'is-none' : '' }}">
+            @if($noAllergies)
+                <span>{{ $allergies === '' ? 'Allergies not recorded' : 'No known allergies' }}</span>
+            @else
+                <x-kc-icon name="alert" />
+                <span><b>Allergies:</b> {{ \Illuminate\Support\Str::limit($allergies, 80) }}</span>
+            @endif
         </div>
     </div>
 @endif
