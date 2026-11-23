@@ -1,398 +1,181 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Facility Admin Home | Kass Care</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
+@extends('layouts.app')
 
-<body class="min-h-screen bg-slate-950 text-white">
+@section('title', 'Home')
+
+@section('content')
 @php
-    $facility = auth()->user()->facility;
+    use Carbon\Carbon;
 
-    $trialDaysRemaining = null;
+    $todayVisits = collect($todayVisits ?? []);
+    $lateVisits = collect($lateVisits ?? []);
+    $credentialAlerts = collect($credentialAlerts ?? []);
+    $r = fn ($name, $params = []) => Route::has($name) ? route($name, $params) : null;
 
-    if (
-        $facility &&
-        ($facility->subscription_status ?? null) === 'trialing' &&
-        $facility->trial_ends_at
-    ) {
-        $trialDaysRemaining = ceil(now()->diffInDays($facility->trial_ends_at, false));
-    }
+    $time = function ($v) {
+        if (empty($v)) return null;
+        try { return Carbon::parse($v)->format('g:i A'); } catch (\Throwable $e) { return null; }
+    };
+    $statusKey = fn ($s) => str_replace(' ', '_', strtolower($s ?? 'scheduled'));
+    $statusText = fn ($s) => ucfirst(str_replace('_', ' ', $s ?? 'scheduled'));
+
+    $inProgress = $todayVisits->filter(fn ($v) => $statusKey($v->status) === 'in_progress')->count();
+    $done = $todayVisits->filter(fn ($v) => $statusKey($v->status) === 'completed')->count();
+    $expiredDocuments = (int) ($expiredDocuments ?? 0);
+    $expiringSoonDocuments = (int) ($expiringSoonDocuments ?? 0);
+    $issues = $lateVisits->count() + (int) ($unassignedCount ?? 0) + $credentialAlerts->count() + $expiredDocuments;
+    $facilityName = $facility->name ?? auth()->user()->facility?->name ?? 'your agency';
 @endphp
 
-<div class="max-w-7xl mx-auto px-6 py-10">
+<div class="kc-page">
+    <div class="kc-page-head">
+        <div>
+            <h1>{{ $facilityName }}</h1>
+            <p>{{ now()->format('l, F j') }}. Here is your agency today.</p>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+            @if($r('facility.visits.create'))<a class="kc-btn kc-btn--primary" href="{{ $r('facility.visits.create') }}"><x-kc-icon name="calendar" /> Schedule a visit</a>@endif
+            @if($r('facility.patients.create'))<a class="kc-btn kc-btn--ghost" href="{{ $r('facility.patients.create') }}"><x-kc-icon name="users" /> Add patient</a>@endif
+        </div>
+    </div>
 
-    @if(!is_null($trialDaysRemaining))
-        <div class="mb-8 rounded-3xl border border-amber-300 bg-amber-50 p-6 shadow-sm text-slate-900">
-            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                <div>
-                    <p class="text-xs font-black uppercase tracking-[0.35em] text-amber-700">
-                        KASSCARE FREE TRIAL
-                    </p>
-
-                    <h2 class="mt-2 text-3xl font-black text-slate-900">
-                        {{ max($trialDaysRemaining, 0) }} Days Remaining
-                    </h2>
-
-                    <p class="mt-2 text-sm font-semibold text-slate-600">
-                        Your facility is currently using the KASSCare 30-day enterprise trial.
-                        Activate billing before expiration to maintain uninterrupted access.
-                    </p>
-                </div>
-
-                <a href="{{ route('billing.index') }}"
-                   class="inline-flex items-center justify-center rounded-2xl bg-amber-600 px-8 py-4 text-lg font-black text-white shadow-xl hover:bg-amber-700">
-                    💳 Activate Subscription
-                </a>
-            </div>
+    @if(!is_null($trialDaysRemaining ?? null))
+        <div class="kc-flash" style="background:var(--kc-amber-soft);color:#6b4a0c;margin-bottom:16px;align-items:center;justify-content:space-between;flex-wrap:wrap">
+            <span><x-kc-icon name="clock" /> Free trial: {{ max($trialDaysRemaining, 0) }} {{ max($trialDaysRemaining, 0) === 1 ? 'day' : 'days' }} left of your 30-day KASSCare trial.</span>
+            @if(Route::has('billing.index'))<a class="kc-btn kc-btn--primary kc-btn--sm" href="{{ route('billing.index') }}">Choose a plan</a>@endif
         </div>
     @endif
-          <style>
-    @keyframes kasscareTicker {
-        0% { transform: translateX(100%); }
-        100% { transform: translateX(-100%); }
-    }
 
-    .kasscare-ticker-track {
-        animation: kasscareTicker 28s linear infinite;
-    }
-</style>
+    @if(!$facility)
+        <section class="kc-focus">
+            <p class="kc-focus-label">Almost ready</p>
+            <h2>Your account is not linked to a facility yet.</h2>
+            <p class="kc-focus-meta">Contact KASSCare support to finish setting up your agency.</p>
+        </section>
+    @else
 
-<div class="mb-8 overflow-hidden rounded-2xl border border-cyan-400/30 bg-white/10 shadow-xl">
-    <div class="bg-gradient-to-r from-indigo-700 via-cyan-600 to-emerald-600 px-6 py-3">
-        <div class="overflow-hidden whitespace-nowrap">
-            <div class="kasscare-ticker-track inline-block text-sm font-black tracking-wide text-white">
-                🚨 {{ ($expiredDocuments ?? 0) + ($expiringSoonDocuments ?? 0) }} Compliance Item(s) Need Review
-                &nbsp; • &nbsp;
-                  👥 {{ $patients ?? 0 }} Active Client(s)
-		 &nbsp; • &nbsp;
-	  	👨‍⚕️ {{ $caregivers ?? 0 }} Caregiver(s)
-	  	&nbsp; • &nbsp;
-	   	📅 {{ $visits ?? 0 }} Scheduled Visit(s)
-	    	&nbsp; • &nbsp;
-	    	🩺 {{ $providers ?? 0 }} Linked Provider(s)
-                &nbsp; • &nbsp;
-                ✅ KassCare Facility Intelligence Monitoring Active
-            </div>
-        </div>
-    </div>
-</div>
-    {{-- Header --}}
-    <div class="mb-10 flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-        <div>
-            <p class="text-xs uppercase tracking-[0.35em] text-indigo-300">Kass Care</p>
-
-            <h1 class="mt-2 text-4xl font-bold">
-                Facility Command Center
-            </h1>
-
-            <p class="mt-3 text-slate-400">
-                {{ $facility?->name ?? 'Your Facility' }}
-            </p>
-
-            <p class="mt-2 text-slate-500">
-                Real-time facility intelligence for clients, caregivers, visits, providers, messaging, and operations.
-            </p>
-        </div>
-
-        <div class="flex flex-wrap items-center gap-3">
-            <a href="{{ route('dashboard') }}"
-               class="inline-flex items-center rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-900">
-                Dashboard
-            </a>
-		<a href="{{ route('facility.admission-packets.index') }}"
-   class="inline-flex items-center rounded-2xl bg-cyan-400 px-5 py-3 text-sm font-black text-slate-950 shadow hover:bg-cyan-300">
-    📝 Admission Packets
-</a>
-<a href="{{ route('facility.document-templates.index') }}"
-   class="inline-flex items-center rounded-2xl bg-emerald-500 px-5 py-3 text-sm font-black text-white shadow hover:bg-emerald-600">
-    🏥 Admissions Center
-</a>
-
-<a href="{{ route('facility.compliance-marketplace.index') }}"
-   class="inline-flex items-center rounded-2xl bg-violet-600 px-5 py-3 text-sm font-black text-white shadow hover:bg-violet-700">
-    📦 Compliance Marketplace
-</a>
-
-            @if(auth()->user()->facility_id)
-                <form method="POST" action="{{ route('select.facility', auth()->user()->facility_id) }}">
-                    @csrf
-                    <button type="submit"
-                            class="inline-flex items-center rounded-2xl border border-indigo-400 px-5 py-3 text-sm font-semibold text-indigo-100 hover:bg-indigo-500/20">
-                        Enter Facility Context
-                    </button>
-                </form>
+    {{-- What needs fixing now --}}
+    <section class="kc-focus {{ $issues ? '' : 'kc-focus--live' }}" aria-label="Needs attention">
+        <p class="kc-focus-label">{{ $issues ? 'Needs your attention' : 'Everything is on track' }}</p>
+        <h2>
+            @if($lateVisits->count())
+                {{ $lateVisits->count() }} {{ $lateVisits->count() === 1 ? 'caregiver has' : 'caregivers have' }} not checked in
+            @elseif($unassignedCount ?? 0)
+                {{ $unassignedCount }} upcoming {{ $unassignedCount === 1 ? 'visit has' : 'visits have' }} no caregiver
+            @elseif($expiredDocuments)
+                {{ $expiredDocuments }} compliance {{ $expiredDocuments === 1 ? 'document has' : 'documents have' }} expired
+            @elseif($credentialAlerts->count())
+                {{ $credentialAlerts->count() }} staff {{ $credentialAlerts->count() === 1 ? 'credential needs' : 'credentials need' }} renewing
+            @else
+                No late visits, gaps or expired credentials
             @endif
-
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button type="submit"
-                        class="inline-flex items-center rounded-2xl border border-red-400/50 bg-red-500/10 px-5 py-3 text-sm font-semibold text-red-200 hover:bg-red-500/20">
-                    Logout
-                </button>
-            </form>
+        </h2>
+        <p class="kc-focus-meta">
+            {{ $todayVisits->count() }} visits today: {{ $inProgress }} happening now, {{ $done }} completed.
+        </p>
+        <div class="kc-focus-actions">
+            @if($r('facility.visits.index'))<a class="kc-btn kc-btn--light" href="{{ $r('facility.visits.index') }}"><x-kc-icon name="calendar" /> Open visits</a>@endif
+            @if(($expiredDocuments || $expiringSoonDocuments) && $r('facility.compliance-documents.index'))<a class="kc-btn kc-btn--ghost" style="color:#fff;border-color:rgba(255,255,255,.25)" href="{{ $r('facility.compliance-documents.index') }}"><x-kc-icon name="file-text" /> Compliance documents</a>@endif
+            @if($credentialAlerts->count() && $r('kc.credentials.index'))<a class="kc-btn kc-btn--ghost" style="color:#fff;border-color:rgba(255,255,255,.25)" href="{{ $r('kc.credentials.index') }}"><x-kc-icon name="shield" /> Check credentials</a>@endif
         </div>
+    </section>
+
+    <div class="kc-tiles">
+        <a class="kc-tile" href="{{ $r('facility.patients.index') ?? '#' }}"><b>{{ $clientsCount ?? 0 }}</b><span>Patients</span></a>
+        <a class="kc-tile" href="{{ $r('facility.caregivers.index') ?? '#' }}"><b>{{ $caregiversCount ?? 0 }}</b><span>Caregivers</span></a>
+        <a class="kc-tile" href="{{ $r('providers.index') ?? '#' }}"><b>{{ $providersCount ?? 0 }}</b><span>Providers</span></a>
+        <a class="kc-tile" href="{{ $r('kc.family.index') ?? '#' }}"><b>{{ $familyCount ?? 0 }}</b><span>Family members</span></a>
     </div>
 
-@php
-    $facilityHealthScore = 100;
-
-    $facilityHealthScore -= (($expiredDocuments ?? 0) * 10);
-    $facilityHealthScore -= (($expiringSoonDocuments ?? 0) * 5);
-
-    $facilityHealthScore = max(0, min(100, $facilityHealthScore));
-
-    $facilityStatus = match (true) {
-        $facilityHealthScore >= 90 => 'EXCELLENT',
-        $facilityHealthScore >= 75 => 'GOOD',
-        $facilityHealthScore >= 60 => 'WATCH',
-        default => 'ACTION NEEDED',
-    };
-
-    $facilityRecommendation = match (true) {
-        ($expiredDocuments ?? 0) > 0 => 'Renew compliance documents immediately.',
-        ($expiringSoonDocuments ?? 0) > 0 => 'Schedule compliance renewals this week.',
-        default => 'Facility operations appear healthy and compliant.',
-    };
-@endphp
-
-<div class="mb-8 rounded-3xl border border-indigo-500/20 bg-gradient-to-r from-indigo-950 via-slate-900 to-cyan-950 p-8 shadow-2xl">
-
-    <p class="text-xs uppercase tracking-[0.35em] font-black text-cyan-300">
-        🧠 KassCare Facility Intelligence
-    </p>
-
-    <div class="mt-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-
-        <div>
-            <h2 class="text-3xl font-black text-white">
-                Facility Status: {{ $facilityStatus }}
-            </h2>
-
-            <p class="mt-2 text-slate-300 max-w-3xl">
-                KassCare is monitoring compliance, staffing, residents, visits,
-                provider activity, and operational readiness in real time.
-            </p>
-        </div>
-
-        <div class="rounded-3xl bg-white/10 border border-white/10 px-8 py-6 text-center">
-            <p class="text-xs uppercase font-bold text-cyan-200">
-                Facility Health Score
-            </p>
-
-            <p class="mt-2 text-5xl font-black text-white">
-                {{ $facilityHealthScore }}%
-            </p>
-        </div>
-
-    </div>
-
-    <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-
-        <div class="rounded-2xl bg-white/10 border border-white/10 p-5">
-            <p class="text-xs uppercase font-bold text-cyan-200">
-                Compliance
-            </p>
-
-            <p class="mt-3 text-3xl font-black text-white">
-                {{ ($expiredDocuments ?? 0) + ($expiringSoonDocuments ?? 0) }}
-            </p>
-
-            <p class="text-sm text-slate-300">
-                Document alerts detected.
-            </p>
-        </div>
-
-        <div class="rounded-2xl bg-white/10 border border-white/10 p-5">
-            <p class="text-xs uppercase font-bold text-cyan-200">
-                Recommendation
-            </p>
-
-            <p class="mt-3 text-sm font-semibold text-white">
-                {{ $facilityRecommendation }}
-            </p>
-        </div>
-
-        <div class="rounded-2xl bg-white/10 border border-white/10 p-5">
-            <p class="text-xs uppercase font-bold text-cyan-200">
-                KassCare Insight
-            </p>
-
-            <p class="mt-3 text-sm font-semibold text-white">
-                Strong facilities maintain compliance, complete visits, and respond quickly to alerts.
-            </p>
-        </div>
-
-    </div>
-
-</div>
-
-              @if(($expiredDocuments ?? 0) > 0 || ($expiringSoonDocuments ?? 0) > 0)
-    <div class="mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-        @if(($expiredDocuments ?? 0) > 0)
-            <a href="{{ route('facility.compliance-documents.index') }}"
-               class="rounded-3xl border border-red-300 bg-red-50 p-6 shadow-sm block hover:bg-red-100">
-                <p class="text-xs font-black uppercase tracking-[0.3em] text-red-700">
-                    Compliance Alert
-                </p>
-                <h2 class="mt-3 text-3xl font-black text-red-800">
-                    {{ $expiredDocuments }} Expired Document(s)
-                </h2>
-                <p class="mt-2 text-sm font-semibold text-red-600">
-                    Immediate renewal required.
-                </p>
-            </a>
-        @endif
-
-        @if(($expiringSoonDocuments ?? 0) > 0)
-            <a href="{{ route('facility.compliance-documents.index') }}"
-               class="rounded-3xl border border-yellow-300 bg-yellow-50 p-6 shadow-sm block hover:bg-yellow-100">
-                <p class="text-xs font-black uppercase tracking-[0.3em] text-yellow-700">
-                    Compliance Warning
-                </p>
-                <h2 class="mt-3 text-3xl font-black text-yellow-800">
-                    {{ $expiringSoonDocuments }} Expiring Soon
-                </h2>
-                <p class="mt-2 text-sm font-semibold text-yellow-700">
-                    Documents expiring within 30 days.
-                </p>
-            </a>
-        @endif
-    </div>
-@endif
-
-
-    {{-- Stats --}}
-    <div class="mb-8 grid grid-cols-1 gap-6 md:grid-cols-4">
-        <div class="rounded-3xl border border-slate-800 bg-slate-900 p-6">
-            <p class="text-xs uppercase tracking-[0.3em] text-slate-400">Clients</p>
-            <p class="mt-4 text-5xl font-bold">{{ $patients ?? 0 }}</p>
-            <p class="mt-2 text-slate-400">Registered in this facility</p>
-        </div>
-
-        <div class="rounded-3xl border border-slate-800 bg-slate-900 p-6">
-            <p class="text-xs uppercase tracking-[0.3em] text-slate-400">Caregivers</p>
-            <p class="mt-4 text-5xl font-bold">{{ $caregivers ?? 0 }}</p>
-            <p class="mt-2 text-slate-400">Assigned workforce</p>
-        </div>
-
-        <div class="rounded-3xl border border-slate-800 bg-slate-900 p-6">
-            <p class="text-xs uppercase tracking-[0.3em] text-slate-400">Visits</p>
-            <p class="mt-4 text-5xl font-bold">{{ $visits ?? 0 }}</p>
-            <p class="mt-2 text-slate-400">Scheduled visits</p>
-        </div>
-
-        <div class="rounded-3xl border border-slate-800 bg-slate-900 p-6">
-            <p class="text-xs uppercase tracking-[0.3em] text-slate-400">Providers</p>
-            <p class="mt-4 text-5xl font-bold">{{ $providers ?? 0 }}</p>
-            <p class="mt-2 text-slate-400">Linked providers</p>
-        </div>
-    </div>
-
-    {{-- Main content --}}
-    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-
-        {{-- Facility Details --}}
-        <div class="rounded-3xl border border-slate-800 bg-slate-900 p-8 lg:col-span-2">
-            <h2 class="mb-2 text-2xl font-semibold">Facility Details</h2>
-            <p class="mb-6 text-slate-400">Core information for this facility.</p>
-
-            <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
-                <div class="rounded-2xl border border-slate-800 bg-slate-950 p-5">
-                    <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Name</p>
-                    <p class="mt-3 text-2xl font-semibold">
-                        {{ $facility?->name ?? 'Not provided' }}
-                    </p>
-                </div>
-
-                <div class="rounded-2xl border border-slate-800 bg-slate-950 p-5">
-                    <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Address</p>
-                    <p class="mt-3 text-2xl font-semibold">
-                        {{ $facility?->address ?? 'Not provided' }}
-                    </p>
-                </div>
-
-                <div class="rounded-2xl border border-slate-800 bg-slate-950 p-5">
-                    <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Phone</p>
-                    <p class="mt-3 text-2xl font-semibold">
-                        {{ $facility?->phone ?? 'Not provided' }}
-                    </p>
-                </div>
-
-                <div class="rounded-2xl border border-slate-800 bg-slate-950 p-5">
-                    <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Email</p>
-                    <p class="mt-3 text-2xl font-semibold">
-                        {{ $facility?->email ?? auth()->user()->email ?? 'Not provided' }}
-                    </p>
-                </div>
+    <div class="kc-grid kc-grid--2-1">
+        <section class="kc-card">
+            <div class="kc-card-head">
+                <h2>Today's visits</h2>
+                @if($r('facility.visits.index'))<a href="{{ $r('facility.visits.index') }}">All visits</a>@endif
             </div>
+            @if($todayVisits->isEmpty())
+                <div class="kc-empty"><strong>No visits today</strong>Schedule visits so caregivers see them on their phones.</div>
+            @else
+                <div class="kc-table-wrap">
+                    <table class="kc-table">
+                        <thead><tr><th>Time</th><th>Patient</th><th>Caregiver</th><th>Status</th></tr></thead>
+                        <tbody>
+                        @foreach($todayVisits as $visit)
+                            @php $late = $lateVisits->contains('id', $visit->id); @endphp
+                            <tr>
+                                <td><strong>{{ $time($visit->start_time) ?? '—' }}</strong></td>
+                                <td>{{ $visit->client->name ?? 'Unknown' }}</td>
+                                <td>
+                                    @if($visit->caregiver?->name)
+                                        {{ $visit->caregiver->name }}
+                                    @else
+                                        <span class="kc-pill kc-pill--missed">Not assigned</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($late)
+                                        <span class="kc-pill kc-pill--missed">Late</span>
+                                    @else
+                                        <span class="kc-pill kc-pill--{{ $statusKey($visit->status) }}">{{ $statusText($visit->status) }}</span>
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
+        </section>
+
+        <div class="kc-grid">
+            <section class="kc-card">
+                <div class="kc-card-head">
+                    <h2>Compliance documents</h2>
+                    @if($r('facility.compliance-documents.index'))<a href="{{ $r('facility.compliance-documents.index') }}">Open</a>@endif
+                </div>
+                <ul class="kc-list">
+                    <li><span>Expired</span><span class="kc-pill {{ $expiredDocuments ? 'kc-pill--expired' : 'kc-pill--valid' }}">{{ $expiredDocuments }}</span></li>
+                    <li><span>Expiring in 30 days</span><span class="kc-pill {{ $expiringSoonDocuments ? 'kc-pill--expiring' : 'kc-pill--valid' }}">{{ $expiringSoonDocuments }}</span></li>
+                    @if($r('facility.readiness.index'))<li><a href="{{ $r('facility.readiness.index') }}" style="color:var(--kc-teal);font-weight:700;text-decoration:none">Check inspection readiness</a></li>@endif
+                </ul>
+            </section>
+
+            <section class="kc-card">
+                <div class="kc-card-head">
+                    <h2>Credentials to renew</h2>
+                    @if($r('kc.credentials.index'))<a href="{{ $r('kc.credentials.index') }}">Manage</a>@endif
+                </div>
+                @if($credentialAlerts->isEmpty())
+                    <div class="kc-empty">Nothing expiring in the next 30 days.</div>
+                @else
+                    <ul class="kc-list">
+                        @foreach($credentialAlerts as $c)
+                            <li>
+                                <div class="kc-list-main">
+                                    <p class="kc-list-title">{{ $c->user->name ?? 'Staff member' }}</p>
+                                    <p class="kc-list-sub">{{ $c->type }}, {{ $c->state === 'expired' ? 'expired' : 'expires' }} {{ $c->expires_on?->format('M j') }}</p>
+                                </div>
+                                <span class="kc-pill kc-pill--{{ $c->state }}">{{ $c->state === 'expired' ? 'Expired' : 'Soon' }}</span>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+            </section>
+
+            <section class="kc-card" style="padding:16px 20px 20px">
+                <h2 style="margin:0 0 12px;font-size:19px">Quick actions</h2>
+                <div style="display:grid;gap:8px">
+                    @if($r('facility.admission-packets.index'))<a class="kc-btn kc-btn--ghost kc-btn--block" href="{{ $r('facility.admission-packets.index') }}"><x-kc-icon name="file-text" /> Admission packets</a>@endif
+                    @if($r('facility.shifts.index'))<a class="kc-btn kc-btn--ghost kc-btn--block" href="{{ $r('facility.shifts.index') }}"><x-kc-icon name="clock" /> Shifts</a>@endif
+                    @if($r('facility.mar.index'))<a class="kc-btn kc-btn--ghost kc-btn--block" href="{{ $r('facility.mar.index') }}"><x-kc-icon name="pill" /> Medication record (MAR)</a>@endif
+                    @if($r('facility.compliance-marketplace.index'))<a class="kc-btn kc-btn--ghost kc-btn--block" href="{{ $r('facility.compliance-marketplace.index') }}"><x-kc-icon name="building" /> Compliance marketplace</a>@endif
+                    @if($r('facility.caregivers.create'))<a class="kc-btn kc-btn--ghost kc-btn--block" href="{{ $r('facility.caregivers.create') }}"><x-kc-icon name="heart" /> Add caregiver</a>@endif
+                    @if($r('kc.family.index'))<a class="kc-btn kc-btn--ghost kc-btn--block" href="{{ $r('kc.family.index') }}"><x-kc-icon name="users" /> Invite a family member</a>@endif
+                    @if($r('facility.messages.create'))<a class="kc-btn kc-btn--ghost kc-btn--block" href="{{ $r('facility.messages.create') }}"><x-kc-icon name="message" /> Message a provider</a>@endif
+                    @if($r('facility.revenue'))<a class="kc-btn kc-btn--ghost kc-btn--block" href="{{ $r('facility.revenue') }}"><x-kc-icon name="chart" /> Revenue</a>@endif
+                </div>
+            </section>
         </div>
-              
-        {{-- Quick Actions --}}
-        <div class="rounded-3xl border border-slate-800 bg-slate-900 p-8">
-            <h2 class="mb-2 text-2xl font-semibold">Quick Actions</h2>
-            <p class="mb-6 text-slate-400">Jump into facility workflows.</p>
-
-            <div class="space-y-3">
-                <a href="{{ route('facility.messages.create') }}"
-                   class="block w-full rounded-2xl bg-emerald-600 px-4 py-4 text-center font-semibold text-white hover:bg-emerald-500">
-                    Message Provider
-                </a>
-
-                <a href="{{ route('facility.messages.index') }}"
-                   class="block w-full rounded-2xl border border-emerald-500 px-4 py-4 text-center font-semibold text-emerald-200 hover:bg-emerald-500/10">
-                    View Messages
-                </a>
-
-                <a href="{{ route('facility.patients.index') }}"
-                   class="block w-full rounded-2xl bg-indigo-600 px-4 py-4 text-center font-semibold text-white hover:bg-indigo-500">
-                    Open Clients
-                </a>
-
-                <a href="{{ route('facility.caregivers.index') }}"
-                   class="block w-full rounded-2xl border border-slate-700 px-4 py-4 text-center font-semibold text-slate-200 hover:bg-slate-800">
-                    Open Caregivers
-                </a>
-
-                <a href="{{ route('facility.visits.index') }}"
-                   class="block w-full rounded-2xl border border-slate-700 px-4 py-4 text-center font-semibold text-slate-200 hover:bg-slate-800">
-                    Open Visits
-                </a>
-
-                <a href="{{ route('providers.index') }}"
-                   class="block w-full rounded-2xl border border-slate-700 px-4 py-4 text-center font-semibold text-slate-200 hover:bg-slate-800">
-                    Open Providers
-                </a>
-
-                <a href="{{ route('facility.readiness.index') }}"
-                   class="block w-full rounded-2xl bg-green-700 px-4 py-4 text-center font-black text-white hover:bg-green-800">
-                    ✅ State Inspection Readiness
-                </a>
-<a href="{{ route('facility.mar.index') }}"
-   class="block w-full rounded-2xl bg-cyan-600 px-4 py-4 text-center font-black text-white hover:bg-cyan-700">
-    💊 Medication Administration Record (MAR)
-</a>
-
-<a href="{{ route('facility.shifts.index') }}"
-   class="block w-full rounded-2xl bg-purple-700 px-4 py-4 text-center font-black text-white hover:bg-purple-800">
-    🕒 Shift Management
-</a>
-
-<a href="{{ route('caregiver.activity') }}"
-   class="block w-full rounded-2xl bg-cyan-700 px-4 py-4 text-center font-black text-white hover:bg-cyan-800">
-    👁 Caregiver Activity
-</a>
-<a href="{{ route('facility.compliance-documents.index') }}"
-   class="block w-full rounded-2xl bg-cyan-700 px-4 py-4 text-center font-black text-white hover:bg-cyan-800">
-    🗂 Compliance Vault
-</a>
-            </div>
-        </div>
-
     </div>
-
+    @endif
 </div>
-</body>
-</html>
+@endsection

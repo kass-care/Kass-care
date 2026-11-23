@@ -22,3 +22,10 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Never commit secrets or database dumps
+.env*
+!.env.example
+.enn
+/env
+*.sql

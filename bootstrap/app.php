@@ -23,6 +23,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'facility.context' => \App\Http\Middleware\EnsureFacilityContext::class,
             'dashboard.guard' => \App\Http\Middleware\RedirectIfWrongDashboard::class,
         ]);
+
+        // Family members can only reach the family portal
+        $middleware->web(append: [
+            \App\Http\Middleware\KeepFamilyInPortal::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

@@ -1,557 +1,233 @@
 @extends('layouts.app')
 
+@section('title', 'Home')
+
 @section('content')
-<div class="max-w-7xl mx-auto px-4 py-8">
-    @php
-        $scheduledCount   = $scheduledCount ?? 0;
-        $completedCount   = $completedCount ?? 0;
-        $inProgressCount  = $inProgressCount ?? 0;
-        $flaggedCount     = $flaggedCount ?? 0;
-        $highBpCount      = $highBpCount ?? 0;
-        $lowOxygenCount   = $lowOxygenCount ?? 0;
-        $feverCount       = $feverCount ?? 0;
-        $screeningCount   = $screeningCount ?? ($preventiveScreeningCount ?? 0);
+@php
+    use Carbon\Carbon;
 
-        $totalClaims      = $totalClaims ?? 0;
-        $submittedClaims  = $submittedClaims ?? 0;
-        $paidClaims       = $paidClaims ?? 0;
-        $deniedClaims     = $deniedClaims ?? 0;
-        $totalRevenue     = $totalRevenue ?? 0;
+    $patients = collect($patients ?? []);
+    $flaggedCareLogs = collect($flaggedCareLogs ?? []);
+    $providerFacilities = collect($providerFacilities ?? []);
+    $r = fn ($name, $params = []) => Route::has($name) ? route($name, $params) : null;
 
-       $unreadProviderMessages = \App\Models\ProviderMessage::where('provider_id', auth()->id())
-    ->whereNull('read_at')
-    ->count();
-        $recentPatients = collect();
+    $firstName = explode(' ', trim(auth()->user()->name ?? ''))[0] ?: 'there';
+    $hour = now()->hour;
+    $greeting = $hour < 12 ? 'Good morning' : ($hour < 17 ? 'Good afternoon' : 'Good evening');
 
-        if (isset($patients) && $patients instanceof \Illuminate\Support\Collection) {
-            $recentPatients = $patients->take(5);
-        } elseif (isset($patients) && is_iterable($patients)) {
-            $recentPatients = collect($patients)->take(5);
+    $alertTypes = [
+        ['high_bp', 'High blood pressure', $highBpCount ?? 0],
+        ['low_oxygen', 'Low oxygen', $lowOxygenCount ?? 0],
+        ['fever', 'Fever', $feverCount ?? 0],
+        ['pulse', 'Pulse', $pulseIssueCount ?? 0],
+    ];
+    $flagged = (int) ($flaggedCount ?? $flaggedCareLogs->count());
+
+    $unreadMessages = 0;
+    try {
+        $unreadMessages = \App\Models\ProviderMessage::where('provider_id', auth()->id())->whereNull('read_at')->count();
+    } catch (\Throwable $e) {}
+
+    $pendingMeds = 0;
+    try {
+        if (!empty($facilityId)) {
+            $pendingMeds = \App\Models\Medication::where('approval_status', 'pending')
+                ->whereHas('client', fn ($q) => $q->where('facility_id', $facilityId))
+                ->count();
         }
-    @endphp
+    } catch (\Throwable $e) {}
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-        <div class="lg:col-span-2 space-y-6">
-
-            {{-- Hero --}}
-            <div class="rounded-3xl bg-gradient-to-r from-indigo-700 via-indigo-600 to-blue-500 text-white p-8 shadow-sm">
-                <p class="text-xs uppercase tracking-[0.35em] font-semibold text-indigo-100">KASS CARE</p>
-
-                <h1 class="mt-3 text-4xl font-bold">
-                    Provider Clinical Command Center
-                </h1>
-
-                <p class="mt-3 text-indigo-100 text-lg max-w-3xl">
-                    Monitor clinical alerts, review patient activity, communicate with facilities,
-                    and move quickly across notes, pharmacy, compliance, and patient workspaces.
-                </p>
-                    @if(isset($providerFacilities) && $providerFacilities->count() > 0)
-    <div class="mt-6 rounded-2xl border border-white/20 bg-white/10 p-4">
-        <p class="text-xs uppercase tracking-[0.25em] font-bold text-indigo-100">
-            Facility Context
-        </p>
-
-        <div class="mt-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div>
-                <p class="text-sm text-indigo-100">Currently viewing</p>
-                <p class="text-xl font-black text-white">
-                    {{ $selectedFacility?->name ?? 'All assigned facilities' }}
-                </p>
-            </div>
-       <div class="w-full md:w-80">
-    <form method="POST" action="{{ route('select.facility', 0) }}">
-        @csrf
-
-        <label class="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-indigo-100">
-            Select Facility
-        </label>
-
-        <select name="facility_id"
-                onchange="this.form.action='/select-facility/' + (this.value || 0); this.form.submit();"
-                class="w-full rounded-xl border border-white/20 bg-white px-4 py-3 text-sm font-bold text-slate-900 shadow">
-            <option value="">All Facilities</option>
-
-            @foreach($providerFacilities as $facility)
-                <option value="{{ $facility->id }}"
-                    {{ (int)($facilityId ?? 0) === (int)$facility->id ? 'selected' : '' }}>
-                    {{ $facility->name }}
-                </option>
-            @endforeach
-        </select>
-    </form>
-</div>
-
-        </div>
-    </div>
-@endif
-                <div class="mt-6 flex flex-wrap gap-3">
-                    @if(Route::has('provider.messages.create'))
-                        <a href="{{ route('provider.messages.create') }}"
-                           class="inline-flex items-center rounded-2xl bg-white px-5 py-3 font-semibold text-indigo-700 hover:bg-indigo-50">
-                            ✉️ Message Facility
-                        </a>
-                    @endif
-
-                    @if(Route::has('provider.alerts.index'))
-                        <a href="{{ route('provider.alerts.index', ['type' => 'all']) }}"
-                           class="inline-flex items-center rounded-2xl bg-white/15 px-5 py-3 font-semibold text-white hover:bg-white/20">
-                            🔔 Open Alerts
-                        </a>
-                    @endif
-
-                    @if(Route::has('provider.notes.index'))
-                        <a href="{{ route('provider.notes.index') }}"
-                           class="inline-flex items-center rounded-2xl bg-white/15 px-5 py-3 font-semibold text-white hover:bg-white/20">
-                            📝 Provider Notes
-                        </a>
-                    @endif
-                 @php
-    $pendingMedicationApprovals = \App\Models\Medication::where('approval_status', 'pending')
-        ->whereHas('client', function ($query) use ($facilityId) {
-            $query->where('facility_id', $facilityId);
-        })
-        ->count();
+    $todo = [
+        ['Abnormal vitals to review', $flagged, $r('provider.alerts.index', ['type' => 'all']), 'activity'],
+        ['Medications waiting for approval', $pendingMeds, $r('provider.medication-approvals.index'), 'pill'],
+        ['Unread facility messages', $unreadMessages, $r('provider.messages.index'), 'message'],
+    ];
+    $todoTotal = $flagged + $pendingMeds + $unreadMessages;
 @endphp
 
-@if(Route::has('provider.medication-approvals.index'))
-    <a href="{{ route('provider.medication-approvals.index') }}"
-       class="inline-flex items-center rounded-2xl bg-amber-400 px-5 py-3 font-black text-slate-900 hover:bg-amber-300">
-        💊 Medication Approvals
-        @if($pendingMedicationApprovals > 0)
-            <span class="ml-3 rounded-full bg-red-600 px-3 py-1 text-xs font-black text-white">
-                {{ $pendingMedicationApprovals }}
-            </span>
-        @endif
-    </a>
-@endif
+<div class="kc-page">
 
-                    @if(Route::has('provider.compliance'))
-                        <a href="{{ route('provider.compliance') }}"
-                           class="inline-flex items-center rounded-2xl bg-emerald-500 px-5 py-3 font-semibold text-white hover:bg-emerald-600">
-                            ✅ Compliance
-                        </a>
-                    @endif
-
-                    @if(Route::has('provider.claims.index'))
-                        <a href="{{ route('provider.claims.index') }}"
-                           class="inline-flex items-center rounded-2xl bg-yellow-400 px-5 py-3 font-bold text-slate-900 hover:bg-yellow-300">
-                            💰 Claims
-                        </a>
-                    @endif
-                </div>
-            </div>
-               @php
-    $copilotAttentionCount = ($flaggedCount ?? 0)
-        + ($highBpCount ?? 0)
-        + ($lowOxygenCount ?? 0)
-        + ($feverCount ?? 0)
-        + ($unreadProviderMessages ?? 0);
-
-    $copilotStatus = $copilotAttentionCount > 0
-        ? 'Provider attention recommended'
-        : 'No urgent clinical activity detected';
-
-    $copilotFirstAction = match (true) {
-        ($lowOxygenCount ?? 0) > 0 => 'Review low oxygen alerts first.',
-        ($highBpCount ?? 0) > 0 => 'Review high blood pressure alerts first.',
-        ($feverCount ?? 0) > 0 => 'Review fever alerts first.',
-        ($unreadProviderMessages ?? 0) > 0 => 'Review unread facility messages.',
-        ($flaggedCount ?? 0) > 0 => 'Review flagged patient activity.',
-        default => 'Continue routine patient review and facility rounding.',
-    };
-@endphp
-
-<div class="rounded-3xl border border-indigo-200 bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-900 p-6 shadow-sm text-white">
-    <p class="text-xs uppercase tracking-[0.35em] font-black text-indigo-200">
-        🧠 KassCare Copilot
-    </p>
-
-    <div class="mt-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <div class="kc-greeting" style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between">
         <div>
-            <h2 class="text-2xl font-black">
-                {{ $copilotStatus }}
+            <h1>{{ $greeting }}, {{ $firstName }}</h1>
+            <p>{{ now()->format('l, F j') }}{{ isset($selectedFacility) && $selectedFacility ? ' at ' . $selectedFacility->name : '' }}</p>
+        </div>
+
+        @if($providerFacilities->count() > 1 && Route::has('select.facility'))
+            <form method="POST" action="{{ route('select.facility', 0) }}" style="min-width:240px">
+                @csrf
+                <label for="kc-facility" class="kc-list-sub" style="display:block;margin-bottom:4px;font-weight:700">Facility</label>
+                <select id="kc-facility" name="facility_id" class="kc-input"
+                        onchange="this.form.action='/select-facility/' + (this.value || 0); this.form.submit();">
+                    <option value="">Choose a facility</option>
+                    @foreach($providerFacilities as $facility)
+                        <option value="{{ $facility->id }}" @selected((int) ($facilityId ?? 0) === (int) $facility->id)>{{ $facility->name }}</option>
+                    @endforeach
+                </select>
+            </form>
+        @endif
+    </div>
+
+    @if(empty($facilityId))
+        <section class="kc-focus" aria-label="Choose a facility">
+            <p class="kc-focus-label">Start here</p>
+            <h2>Choose a facility to see your patients.</h2>
+            <p class="kc-focus-meta">
+                {{ $providerFacilities->count() ? 'Pick one from the list above.' : 'No facility has added you yet. Ask the agency admin to link your account.' }}
+            </p>
+        </section>
+    @else
+
+        {{-- The one thing that matters most right now --}}
+        <section class="kc-focus {{ $todoTotal ? '' : 'kc-focus--live' }}" aria-label="Your to-do">
+            <p class="kc-focus-label">{{ $todoTotal ? 'Needs your attention' : 'All clear' }}</p>
+            <h2>
+                @if($flagged)
+                    {{ $flagged }} care {{ $flagged === 1 ? 'log has' : 'logs have' }} abnormal vitals
+                @elseif($pendingMeds)
+                    {{ $pendingMeds }} {{ $pendingMeds === 1 ? 'medication is' : 'medications are' }} waiting for your approval
+                @elseif($unreadMessages)
+                    {{ $unreadMessages }} unread {{ $unreadMessages === 1 ? 'message' : 'messages' }} from facilities
+                @else
+                    Nothing waiting for you right now
+                @endif
             </h2>
-
-            <p class="mt-2 text-indigo-100">
-                KassCare is scanning alerts, vitals, messages, and clinical activity across your assigned facilities.
+            <p class="kc-focus-meta">
+                @if($flagged)
+                    @foreach(array_filter($alertTypes, fn ($t) => $t[2] > 0) as $t){{ $loop->first ? '' : ', ' }}{{ $t[1] }} {{ $t[2] }}@endforeach
+                @else
+                    Caregiver vitals are checked automatically as they are logged.
+                @endif
             </p>
-        </div>
-
-        <div class="rounded-2xl bg-white/10 border border-white/10 px-5 py-4">
-            <p class="text-xs uppercase font-bold text-indigo-200">Attention Signals</p>
-            <p class="mt-1 text-3xl font-black">{{ $copilotAttentionCount }}</p>
-        </div>
-    </div>
-
-    <div class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="rounded-2xl bg-white/10 border border-white/10 p-4">
-            <p class="text-sm font-black text-indigo-100">What needs attention</p>
-
-            <div class="mt-3 space-y-2 text-sm">
-                @if(($lowOxygenCount ?? 0) > 0)
-                    <p>• {{ $lowOxygenCount }} low oxygen alert(s)</p>
+            <div class="kc-focus-actions">
+                @if($flagged && $r('provider.alerts.index'))
+                    <a href="{{ $r('provider.alerts.index', ['type' => 'all']) }}" class="kc-btn kc-btn--light"><x-kc-icon name="bell" /> Review alerts</a>
+                @elseif($pendingMeds && $r('provider.medication-approvals.index'))
+                    <a href="{{ $r('provider.medication-approvals.index') }}" class="kc-btn kc-btn--light"><x-kc-icon name="pill" /> Review medications</a>
+                @elseif($unreadMessages && $r('provider.messages.index'))
+                    <a href="{{ $r('provider.messages.index') }}" class="kc-btn kc-btn--light"><x-kc-icon name="message" /> Open messages</a>
                 @endif
-
-                @if(($highBpCount ?? 0) > 0)
-                    <p>• {{ $highBpCount }} high blood pressure alert(s)</p>
-                @endif
-
-                @if(($feverCount ?? 0) > 0)
-                    <p>• {{ $feverCount }} fever alert(s)</p>
-                @endif
-
-                @if(($unreadProviderMessages ?? 0) > 0)
-                    <p>• {{ $unreadProviderMessages }} unread facility message(s)</p>
-                @endif
-
-                @if(($flaggedCount ?? 0) > 0)
-                    <p>• {{ $flaggedCount }} flagged clinical item(s)</p>
-                @endif
-
-                @if($copilotAttentionCount === 0)
-                    <p>• No urgent provider action detected right now.</p>
+                @if($r('provider.rounds.index'))
+                    <a href="{{ $r('provider.rounds.index') }}" class="kc-btn kc-btn--ghost" style="color:#fff;border-color:rgba(255,255,255,.25)"><x-kc-icon name="stethoscope" /> Start rounds</a>
                 @endif
             </div>
-        </div>
+        </section>
 
-        <div class="rounded-2xl bg-white/10 border border-white/10 p-4">
-            <p class="text-sm font-black text-indigo-100">Recommended first action</p>
-            <p class="mt-3 text-sm">
-                {{ $copilotFirstAction }}
-            </p>
-        </div>
-    </div>
-</div> 
-            {{-- Revenue Snapshot --}}
-            <div class="rounded-3xl border border-emerald-200 bg-gradient-to-r from-emerald-50 via-white to-indigo-50 p-6 shadow-sm">
-                <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                    <div>
-                        <p class="text-xs uppercase tracking-[0.35em] font-bold text-emerald-700">
-                            Revenue Snapshot
-                        </p>
-                        <h2 class="mt-2 text-2xl font-black text-slate-900">
-                            Claims & Billing Overview
-                        </h2>
-                        <p class="mt-1 text-sm text-slate-500">
-                            Track clinical work converting into claim revenue.
-                        </p>
-                    </div>
+        <ul class="kc-stats">
+            <li><strong>{{ $scheduledCount ?? 0 }}</strong> visits scheduled</li>
+            <li><strong>{{ $inProgressCount ?? 0 }}</strong> in progress</li>
+            <li><strong>{{ $completedCount ?? 0 }}</strong> completed</li>
+        </ul>
 
-                    @if(Route::has('provider.claims.index'))
-                        <a href="{{ route('provider.claims.index') }}"
-                           class="rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow hover:bg-emerald-700">
-                            💰 View Claims
-                        </a>
-                    @endif
+        <div class="kc-grid kc-grid--2-1">
+
+            {{-- Patients --}}
+            <section class="kc-card">
+                <div class="kc-card-head">
+                    <h2>Patients</h2>
+                    @if($r('provider.patients.index'))<a href="{{ $r('provider.patients.index') }}">My patients</a>@elseif($r('provider.rounds.index'))<a href="{{ $r('provider.rounds.index') }}">Rounds list</a>@endif
                 </div>
-
-                <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                    <div class="rounded-2xl bg-white p-5 shadow-sm border border-slate-100">
-                        <p class="text-xs uppercase tracking-widest text-slate-500 font-bold">Total Claims</p>
-                        <p class="mt-3 text-4xl font-black text-slate-900">{{ $totalClaims }}</p>
-                    </div>
-
-                    <div class="rounded-2xl bg-yellow-50 p-5 shadow-sm border border-yellow-100">
-                        <p class="text-xs uppercase tracking-widest text-yellow-700 font-bold">Submitted</p>
-                        <p class="mt-3 text-4xl font-black text-yellow-700">{{ $submittedClaims }}</p>
-                    </div>
-
-                    <div class="rounded-2xl bg-emerald-50 p-5 shadow-sm border border-emerald-100">
-                        <p class="text-xs uppercase tracking-widest text-emerald-700 font-bold">Paid</p>
-                        <p class="mt-3 text-4xl font-black text-emerald-700">{{ $paidClaims }}</p>
-                    </div>
-
-                    <div class="rounded-2xl bg-red-50 p-5 shadow-sm border border-red-100">
-                        <p class="text-xs uppercase tracking-widest text-red-700 font-bold">Denied</p>
-                        <p class="mt-3 text-4xl font-black text-red-700">{{ $deniedClaims }}</p>
-                    </div>
-
-                    <div class="rounded-2xl bg-indigo-700 p-5 shadow-sm overflow-hidden min-w-0">
-                        <p class="text-xs uppercase tracking-widest text-indigo-100 font-bold">Revenue</p>
-                        <p class="mt-3 text-2xl xl:text-3xl font-black text-white whitespace-nowrap">
-                            ${{ number_format($totalRevenue, 2) }}
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            {{-- Clinical Metrics --}}
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-                    <p class="text-xs uppercase tracking-[0.25em] text-gray-500 font-semibold">Scheduled</p>
-                    <p class="mt-3 text-4xl font-bold text-gray-900">{{ $scheduledCount }}</p>
-                </div>
-
-                <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-                    <p class="text-xs uppercase tracking-[0.25em] text-gray-500 font-semibold">Completed</p>
-                    <p class="mt-3 text-4xl font-bold text-gray-900">{{ $completedCount }}</p>
-                </div>
-
-                <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-                    <p class="text-xs uppercase tracking-[0.25em] text-gray-500 font-semibold">In Progress</p>
-                    <p class="mt-3 text-4xl font-bold text-gray-900">{{ $inProgressCount }}</p>
-                </div>
-
-                <a href="{{ Route::has('provider.alerts.index') ? route('provider.alerts.index', ['type' => 'all']) : '#' }}"
-                   class="rounded-2xl border border-red-100 bg-red-50 p-5 shadow-sm hover:shadow-md transition">
-                    <p class="text-xs uppercase tracking-[0.25em] text-red-500 font-semibold">Flagged</p>
-                    <p class="mt-3 text-4xl font-bold text-red-700">{{ $flaggedCount }}</p>
-                </a>
-
-                <a href="{{ Route::has('provider.alerts.index') ? route('provider.alerts.index', ['type' => 'high_bp']) : '#' }}"
-                   class="rounded-2xl border border-red-100 bg-white p-5 shadow-sm hover:shadow-md transition">
-                    <p class="text-xs uppercase tracking-[0.25em] text-red-500 font-semibold">High BP</p>
-                    <p class="mt-3 text-4xl font-bold text-red-700">{{ $highBpCount }}</p>
-                </a>
-
-                <a href="{{ Route::has('provider.alerts.index') ? route('provider.alerts.index', ['type' => 'low_oxygen']) : '#' }}"
-                   class="rounded-2xl border border-orange-100 bg-white p-5 shadow-sm hover:shadow-md transition">
-                    <p class="text-xs uppercase tracking-[0.25em] text-orange-500 font-semibold">Low Oxygen</p>
-                    <p class="mt-3 text-4xl font-bold text-orange-700">{{ $lowOxygenCount }}</p>
-                </a>
-
-                <a href="{{ Route::has('provider.alerts.index') ? route('provider.alerts.index', ['type' => 'fever']) : '#' }}"
-                   class="rounded-2xl border border-yellow-100 bg-white p-5 shadow-sm hover:shadow-md transition">
-                    <p class="text-xs uppercase tracking-[0.25em] text-yellow-600 font-semibold">Fever / Temp</p>
-                    <p class="mt-3 text-4xl font-bold text-yellow-700">{{ $feverCount }}</p>
-                </a>
-
-                <a href="{{ Route::has('provider.alerts.index') ? route('provider.alerts.index', ['type' => 'preventive_screening']) : '#' }}"
-                   class="rounded-2xl border border-purple-100 bg-purple-50 p-5 shadow-sm hover:shadow-md transition">
-                    <p class="text-xs uppercase tracking-[0.25em] text-purple-600 font-semibold">Screenings</p>
-                    <p class="mt-3 text-4xl font-bold text-purple-700">{{ $screeningCount }}</p>
-                </a>
-            </div>
-
-            {{-- Current Patients --}}
-            <div class="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-                <h2 class="text-2xl font-bold text-gray-900">Current Patients</h2>
-                <p class="mt-1 text-sm text-gray-500">
-                    Quick access to patient workspaces and summaries.
-                </p>
-
-                <div class="mt-5 space-y-3">
-                    @forelse($recentPatients as $patient)
-                        @php
-                            $patientName = $patient->name ?? $patient->full_name ?? 'Unnamed Patient';
-                            $patientRoom = $patient->room ?? 'N/A';
-
-                            $patientAlerts = $patient->dashboard_alert_count
-                                ?? $patient->alert_count
-                                ?? $patient->alerts_count
-                                ?? 0;
-
-                            $patientMeds = $patient->dashboard_medication_count
-                                ?? $patient->medication_count
-                                ?? 0;
-
-                            $patientDiagnoses = $patient->dashboard_diagnosis_count
-                                ?? $patient->diagnosis_count
-                                ?? 0;
-
-                            $patientLastVisit = $patient->dashboard_last_visit
-                                ?? $patient->last_visit
-                                ?? null;
-
-                            if ($patientAlerts >= 3) {
-                                $alertBadgeClass = 'bg-red-100 text-red-700';
-                                $alertIcon = '🔴';
-                            } elseif ($patientAlerts >= 1) {
-                                $alertBadgeClass = 'bg-yellow-100 text-yellow-700';
-                                $alertIcon = '🟡';
-                            } else {
-                                $alertBadgeClass = 'bg-emerald-100 text-emerald-700';
-                                $alertIcon = '🟢';
-                            }
-                        @endphp
-
-                        <div class="rounded-2xl border border-gray-200 bg-gray-50 p-4 hover:bg-white transition">
-                            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                                <div class="min-w-0">
-                                    <div class="text-lg font-semibold text-gray-900">{{ $patientName }}</div>
-                                    <div class="text-sm text-gray-500 mt-1">Room {{ $patientRoom }}</div>
-
-                                    <div class="mt-3 flex flex-wrap gap-2 text-sm">
-                                        <span class="inline-flex items-center rounded-full px-3 py-1 {{ $alertBadgeClass }}">
-                                            {{ $alertIcon }} {{ $patientAlerts }} Alert{{ $patientAlerts == 1 ? '' : 's' }}
-                                        </span>
-
-                                        <span class="inline-flex items-center rounded-full bg-cyan-100 text-cyan-700 px-3 py-1">
-                                            💊 {{ $patientMeds }} Medication{{ $patientMeds == 1 ? '' : 's' }}
-                                        </span>
-
-                                        <span class="inline-flex items-center rounded-full bg-violet-100 text-violet-700 px-3 py-1">
-                                            📋 {{ $patientDiagnoses }} Diagnosis{{ $patientDiagnoses == 1 ? '' : 'es' }}
-                                        </span>
-
-                                        <span class="inline-flex items-center rounded-full bg-gray-200 text-gray-700 px-3 py-1">
-                                            📅 Last visit:
-                                            {{ $patientLastVisit ? \Carbon\Carbon::parse($patientLastVisit)->format('M d, Y') : 'N/A' }}
-                                        </span>
-                                    </div>
+                @if($patients->isEmpty())
+                    <div class="kc-empty"><strong>No patients yet</strong>Patients added by the facility will show here.</div>
+                @else
+                    <ul class="kc-list">
+                        @foreach($patients as $patient)
+                            @php
+                                $alerts = (int) ($patient->dashboard_alert_count ?? 0);
+                                $lastVisit = $patient->dashboard_last_visit ?? null;
+                                $name = $patient->name ?? $patient->full_name ?? trim(($patient->first_name ?? '') . ' ' . ($patient->last_name ?? '')) ?: 'Unnamed patient';
+                            @endphp
+                            <li>
+                                <div class="kc-list-main">
+                                    <p class="kc-list-title">
+                                        @if($r('provider.patients.workspace', $patient->id))
+                                            <a href="{{ route('provider.patients.workspace', $patient->id) }}" style="color:inherit;text-decoration:none">{{ $name }}</a>
+                                        @else
+                                            {{ $name }}
+                                        @endif
+                                    </p>
+                                    <p class="kc-list-sub">
+                                        {{ $patient->dashboard_medication_count ?? 0 }} meds,
+                                        {{ $patient->dashboard_diagnosis_count ?? 0 }} diagnoses,
+                                        last seen {{ $lastVisit ? Carbon::parse($lastVisit)->format('M j') : 'not yet' }}
+                                    </p>
                                 </div>
+                                @if($alerts >= 3)
+                                    <span class="kc-pill kc-pill--missed">{{ $alerts }} alerts</span>
+                                @elseif($alerts > 0)
+                                    <span class="kc-pill kc-pill--in_progress">{{ $alerts }} {{ $alerts === 1 ? 'alert' : 'alerts' }}</span>
+                                @else
+                                    <span class="kc-pill kc-pill--completed">Stable</span>
+                                @endif
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+            </section>
 
-                                <div class="flex flex-wrap gap-2">
-                                    @if(Route::has('provider.patients.workspace'))
-                                        <a href="{{ route('provider.patients.workspace', $patient->id) }}"
-                                           class="inline-flex items-center rounded-xl bg-indigo-600 hover:bg-indigo-700 px-4 py-2 text-sm font-semibold text-white">
-                                            Review Patient
-                                        </a>
-                                    @endif
-
-                                    @if(Route::has('provider.patients.summary'))
-                                        <a href="{{ route('provider.patients.summary', $patient->id) }}"
-                                           class="inline-flex items-center rounded-xl bg-gray-200 hover:bg-gray-300 px-4 py-2 text-sm font-semibold text-gray-800">
-                                            Summary
-                                        </a>
+            <div class="kc-grid">
+                {{-- To-do --}}
+                <section class="kc-card">
+                    <div class="kc-card-head"><h2>To-do</h2></div>
+                    <ul class="kc-list">
+                        @foreach($todo as [$label, $count, $url, $icon])
+                            <li>
+                                <div class="kc-list-main">
+                                    @if($url)
+                                        <a class="kc-list-title" style="display:block;color:inherit;text-decoration:none" href="{{ $url }}">{{ $label }}</a>
+                                    @else
+                                        <p class="kc-list-title">{{ $label }}</p>
                                     @endif
                                 </div>
-                            </div>
-                        </div>
-                    @empty
-                        <div class="rounded-2xl bg-gray-50 py-12 text-center text-gray-500">
-                            No patients registered yet.
-                        </div>
-                    @endforelse
-                </div>
-            </div>
+                                <span class="kc-pill {{ $count ? 'kc-pill--in_progress' : 'kc-pill--completed' }}">{{ $count }}</span>
+                            </li>
+                        @endforeach
+                    </ul>
+                </section>
 
-            <div class="rounded-3xl border border-gray-200 bg-white shadow-sm p-6">
-                <p class="text-xs uppercase tracking-[0.35em] text-indigo-600 font-semibold">
-                    Provider Task Summary
-                </p>
+                {{-- Alerts by type --}}
+                <section class="kc-card">
+                    <div class="kc-card-head"><h2>Alerts by type</h2></div>
+                    <ul class="kc-list">
+                        @foreach($alertTypes as [$key, $label, $count])
+                            <li>
+                                <div class="kc-list-main">
+                                    @if($r('provider.alerts.index'))
+                                        <a class="kc-list-title" style="display:block;color:inherit;text-decoration:none" href="{{ $r('provider.alerts.index', ['type' => $key]) }}">{{ $label }}</a>
+                                    @else
+                                        <p class="kc-list-title">{{ $label }}</p>
+                                    @endif
+                                </div>
+                                <span class="kc-pill {{ $count ? 'kc-pill--missed' : '' }}">{{ $count }}</span>
+                            </li>
+                        @endforeach
+                    </ul>
+                </section>
 
-                <h3 class="mt-4 text-2xl font-bold text-gray-900">
-                    Alert-Driven Workflow
-                </h3>
+                {{-- Billing --}}
+                <section class="kc-card">
+                    <div class="kc-card-head">
+                        <h2>Claims</h2>
+                        @if($r('provider.claims.index'))<a href="{{ $r('provider.claims.index') }}">Open claims</a>@endif
+                    </div>
+                    <ul class="kc-list">
+                        <li><span>Paid</span><strong>${{ number_format((float) ($totalRevenue ?? 0), 2) }}</strong></li>
+                        <li><span>Submitted</span><span class="kc-pill kc-pill--scheduled">{{ $submittedClaims ?? 0 }}</span></li>
+                        <li><span>Denied</span><span class="kc-pill {{ ($deniedClaims ?? 0) ? 'kc-pill--missed' : '' }}">{{ $deniedClaims ?? 0 }}</span></li>
+                    </ul>
+                </section>
 
-                <p class="mt-3 text-gray-500 leading-7">
-                    Keep the dashboard clean by reviewing patient alert details from the Alerts page.
-                    Click any alert count above to open matching clinical items.
-                </p>
-            </div>
-        </div>
-
-        {{-- Sidebar --}}
-        <div class="space-y-6">
-            <div class="rounded-3xl border border-gray-200 bg-white shadow-sm p-6">
-                <h2 class="text-2xl font-bold text-gray-900 mb-5">Quick Access</h2>
-
-                <div class="space-y-4">
-                    @if(Route::has('provider.messages.create'))
-                        <a href="{{ route('provider.messages.create') }}"
-                           class="flex items-center justify-between rounded-2xl bg-indigo-50 px-5 py-4 transition hover:bg-indigo-100">
-                            <span class="font-semibold text-indigo-700">✉️ Message Facility</span>
-                            <span>↗️</span>
-                        </a>
-                    @endif
-
-                            @if(Route::has('provider.messages.index'))
-    <a href="{{ route('provider.messages.index') }}"
-       class="flex items-center justify-between rounded-2xl bg-slate-50 px-5 py-4 transition hover:bg-slate-100">
-        <span class="font-semibold text-slate-700">
-            📥 View Messages
-        </span>
-
-        <div class="flex items-center gap-2">
-            @if(($unreadProviderMessages ?? 0) > 0)
-                <span class="rounded-full bg-red-600 px-3 py-1 text-xs font-black text-white">
-                    {{ $unreadProviderMessages }}
-                </span>
-            @endif
-
-            <span>↗️</span>
-        </div>
-    </a>
-@endif
-                    @if(Route::has('provider.calendar'))
-                        <a href="{{ route('provider.calendar') }}"
-                           class="flex items-center justify-between rounded-2xl bg-blue-50 px-5 py-4 transition hover:bg-blue-100">
-                            <span class="font-semibold text-blue-700">📅 Open Schedule</span>
-                            <span>↗️</span>
-                        </a>
-                    @endif
-
-                    @if(Route::has('provider.compliance'))
-                        <a href="{{ route('provider.compliance') }}"
-                           class="flex items-center justify-between rounded-2xl bg-yellow-50 px-5 py-4 transition hover:bg-yellow-100">
-                            <span class="font-semibold text-yellow-700">✅ Compliance Dashboard</span>
-                            <span>↗️</span>
-                        </a>
-                    @endif
-
-                    @if(Route::has('provider.notes.index'))
-                        <a href="{{ route('provider.notes.index') }}"
-                           class="flex items-center justify-between rounded-2xl bg-green-50 px-5 py-4 transition hover:bg-green-100">
-                            <span class="font-semibold text-green-700">📝 Provider Notes</span>
-                            <span>↗️</span>
-                        </a>
-                    @endif
-
-                    @if(Route::has('provider.claims.index'))
-                        <a href="{{ route('provider.claims.index') }}"
-                           class="flex items-center justify-between rounded-2xl bg-emerald-50 px-5 py-4 transition hover:bg-emerald-100">
-                            <span class="font-semibold text-emerald-700">💰 Claims</span>
-                            <span>↗️</span>
-                        </a>
-                    @endif
-
-                    @if(Route::has('provider.pharmacy.index'))
-                        <a href="{{ route('provider.pharmacy.index') }}"
-                           class="flex items-center justify-between rounded-2xl bg-cyan-50 px-5 py-4 transition hover:bg-cyan-100">
-                            <span class="font-semibold text-cyan-700">💊 Pharmacy / Rx</span>
-                            <span>↗️</span>
-                        </a>
-                    @endif
-
-                    @if(Route::has('provider.tasks.index'))
-                        <a href="{{ route('provider.tasks.index') }}"
-                           class="flex items-center justify-between rounded-2xl bg-purple-50 px-5 py-4 transition hover:bg-purple-100">
-                            <span class="font-semibold text-purple-700">📌 Tasks</span>
-                            <span>↗️</span>
-                        </a>
-                    @endif
-                </div>
-            </div>
-
-            <div class="rounded-3xl border border-gray-200 bg-white shadow-sm p-6">
-                <p class="text-xs uppercase tracking-[0.35em] text-indigo-600 font-semibold">
-                    Provider Summary
-                </p>
-
-                <h3 class="mt-4 text-2xl font-bold text-gray-900">
-                    Real-time Clinical Oversight
-                </h3>
-
-                <p class="mt-3 text-gray-500 leading-7">
-                    Monitor alerts, open filtered patient results, communicate with facilities,
-                    and keep provider attention focused without flooding the dashboard.
-                </p>
-            </div>
-
-            <div class="rounded-3xl border border-indigo-100 bg-indigo-50 p-6 shadow-sm">
-                <p class="text-xs uppercase tracking-[0.35em] text-indigo-600 font-semibold">
-                    Communication
-                </p>
-
-                <h3 class="mt-4 text-xl font-bold text-indigo-900">
-                    Facility Messaging
-                </h3>
-
-                <p class="mt-3 text-sm text-indigo-700 leading-6">
-                    Send messages to facilities, review incoming facility concerns,
-                    and keep patient communication connected to provider workflow.
-                </p>
-
-                @if(Route::has('provider.messages.create'))
-                    <a href="{{ route('provider.messages.create') }}"
-                       class="mt-5 inline-flex rounded-2xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white hover:bg-indigo-700">
-                        Start Message
-                    </a>
-                @endif
+                {{-- Shortcuts --}}
+                <section class="kc-card" style="padding:16px 20px 20px">
+                    <h2 style="margin:0 0 12px;font-size:19px">Quick actions</h2>
+                    <div style="display:grid;gap:8px">
+                        @if($r('provider.notes.create'))<a class="kc-btn kc-btn--primary kc-btn--block" href="{{ $r('provider.notes.create') }}"><x-kc-icon name="file-text" /> New note</a>@endif
+                        @if($r('provider.pharmacy.create'))<a class="kc-btn kc-btn--ghost kc-btn--block" href="{{ $r('provider.pharmacy.create') }}"><x-kc-icon name="pill" /> New prescription</a>@endif
+                        @if($r('provider.messages.create'))<a class="kc-btn kc-btn--ghost kc-btn--block" href="{{ $r('provider.messages.create') }}"><x-kc-icon name="message" /> Message the facility</a>@endif
+                    </div>
+                </section>
             </div>
         </div>
-    </div>
+    @endif
 </div>
 @endsection
