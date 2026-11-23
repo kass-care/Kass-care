@@ -16,6 +16,9 @@ class User extends Authenticatable
         'password',
         'role',
         'facility_id',
+        'client_id',
+        'relationship',
+        'phone',
         'plan',
         'subscription_status',
         'facility_limit',
@@ -65,6 +68,22 @@ class User extends Authenticatable
     public function isCaregiver()
     {
         return $this->role === 'caregiver';
+    }
+
+    public function isFamily()
+    {
+        return $this->role === 'family';
+    }
+
+    /** For family members: the client (loved one) they follow. */
+    public function familyClient()
+    {
+        return $this->belongsTo(\App\Models\Client::class, 'client_id');
+    }
+
+    public function credentials()
+    {
+        return $this->hasMany(\App\Models\StaffCredential::class);
     }
 
     /*

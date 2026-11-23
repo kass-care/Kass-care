@@ -130,6 +130,7 @@ Route::middleware('auth')->group(function () {
             'admin' => redirect()->route('facility.admin.home'),
             'provider' => redirect()->route('provider.dashboard'),
             'caregiver' => redirect()->route('caregiver.dashboard'),
+            'family' => redirect()->route('family.dashboard'),
             default => redirect()->route('login'),
         };
     })->name('redirect.by.role');
@@ -147,6 +148,7 @@ Route::get('/caregiver-activity', [FacilityCaregiverActivityController::class, '
             'admin' => redirect()->route('facility.admin.home'),
             'provider' => redirect()->route('provider.dashboard'),
             'caregiver' => redirect()->route('caregiver.dashboard'),
+            'family' => redirect()->route('family.dashboard'),
             default => redirect()->route('login'),
         };
     })->name('dashboard');
@@ -171,7 +173,7 @@ Route::get('/caregiver-activity', [FacilityCaregiverActivityController::class, '
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'role:admin,provider'])->get('/facility-admin/home', [AdminDashboardController::class, 'facilityHome'])
+Route::middleware(['auth', 'role:admin,provider'])->get('/facility-admin/home', [\App\Http\Controllers\KassPro\FacilityHomeController::class, 'index'])
     ->name('facility.admin.home');
 
 Route::middleware(['auth', 'role:admin,provider'])
@@ -469,6 +471,7 @@ Route::middleware('auth')->group(function () {
             'admin'       => redirect()->route('facility.admin.home'),
             'provider'    => redirect()->route('provider.dashboard'),
             'caregiver'   => redirect()->route('caregiver.dashboard'),
+            'family'      => redirect()->route('family.dashboard'),
             default       => abort(403),
         };
     })->name('dashboard');
@@ -956,3 +959,6 @@ Route::get('/register-provider', function () {
 
 Route::post('/register-provider', [\App\Http\Controllers\Auth\ProviderRegisterController::class, 'store'])
     ->name('register-provider.store');
+
+/* KASSCare Pro features (family portal, credentials) */
+require __DIR__.'/kasscare-pro.php';
