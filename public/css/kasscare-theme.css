@@ -448,3 +448,58 @@ body.kc-body {
     .kc-sidebar, .kc-topbar, .kc-tabbar, .kc-footer { display: none !important; }
     .kc-content { margin: 0 !important; }
 }
+
+/* ---------- Pro screens: tables, forms, tiles ---------- */
+.kc-page-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; margin: 4px 0 20px; }
+.kc-page-head h1 { font-family: var(--kc-font-display); font-size: 28px; line-height: 1.15; margin: 0; color: var(--kc-ink); }
+.kc-page-head p { margin: 6px 0 0; color: var(--kc-muted); max-width: 60ch; }
+
+.kc-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 20px; }
+@media (min-width: 900px) { .kc-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.kc-tile { display: block; padding: 16px 18px; border-radius: var(--kc-radius); background: #fff; border: 1px solid var(--kc-line); text-decoration: none; color: var(--kc-text); }
+a.kc-tile:hover { border-color: var(--kc-teal); }
+.kc-tile b { display: block; font-family: var(--kc-font-display); font-size: 30px; line-height: 1.1; color: var(--kc-ink); }
+.kc-tile span { color: var(--kc-muted); font-size: 15px; }
+.kc-tile--warn { background: var(--kc-amber-soft); border-color: #f0dcae; }
+.kc-tile--bad { background: var(--kc-coral-soft); border-color: #f3c7bf; }
+.kc-tile--bad b { color: #9a2c1b; }
+
+.kc-table-wrap { overflow-x: auto; }
+.kc-table { width: 100%; border-collapse: collapse; font-size: 15px; }
+.kc-table th { text-align: left; font-weight: 700; color: var(--kc-muted); font-size: 14px; padding: 10px 20px; background: #f3f7f6; border-bottom: 1px solid var(--kc-line); white-space: nowrap; }
+.kc-table td { padding: 12px 20px; border-bottom: 1px solid var(--kc-line); vertical-align: middle; }
+.kc-table tr:last-child td { border-bottom: 0; }
+.kc-table td .kc-list-sub { margin: 0; }
+
+.kc-form { padding: 8px 20px 20px; }
+.kc-form-grid { display: grid; gap: 0 16px; }
+@media (min-width: 640px) { .kc-form-grid { grid-template-columns: 1fr 1fr; } .kc-form-grid .kc-span-2 { grid-column: span 2; } }
+textarea.kc-input { min-height: 90px; padding: 12px 14px; resize: vertical; }
+select.kc-input { appearance: auto; }
+.kc-hint { font-size: 14px; color: var(--kc-muted); margin: 6px 0 0; }
+
+.kc-pill--expired { background: var(--kc-coral-soft); color: #9a2c1b; }
+.kc-pill--expiring { background: var(--kc-amber-soft); color: #8a5a10; }
+.kc-pill--valid { background: var(--kc-mint); color: var(--kc-teal-deep); }
+.kc-pill--no_expiry { background: #eef2f1; color: var(--kc-muted); }
+
+.kc-callout { border-radius: var(--kc-radius); background: var(--kc-ink); color: #fff; padding: 18px 20px; margin-bottom: 20px; }
+.kc-callout p { margin: 0 0 8px; color: #c7dcd8; }
+.kc-callout code { display: inline-block; font-size: 20px; font-weight: 700; letter-spacing: .04em; background: rgba(255,255,255,.1); padding: 6px 12px; border-radius: 8px; color: #fff; }
+
+.kc-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+.kc-tabs a { padding: 8px 14px; border-radius: 999px; text-decoration: none; font-weight: 700; font-size: 14px; color: var(--kc-muted); background: #fff; border: 1px solid var(--kc-line); }
+.kc-tabs a[aria-current="page"] { background: var(--kc-ink); color: #fff; border-color: var(--kc-ink); }
+
+.kc-note { padding: 14px 20px; border-top: 1px solid var(--kc-line); }
+.kc-note:first-child { border-top: 0; }
+.kc-note-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.kc-note p { margin: 6px 0 0; }
+.kc-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.kc-chips span { font-size: 13px; padding: 3px 10px; border-radius: 999px; background: var(--kc-mint); color: var(--kc-teal-deep); font-weight: 700; }
+
+/* Install-app banner */
+.kc-install { display: none; align-items: center; gap: 12px; margin: 16px 16px 0; padding: 12px 16px; border-radius: var(--kc-radius); background: #fff; border: 1px solid var(--kc-line); }
+.kc-install.is-shown { display: flex; }
+.kc-install p { margin: 0; flex: 1; font-size: 15px; }
+@media (min-width: 1024px) { .kc-install { margin: 20px 32px 0; } }

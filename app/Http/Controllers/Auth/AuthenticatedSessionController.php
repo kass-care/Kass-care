@@ -60,6 +60,11 @@ class AuthenticatedSessionController extends Controller
         return redirect()->route('caregiver.dashboard');
     }
 
+    // FAMILY MEMBER
+    if ($user->role === 'family') {
+        return redirect()->route('family.dashboard');
+    }
+
     Auth::logout();
 
     abort(403, 'Unauthorized');

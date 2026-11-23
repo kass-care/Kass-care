@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="theme-color" content="#0f2e33">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/kasscare-192.png">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="KASSCare">
 
     @php
         $user = auth()->user();
@@ -14,7 +20,7 @@
         $homeUrl = \App\Support\KassNav::homeUrl($role);
         $pageTitle = trim($__env->yieldContent('title')) ?: \App\Support\KassNav::pageTitle($role);
         $initials = collect(explode(' ', trim($user->name ?? 'K')))->filter()->take(2)->map(fn ($p) => mb_strtoupper(mb_substr($p, 0, 1)))->implode('');
-        $alertsUrl = collect(['provider.alerts.index', 'alerts.index'])->first(fn ($n) => Route::has($n));
+        $alertsUrl = $role === 'family' ? null : collect(['provider.alerts.index', 'alerts.index'])->first(fn ($n) => Route::has($n));
         $unread = 0;
         try {
             if ($user && method_exists($user, 'unreadNotifications')) {
@@ -120,6 +126,14 @@
         </header>
 
         <main id="main" class="kc-main">
+            @auth
+            <div class="kc-install" id="kc-install" role="region" aria-label="Install app">
+                <img src="/icons/kasscare-192.png" width="40" height="40" alt="" style="border-radius:10px">
+                <p id="kc-install-text">Add KASSCare to your home screen for one-tap access.</p>
+                <button type="button" class="kc-btn kc-btn--primary kc-btn--sm" id="kc-install-btn">Install</button>
+                <button type="button" class="kc-icon-btn" id="kc-install-close" aria-label="Not now"><x-kc-icon name="x" /></button>
+            </div>
+            @endauth
             @if(session('success'))
                 <div class="kc-flash-wrap">
                     <div class="kc-flash kc-flash--ok" role="status"><x-kc-icon name="check" />{{ session('success') }}</div>
@@ -180,6 +194,42 @@
         document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setOpen(false); });
     })();
 </script>
+<script>
+    (function () {
+        var box = document.getElementById('kc-install');
+        if (!box) return;
+        var standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+        var dismissed = false;
+        try { dismissed = localStorage.getItem('kc-install-dismissed') === '1'; } catch (e) {}
+        if (standalone || dismissed) return;
+
+        var btn = document.getElementById('kc-install-btn');
+        var deferred = null;
+        window.addEventListener('beforeinstallprompt', function (e) {
+            e.preventDefault(); deferred = e; box.classList.add('is-shown');
+        });
+        var isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+        if (isIos) {
+            document.getElementById('kc-install-text').textContent = 'Install KASSCare: tap the Share button, then "Add to Home Screen".';
+            btn.style.display = 'none';
+            box.classList.add('is-shown');
+        }
+        btn.addEventListener('click', function () {
+            if (!deferred) return;
+            deferred.prompt();
+            deferred.userChoice.finally(function () { box.classList.remove('is-shown'); deferred = null; });
+        });
+        document.getElementById('kc-install-close').addEventListener('click', function () {
+            box.classList.remove('is-shown');
+            try { localStorage.setItem('kc-install-dismissed', '1'); } catch (e) {}
+        });
+    })();
+</script>
 @stack('scripts')
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js').catch(function () {}); });
+    }
+</script>
 </body>
 </html>

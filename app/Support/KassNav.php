@@ -20,6 +20,7 @@ class KassNav
             'admin' => 'Facility admin',
             'provider' => 'Provider / nurse',
             'caregiver' => 'Caregiver',
+            'family' => 'Family member',
             default => 'Team member',
         };
     }
@@ -68,6 +69,8 @@ class KassNav
                     ['Patients', 'users', ['facility.patients.index']],
                     ['Caregivers', 'heart', ['facility.caregivers.index']],
                     ['Providers', 'stethoscope', ['providers.index']],
+                    ['Staff credentials', 'shield', ['kc.credentials.index']],
+                    ['Family access', 'users', ['kc.family.index']],
                     ['Visits', 'calendar', ['facility.visits.index', 'visits.index']],
                     ['Provider rounds', 'repeat', ['facility-provider-cycles.index']],
                     ['Pharmacy', 'pill', ['pharmacy.index']],
@@ -95,6 +98,15 @@ class KassNav
                     ['Clients', 'users', ['admin.clients.index']],
                     ['Visits', 'calendar', ['admin.visits.index']],
                     ['Claims', 'receipt', ['admin.claims.index']],
+                    ['Staff credentials', 'shield', ['kc.credentials.index']],
+                    ['Family access', 'users', ['kc.family.index']],
+                ],
+            ],
+
+            'family' => [
+                'My family' => [
+                    ['Care updates', 'heart', ['family.dashboard']],
+                    ['Profile', 'user', ['profile.edit']],
                 ],
             ],
 
@@ -149,6 +161,7 @@ class KassNav
             'admin' => ['facility.admin.home', 'dashboard'],
             'provider' => ['provider.dashboard'],
             'caregiver' => ['caregiver.dashboard'],
+            'family' => ['family.dashboard'],
             default => ['dashboard'],
         };
 
