@@ -1,0 +1,949 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
+
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\BillingController;
+use App\Http\Controllers\StripeWebhookController;
+
+use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\FacilityController;
+use App\Http\Controllers\FacilityReadinessController;
+use App\Http\Controllers\FacilitySurveyPacketController;
+use App\Http\Controllers\FacilityMarController;
+use App\Http\Controllers\ShiftController;
+
+use App\Http\Controllers\ProviderManagementController;
+use App\Http\Controllers\CaregiverManagementController;
+use App\Http\Controllers\CaregiverShiftController;
+use App\Http\Controllers\ClientController;
+use App\Http\Controllers\VisitController;
+use App\Http\Controllers\EvvController;
+use App\Http\Controllers\DiagnosisController;
+use App\Http\Controllers\MedicationController;
+use App\Http\Controllers\MedicationAdministrationController;
+use App\Http\Controllers\PatientTimelineController;
+use App\Http\Controllers\PatientDocumentController;
+use App\Http\Controllers\AdmissionPacketController;
+use App\Http\Controllers\DocumentTemplateController;
+use App\Http\Controllers\ComplianceMarketplaceController;
+
+use App\Http\Controllers\ProviderDashboardController;
+use App\Http\Controllers\ProviderPatientController;
+use App\Http\Controllers\ProviderRoundsController;
+use App\Http\Controllers\ProviderNoteController;
+use App\Http\Controllers\ProviderAlertController;
+use App\Http\Controllers\ProviderMessageController;
+use App\Http\Controllers\CommunicationController;
+use App\Http\Controllers\PharmacyOrderController;
+use App\Http\Controllers\ProviderMedicationApprovalController;
+
+use App\Http\Controllers\FacilityCaregiverActivityController;
+use App\Http\Controllers\CaregiverDashboardController;
+use App\Http\Controllers\CaregiverController;
+use App\Http\Controllers\ProviderCalendarController;
+
+use App\Http\Controllers\CareLogController;
+use App\Http\Controllers\TaskController;
+use App\Http\Controllers\AlertController;
+use App\Http\Controllers\ComplianceController;
+use App\Http\Controllers\ComplianceDocumentController;
+use App\Http\Controllers\FacilityProviderCycleController;
+use App\Http\Controllers\AdminActivityController;
+use App\Http\Controllers\ClaimLedgerController;
+use App\Http\Controllers\FacilityOnboardingController;
+
+use App\Http\Controllers\FacilityProviderController;
+use App\Http\Controllers\Facility\PatientController;
+use App\Http\Controllers\Facility\CaregiverController as FacilityCaregiverController;
+use App\Http\Controllers\FacilityVisitController;
+use App\Http\Controllers\CaregiverEmarController;
+use App\Http\Controllers\IncidentReportController;
+
+/*
+|--------------------------------------------------------------------------
+| Public
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/register-facility', [FacilityOnboardingController::class, 'create'])
+    ->name('register-facility');
+
+Route::post('/register-facility', [FacilityOnboardingController::class, 'store'])
+    ->name('register-facility.store');
+
+Route::view('/terms', 'legal.terms')->name('terms');
+Route::view('/privacy', 'privacy')->name('privacy');
+
+Route::get('/', function () {
+    return view('welcome');
+});
+/*
+Auth scaffolding
+*/
+require __DIR__.'/auth.php';
+/*
+|--------------------------------------------------------------------------
+| Facility context switch + dashboard redirects
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth')->group(function () {
+
+    Route::post('/select-facility/{facility}', function (\App\Models\Facility $facility) {
+        $user = auth()->user();
+
+        abort_if(!$user, 403, 'Unauthorized.');
+
+        if ($user->role === 'caregiver') {
+            abort(403, 'Caregivers cannot switch facility context.');
+        }
+
+        session([
+            'facility_id' => $facility->id,
+            'facility_name' => $facility->name,
+        ]);
+
+        return match ($user->role) {
+           'super_admin' => redirect()->route('admin.dashboard')
+    ->with('success', 'Facility context changed to: ' . $facility->name),
+            'admin' => redirect()->route('facility.visits.index'),
+            'provider' => redirect()->route('provider.dashboard'),
+            default => redirect()->route('dashboard'),
+        };
+    })->name('select.facility');
+
+    Route::post('/clear-facility-context', function () {
+        session()->forget('facility_id');
+        session()->forget('facility_name');
+
+        return back()->with('success', 'Facility context cleared.');
+    })->name('clear.facility');
+
+    Route::get('/redirect-by-role', function () {
+        $user = auth()->user();
+
+        abort_if(!$user, 403, 'Unauthorized.');
+
+        return match ($user->role) {
+            'super_admin' => redirect()->route('admin.dashboard'),
+            'admin' => redirect()->route('facility.admin.home'),
+            'provider' => redirect()->route('provider.dashboard'),
+            'caregiver' => redirect()->route('caregiver.dashboard'),
+            default => redirect()->route('login'),
+        };
+    })->name('redirect.by.role');
+
+Route::get('/caregiver-activity', [FacilityCaregiverActivityController::class, 'index'])
+    ->name('caregiver.activity');
+
+    Route::get('/dashboard', function () {
+        $user = auth()->user();
+
+        abort_if(!$user, 403, 'Unauthorized.');
+
+        return match ($user->role) {
+            'super_admin' => redirect()->route('admin.dashboard'),
+            'admin' => redirect()->route('facility.admin.home'),
+            'provider' => redirect()->route('provider.dashboard'),
+            'caregiver' => redirect()->route('caregiver.dashboard'),
+            default => redirect()->route('login'),
+        };
+    })->name('dashboard');
+
+    Route::get('/debug-user', function () {
+        return response()->json([
+            'id' => auth()->user()?->id,
+            'name' => auth()->user()?->name,
+            'email' => auth()->user()?->email,
+            'role' => auth()->user()?->role,
+            'facility_id' => auth()->user()?->facility_id,
+            'session_facility_id' => session('facility_id'),
+            'session_facility_name' => session('facility_name'),
+        ]);
+    })->name('debug.user');
+
+});
+
+/*
+|--------------------------------------------------------------------------
+| Facility selector
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware(['auth', 'role:admin,provider'])->get('/facility-admin/home', [AdminDashboardController::class, 'facilityHome'])
+    ->name('facility.admin.home');
+
+Route::middleware(['auth', 'role:admin,provider'])
+    ->prefix('facility')
+    ->name('facility.')
+    ->group(function () {
+Route::get('/admission-packets/{admissionPacket}/pdf', [AdmissionPacketController::class, 'downloadPdf'])
+    ->name('admission-packets.pdf');
+
+Route::post('/admission-packets/{admissionPacket}/send-email', [AdmissionPacketController::class, 'sendToFamily'])
+    ->name('admission-packets.send-email');
+
+    
+
+	Route::get('/admission-packets', [AdmissionPacketController::class, 'index'])->name('admission-packets.index');
+        Route::get('/admission-packets/create', [AdmissionPacketController::class, 'create'])->name('admission-packets.create');
+        Route::post('/admission-packets', [AdmissionPacketController::class, 'store'])->name('admission-packets.store');
+        Route::get('/admission-packets/{admissionPacket}', [AdmissionPacketController::class, 'show'])->name('admission-packets.show');	
+        
+        Route::post('/document-templates/{documentTemplate}/generate-packet', [DocumentTemplateController::class, 'generatePacket'])
+    ->name('document-templates.generate-packet');
+  
+        Route::get('/document-templates', [DocumentTemplateController::class, 'index'])
+            ->name('document-templates.index');
+
+        Route::get('/document-templates/create', [DocumentTemplateController::class, 'create'])
+            ->name('document-templates.create');
+
+        Route::post('/document-templates', [DocumentTemplateController::class, 'store'])
+            ->name('document-templates.store');
+	Route::get('/compliance-marketplace', [ComplianceMarketplaceController::class, 'index'])
+    ->name('compliance-marketplace.index');
+
+Route::post('/compliance-marketplace/{state}/install', [ComplianceMarketplaceController::class, 'install'])
+    ->name('compliance-marketplace.install');
+
+Route::post('/medications/{medication}/administrations', [MedicationAdministrationController::class, 'store'])
+    ->name('medications.administrations.store');
+
+
+        Route::get('/document-templates/{documentTemplate}', [DocumentTemplateController::class, 'show'])
+            ->name('document-templates.show');
+	
+	Route::get('/document-templates/{documentTemplate}/edit', [DocumentTemplateController::class, 'edit'])
+    ->name('document-templates.edit');
+
+Route::put('/document-templates/{documentTemplate}', [DocumentTemplateController::class, 'update'])
+    ->name('document-templates.update');
+
+Route::delete('/document-templates/{documentTemplate}', [DocumentTemplateController::class, 'destroy'])
+    ->name('document-templates.destroy');
+	});
+
+Route::get('/sign/admission-packet/{token}', [AdmissionPacketController::class, 'publicSign'])
+    ->name('admission-packets.public-sign');
+
+Route::post('/sign/admission-packet/{token}', [AdmissionPacketController::class, 'publicStoreSignature'])
+    ->name('admission-packets.public-sign.store');
+
+
+Route::get('/facility/revenue', [\App\Http\Controllers\AdminDashboardController::class, 'revenue'])
+    ->middleware(['auth'])
+    ->name('facility.revenue');
+/*
+|--------------------------------------------------------------------------
+| Admin platform routes - Super Admin only
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware(['auth', 'role:super_admin'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+
+        Route::resource('facilities', FacilityController::class);
+        Route::resource('providers', ProviderManagementController::class);
+
+        Route::middleware(['facility.context'])->group(function () {
+            Route::resource('caregivers', CaregiverManagementController::class);
+            Route::resource('clients', ClientController::class);
+            Route::resource('visits', VisitController::class);
+            Route::resource('claims', ClaimLedgerController::class);
+        });
+
+        Route::get('/tasks', [TaskController::class, 'index'])->name('tasks.index');
+
+        Route::get('/activity', [AdminActivityController::class, 'index'])->name('activity.index');
+    });
+
+/*
+|--------------------------------------------------------------------------
+| Facility provider cycles - 60 day facility visit engine
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware(['auth', 'role:provider,admin,super_admin'])->group(function () {
+    Route::get('/facility-cycles', [FacilityProviderCycleController::class, 'index'])
+        ->name('facility-provider-cycles.index');
+
+    Route::get('/facility-cycles/create', [FacilityProviderCycleController::class, 'create'])
+        ->name('facility-provider-cycles.create');
+
+    Route::post('/facility-cycles', [FacilityProviderCycleController::class, 'store'])
+        ->name('facility-provider-cycles.store');
+
+    Route::get('/facility-cycles/{facilityProviderCycle}/edit', [FacilityProviderCycleController::class, 'edit'])
+        ->name('facility-provider-cycles.edit');
+
+    Route::put('/facility-cycles/{facilityProviderCycle}', [FacilityProviderCycleController::class, 'update'])
+        ->name('facility-provider-cycles.update');
+
+    Route::delete('/facility-cycles/{facilityProviderCycle}', [FacilityProviderCycleController::class, 'destroy'])
+        ->name('facility-provider-cycles.destroy');
+});
+
+
+Route::middleware(['auth', 'role:admin,provider'])
+    ->prefix('facility')
+    ->name('facility.')
+    ->group(function () {
+        Route::get('/readiness', [FacilityReadinessController::class, 'index'])
+            ->name('readiness.index');
+
+        Route::post('/readiness', [FacilityReadinessController::class, 'store'])
+            ->name('readiness.store');
+
+        Route::patch('/readiness/{readinessItem}', [FacilityReadinessController::class, 'update'])
+            ->name('readiness.update');
+
+Route::get('/compliance-documents', [ComplianceDocumentController::class, 'index'])
+    ->name('compliance-documents.index');
+
+Route::post('/compliance-documents', [ComplianceDocumentController::class, 'store'])
+    ->name('compliance-documents.store');
+
+Route::delete('/compliance-documents/{document}', [ComplianceDocumentController::class, 'destroy'])
+    ->name('compliance-documents.destroy');
+
+         Route::post('/patient-documents', [PatientDocumentController::class, 'store'])
+    ->name('patient-documents.store');
+
+Route::get('/patient-documents/{patientDocument}/download', [PatientDocumentController::class, 'download'])
+    ->name('patient-documents.download');
+
+Route::delete('/patient-documents/{patientDocument}', [PatientDocumentController::class, 'destroy'])
+    ->name('patient-documents.destroy');
+
+        Route::get('/readiness/packet/download', [FacilitySurveyPacketController::class, 'download'])
+            ->name('readiness.packet.download');
+
+        Route::get('/mar', [FacilityMarController::class, 'index'])
+            ->name('mar.index');
+	
+	Route::patch('/mar/administrations/{administration}/correct', [FacilityMarController::class, 'correct'])
+    ->name('mar.administrations.correct');
+
+        Route::get('/shifts', [ShiftController::class, 'index'])
+            ->name('shifts.index');
+
+        Route::post('/shifts', [ShiftController::class, 'store'])
+            ->name('shifts.store');
+
+        Route::get('/pharmacy', [PharmacyOrderController::class, 'index'])
+            ->name('pharmacy.index');
+
+        Route::get('/pharmacy/create', [PharmacyOrderController::class, 'create'])
+            ->name('pharmacy.create');
+
+        Route::post('/pharmacy', [PharmacyOrderController::class, 'store'])
+            ->name('pharmacy.store');
+
+        Route::get('/pharmacy/{order}', [PharmacyOrderController::class, 'show'])
+            ->name('pharmacy.show');
+    });
+
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/provider/smart-phrases', [\App\Http\Controllers\SmartPhraseController::class, 'index'])
+        ->name('provider.smart.phrases');
+
+    Route::post('/provider/smart-phrases', [\App\Http\Controllers\SmartPhraseController::class, 'store'])
+        ->name('provider.smart.phrases.store');
+
+    Route::delete('/provider/smart-phrases/{id}', [\App\Http\Controllers\SmartPhraseController::class, 'destroy'])
+        ->name('provider.smart.phrases.destroy');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Facility routes — Admin
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'role:admin,super_admin', 'check.subscription', 'check.plan:facility'])
+    ->prefix('facility')
+    ->name('facility.')
+    ->group(function () {
+
+// =========================
+// MESSAGES (Facility → Provider)
+// =========================
+
+Route::get('/messages', [ProviderMessageController::class, 'facilityIndex'])
+    ->name('messages.index');
+
+Route::get('/messages/create', [ProviderMessageController::class, 'facilityCreate'])
+    ->name('messages.create');
+
+Route::post('/messages', [ProviderMessageController::class, 'facilityStore'])
+    ->name('messages.store');
+
+Route::get('/messages/{message}', [ProviderMessageController::class, 'show'])
+    ->name('messages.show');
+
+Route::post('/messages/{message}/reply', [ProviderMessageController::class, 'reply'])
+    ->name('messages.reply');
+
+        // ========================
+        // PATIENTS
+        // ========================
+        Route::get('/patients', [PatientController::class, 'index'])->name('patients.index');
+        Route::get('/patients/create', [PatientController::class, 'create'])->name('patients.create');
+        Route::post('/patients', [PatientController::class, 'store'])->name('patients.store');
+        Route::get('/patients/{id}', [PatientController::class, 'show'])->name('patients.show');
+        Route::get('/patients/{id}/edit', [PatientController::class, 'edit'])->name('patients.edit');
+        Route::put('/patients/{id}', [\App\Http\Controllers\Facility\PatientController::class, 'update'])->name('patients.update');
+
+        // ========================
+        // CAREGIVERS
+        // ========================
+        Route::get('/caregivers', [FacilityCaregiverController::class, 'index'])->name('caregivers.index');
+        Route::get('/caregivers/create', [FacilityCaregiverController::class, 'create'])->name('caregivers.create');
+        Route::post('/caregivers', [FacilityCaregiverController::class, 'store'])->name('caregivers.store');
+        Route::get('/caregivers/{id}/edit', [FacilityCaregiverController::class, 'edit'])->name('caregivers.edit');
+        Route::put('/caregivers/{id}', [FacilityCaregiverController::class, 'update'])->name('caregivers.update');
+        Route::delete('/caregivers/{id}', [FacilityCaregiverController::class, 'destroy'])->name('caregivers.destroy');
+
+    });
+
+
+// ========================
+// SUPER ADMIN
+// ========================
+Route::middleware(['auth', 'role:super_admin'])
+    ->prefix('admin')
+    ->group(function () {
+        Route::get('/dashboard', [AdminDashboardController::class, 'index'])
+            ->name('admin.dashboard');
+    });
+
+
+// ========================
+// FACILITY VISITS
+// ========================
+Route::get('/visits', [FacilityVisitController::class, 'index'])->name('visits.index');
+Route::get('/visits/create', [FacilityVisitController::class, 'create'])->name('visits.create');
+Route::post('/visits', [FacilityVisitController::class, 'store'])->name('visits.store');
+Route::get('/facility/visits/create', [FacilityVisitController::class, 'create'])
+    ->name('facility.visits.create');
+Route::post('/facility/visits', [FacilityVisitController::class, 'store'])
+    ->name('facility.visits.store');
+Route::get('/facility/visits/{visit}', [FacilityVisitController::class, 'show'])->name('facility.visits.show');
+Route::get('/facility/visits', [FacilityVisitController::class, 'index'])
+    ->name('facility.visits.index');
+
+// ========================
+// PROVIDERS (Facility Assignments)
+// ========================
+Route::get('/providers', [FacilityProviderController::class, 'index'])->name('providers.index');
+Route::post('/providers', [FacilityProviderController::class, 'store'])->name('providers.store');
+
+/*
+|--------------------------------------------------------------------------
+| Basic visits shortcut by role
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth')->group(function () {
+    Route::get('/visits', function () {
+        $user = auth()->user();
+
+        return match ($user->role) {
+            'super_admin' => redirect()->route('admin.visits.index'),
+            'admin'       => redirect()->route('facility.visits.index'),
+            'provider'    => redirect()->route('provider.dashboard'),
+            'caregiver'   => redirect()->route('caregiver.visits'),
+            default       => redirect()->route('dashboard'),
+        };
+    })->name('visits.index.redirect');
+
+    Route::get('/dashboard', function () {
+        $user = auth()->user();
+
+        return match ($user->role) {
+            'super_admin' => redirect()->route('admin.dashboard'),
+            'admin'       => redirect()->route('facility.admin.home'),
+            'provider'    => redirect()->route('provider.dashboard'),
+            'caregiver'   => redirect()->route('caregiver.dashboard'),
+            default       => abort(403),
+        };
+    })->name('dashboard');
+});
+/*
+|--------------------------------------------------------------------------
+| Provider
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'role:provider,super_admin', 'check.subscription', 'check.plan:provider_solo,provider_pro'])
+    ->prefix('provider')
+    ->name('provider.')
+    ->group(function () {
+
+        
+Route::get('/medication-approvals', [ProviderMedicationApprovalController::class, 'index'])
+            ->name('medication-approvals.index');
+
+        Route::post('/medication-approvals/{medication}/approve', [ProviderMedicationApprovalController::class, 'approve'])
+            ->name('medication-approvals.approve');
+
+        Route::post('/medication-approvals/{medication}/reject', [ProviderMedicationApprovalController::class, 'reject'])
+            ->name('medication-approvals.reject');
+
+        Route::get('/dashboard', [ProviderDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/calendar', [ProviderCalendarController::class, 'index'])->name('calendar');
+        Route::get('/compliance', [ProviderDashboardController::class, 'compliance'])->name('compliance');
+
+ // ========================
+// PROVIDER MESSAGES
+// ========================
+Route::get('/messages', [ProviderMessageController::class, 'index'])->name('messages.index');
+
+Route::get('/messages/create', [ProviderMessageController::class, 'create'])->name('messages.create');
+
+Route::post('/messages', [ProviderMessageController::class, 'store'])->name('messages.store');
+
+Route::get('/messages/{message}', [ProviderMessageController::class, 'show'])->name('messages.show');
+
+Route::post('/messages/{message}/reply', [ProviderMessageController::class, 'reply'])->name('messages.reply');
+
+        Route::get('/alerts', function () {
+            return redirect()->route('provider.alerts.index');
+        })->name('alerts');
+
+        Route::get('/summary', [ProviderDashboardController::class, 'summary'])->name('summary');
+
+        Route::post('/care-logs/{id}/review', [ProviderDashboardController::class, 'markReviewed'])
+            ->name('care-logs.review');
+
+        Route::get('/alerts/list', [ProviderAlertController::class, 'index'])->name('alerts.index');
+
+        Route::post('/alerts/{careLog}/review', [ProviderAlertController::class, 'markReviewed'])
+            ->name('alerts.review');
+
+        Route::post('/alerts/{alert}/resolve', [ProviderAlertController::class, 'resolveAlert'])
+            ->name('alerts.resolve');
+
+        Route::post('/communications', [CommunicationController::class, 'store'])
+            ->name('communications.store');
+
+        Route::get('/patients/{id}', [ProviderPatientController::class, 'index'])
+            ->name('patients.workspace');
+
+        Route::get('/patients/{id}/summary', [ProviderPatientController::class, 'summary'])
+            ->name('patients.summary');
+ Route::get('/notes', [ProviderNoteController::class, 'index'])->name('notes.index');
+Route::get('/notes/create', [ProviderNoteController::class, 'create'])->name('notes.create');
+ Route::post('/notes', [ProviderNoteController::class, 'store'])->name('notes.store');
+ Route::get('/notes/{providerNote}', [ProviderNoteController::class, 'show'])->name('notes.show');
+Route::get('/notes/{providerNote}/edit', [ProviderNoteController::class, 'edit'])
+    ->name('notes.edit');
+
+Route::put('/notes/{providerNote}', [ProviderNoteController::class, 'update'])
+    ->name('notes.update');
+
+Route::get('/notes/previous/{visitId}', [\App\Http\Controllers\ProviderNoteController::class, 'previous'])
+    ->name('provider.notes.previous');
+
+        Route::get('/pharmacy', [PharmacyOrderController::class, 'index'])->name('pharmacy.index');
+        Route::get('/pharmacy/create', [PharmacyOrderController::class, 'create'])->name('pharmacy.create');
+        Route::post('/pharmacy', [PharmacyOrderController::class, 'store'])->name('pharmacy.store');
+     
+         Route::get('/pharmacy/{order}', [PharmacyOrderController::class, 'show'])
+    ->name('pharmacy.show');
+
+        Route::get('/pharmacy/{order}/pdf', [PharmacyOrderController::class, 'downloadPdf'])->name('pharmacy.pdf');
+       Route::get('/pharmacy/{order}/premium-pdf', [PharmacyOrderController::class, 'downloadPremiumPdf'])->name('pharmacy.premium-pdf');
+	 Route::post('/pharmacy/{order}/email', [PharmacyOrderController::class, 'emailPrescription'])->name('pharmacy.email');
+
+        Route::get('/diagnoses', [DiagnosisController::class, 'index'])->name('diagnosis.index');
+
+/*
+|--------------------------------------------------------------------------
+| CLAIMS - VIEW (Solo + Pro)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('check.plan:provider_solo,provider_pro')->group(function () {
+
+    Route::get('claims', [\App\Http\Controllers\ClaimController::class, 'index'])
+        ->name('claims.index');
+
+    Route::get('claims/{claim}', [\App\Http\Controllers\ClaimController::class, 'show'])
+        ->name('claims.show');
+
+});
+
+/*
+|--------------------------------------------------------------------------
+| CLAIMS - BILLING ACTIONS (Pro ONLY)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('check.plan:provider_pro')->group(function () {
+
+    Route::post('claims/generate/{note}', [\App\Http\Controllers\ClaimController::class, 'store'])
+        ->name('claims.generate');
+
+    Route::post('claims/{claim}/submit', [\App\Http\Controllers\ClaimController::class, 'submit'])
+        ->name('claims.submit');
+
+    Route::post('claims/{claim}/paid', [\App\Http\Controllers\ClaimController::class, 'markPaid'])
+        ->name('claims.markPaid');
+
+    Route::post('claims/{claim}/denied', [\App\Http\Controllers\ClaimController::class, 'markDenied'])
+        ->name('claims.markDenied');
+
+});
+  Route::get('coding-assistant/{note}', function ($noteId) {
+    $note = \App\Models\ProviderNote::with(['visit.client', 'client'])->findOrFail($noteId);
+
+    $text = strtolower(trim(
+        ($note->chief_complaint ?? '') . ' ' .
+        ($note->subjective ?? '') . ' ' .
+        ($note->objective ?? '') . ' ' .
+        ($note->assessment ?? '') . ' ' .
+        ($note->plan ?? '') . ' ' .
+        ($note->note ?? '')
+    ));
+
+    $icdSuggestions = [];
+
+    $keywordMap = [
+        'copd exacerbation' => ['code' => 'J44.1', 'label' => 'COPD with acute exacerbation'],
+        'copd' => ['code' => 'J44.9', 'label' => 'Chronic obstructive pulmonary disease, unspecified'],
+        'shortness of breath' => ['code' => 'R06.02', 'label' => 'Shortness of breath'],
+        'sob' => ['code' => 'R06.02', 'label' => 'Shortness of breath'],
+        'wheezing' => ['code' => 'R06.2', 'label' => 'Wheezing'],
+        'low oxygen' => ['code' => 'R09.02', 'label' => 'Hypoxemia'],
+        'hypoxia' => ['code' => 'R09.02', 'label' => 'Hypoxemia'],
+        'hypertension' => ['code' => 'I10', 'label' => 'Essential hypertension'],
+        'high blood pressure' => ['code' => 'I10', 'label' => 'Essential hypertension'],
+        'diabetes' => ['code' => 'E11.9', 'label' => 'Type 2 diabetes mellitus without complications'],
+        'chest pain' => ['code' => 'R07.9', 'label' => 'Chest pain, unspecified'],
+        'cough' => ['code' => 'R05.9', 'label' => 'Cough, unspecified'],
+        'fever' => ['code' => 'R50.9', 'label' => 'Fever, unspecified'],
+        'fall' => ['code' => 'W19.XXXA', 'label' => 'Unspecified fall, initial encounter'],
+        'weakness' => ['code' => 'R53.1', 'label' => 'Weakness'],
+        'confusion' => ['code' => 'R41.0', 'label' => 'Disorientation, unspecified'],
+        'abdominal pain' => ['code' => 'R10.9', 'label' => 'Unspecified abdominal pain'],
+        'appendicitis' => ['code' => 'K37', 'label' => 'Unspecified appendicitis'],
+    ];
+
+    foreach ($keywordMap as $keyword => $suggestion) {
+        if (str_contains($text, $keyword)) {
+            $icdSuggestions[$suggestion['code']] = $suggestion;
+        }
+    }
+
+    $icdSuggestions = array_values($icdSuggestions);
+
+    $documentationGaps = [];
+
+    if (empty($note->chief_complaint)) {
+        $documentationGaps[] = 'Chief complaint missing';
+    }
+
+    if (empty($note->subjective)) {
+        $documentationGaps[] = 'Subjective findings missing';
+    }
+
+    if (empty($note->objective)) {
+        $documentationGaps[] = 'Objective findings missing';
+    }
+
+    if (empty($note->assessment)) {
+        $documentationGaps[] = 'Assessment missing';
+    }
+
+    if (empty($note->plan)) {
+        $documentationGaps[] = 'Plan missing';
+    }
+
+    if (str_contains($text, 'copd') && !str_contains($text, 'oxygen') && !str_contains($text, 'spo2')) {
+        $documentationGaps[] = 'COPD note: oxygen saturation / SpO2 should be documented';
+    }
+
+    if (str_contains($text, 'shortness of breath') && !str_contains($text, 'respiratory rate')) {
+        $documentationGaps[] = 'Shortness of breath: respiratory rate should be documented';
+    }
+
+    $documentationScore = max(0, 100 - (count($documentationGaps) * 15));
+
+    $noteLength = strlen($text);
+    $hasAssessment = !empty($note->assessment);
+    $hasPlan = !empty($note->plan);
+    $hasObjective = !empty($note->objective);
+
+    if ($noteLength > 1200 && $hasAssessment && $hasPlan && $hasObjective) {
+        $cpt = '99215';
+    } elseif ($noteLength > 500 && $hasAssessment && $hasPlan) {
+        $cpt = '99214';
+    } else {
+        $cpt = '99213';
+    }
+
+    $pos = '12';
+
+    return view('provider.coding-assistant', compact(
+        'note',
+        'icdSuggestions',
+        'cpt',
+        'pos',
+        'documentationGaps',
+        'documentationScore'
+    ));
+})->name('coding.assistant');
+
+Route::post('/notes/{providerNote}/codes', [\App\Http\Controllers\ProviderNoteController::class, 'saveCodes'])
+    ->name('notes.codes.save');
+/*
+|--------------------------------------------------------------------------
+| Provider Care Logs
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/care-logs', [CareLogController::class, 'index'])
+    ->name('care-logs.index');
+
+Route::get('/care-logs/create', [CareLogController::class, 'create'])
+    ->name('care-logs.create');
+
+Route::post('/care-logs', [CareLogController::class, 'store'])
+    ->name('care-logs.store');
+
+Route::get('/care-logs/{careLog}', [CareLogController::class, 'show'])
+    ->name('care-logs.show');       
+
+       /*
+        |--------------------------------------------------------------------------
+        | Patient Documents
+        |--------------------------------------------------------------------------
+        */
+          Route::middleware(['auth'])->group(function () {
+    Route::post('/patient-documents', [PatientDocumentController::class, 'store'])
+        ->name('patient-documents.store');
+
+    Route::get('/patient-documents/{patientDocument}/download', [PatientDocumentController::class, 'download'])
+        ->name('patient-documents.download');
+
+    Route::delete('/patient-documents/{patientDocument}', [PatientDocumentController::class, 'destroy'])
+        ->name('patient-documents.destroy');
+});
+
+        Route::get('/rounds', [ProviderRoundsController::class, 'index'])->name('rounds.index');
+        Route::post('/rounds/visit/mark-rounded', [ProviderRoundsController::class, 'markRounded'])
+            ->name('rounds.markRounded');
+
+        Route::get('/diagnoses', [DiagnosisController::class, 'index'])->name('diagnosis.index');
+
+        Route::get('/notes', [ProviderNoteController::class, 'index'])->name('notes.index');
+        Route::get('/notes/create', [ProviderNoteController::class, 'create'])->name('notes.create');
+        Route::post('/notes', [ProviderNoteController::class, 'store'])->name('notes.store');
+        Route::get('/notes/{providerNote}', [ProviderNoteController::class, 'show'])->name('notes.show');
+
+Route::get('/notes/{providerNote}/edit', [ProviderNoteController::class, 'edit'])->name('notes.edit');
+Route::put('/notes/{providerNote}', [ProviderNoteController::class, 'update'])->name('notes.update');
+
+        Route::get('/care-logs', [CareLogController::class, 'index'])->name('care-logs.index');
+        Route::get('/care-logs/create', [CareLogController::class, 'create'])->name('care-logs.create');
+        Route::post('/care-logs', [CareLogController::class, 'store'])->name('care-logs.store');
+        Route::get('/care-logs/{careLog}', [CareLogController::class, 'show'])->name('care-logs.show');
+
+      Route::get('/pharmacy', [PharmacyOrderController::class, 'index'])
+    ->name('pharmacy.index');
+
+Route::get('/pharmacy/create', [PharmacyOrderController::class, 'create'])
+    ->name('pharmacy.create');
+
+Route::get('/messages', [ProviderMessageController::class, 'providerIndex'])
+    ->name('messages.index');
+
+Route::get('/messages/create', [ProviderMessageController::class, 'providerCreate'])
+    ->name('messages.create');
+
+Route::post('/messages', [ProviderMessageController::class, 'providerStore'])
+    ->name('messages.store');
+
+Route::get('/messages/{message}', [ProviderMessageController::class, 'providerShow'])
+    ->name('messages.show');
+
+Route::post('/messages/{message}/reply', [ProviderMessageController::class, 'providerReply'])
+    ->name('messages.reply');
+
+Route::post('/pharmacy/{id}/status', [PharmacyOrderController::class, 'updateStatus'])
+    ->name('pharmacy.status');
+        Route::get('/tasks', [TaskController::class, 'index'])->name('tasks.index');
+}); 
+     /*
+|--------------------------------------------------------------------------
+| Caregiver
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'role:caregiver'])
+    ->prefix('caregiver')
+    ->name('caregiver.')
+    ->group(function () {
+
+        Route::get('/dashboard', [CaregiverDashboardController::class, 'index'])
+            ->name('dashboard');
+
+        Route::get('/visits', [CaregiverController::class, 'visits'])
+            ->name('visits');
+	
+	Route::get('/incidents', [IncidentReportController::class, 'caregiverIndex'])
+            ->name('incidents.index');
+
+        Route::get('/incidents/create', [IncidentReportController::class, 'caregiverCreate'])
+            ->name('incidents.create');
+
+        Route::post('/incidents', [IncidentReportController::class, 'caregiverStore'])
+            ->name('incidents.store');
+
+        Route::get('/shifts', [CaregiverShiftController::class, 'index'])
+            ->name('shifts.index');
+
+        Route::post('/shifts/{shift}/clock-in', [CaregiverShiftController::class, 'clockIn'])
+    	->name('shifts.clock-in');
+
+	Route::post('/shifts/{shift}/clock-out', [CaregiverShiftController::class, 'clockOut'])
+    	->name('shifts.clock-out');
+
+        Route::get('/check-in/{id}', [CaregiverController::class, 'checkIn'])
+            ->name('checkin');
+
+        Route::post('/check-in/{id}', [CaregiverController::class, 'storeCheckIn'])
+            ->name('checkin.store');
+
+        Route::get('/check-out/{visit}', [CaregiverController::class, 'checkOut'])
+            ->name('checkout');
+
+        Route::post('/check-out/{visit}', [CaregiverController::class, 'checkoutSave'])
+            ->name('checkout.save');
+
+        Route::get('/care-logs', [CareLogController::class, 'index'])
+            ->name('care-logs.index');
+
+        Route::get('/care-logs/create', [CareLogController::class, 'create'])
+            ->name('care-logs.create');
+
+        Route::post('/care-logs', [CareLogController::class, 'store'])
+            ->name('care-logs.store');
+
+        Route::get('/care-logs/{careLog}', [CareLogController::class, 'show'])
+            ->name('care-logs.show');
+
+        Route::get('/visits/{visit}/report-issue', [CaregiverController::class, 'reportIssue'])
+            ->name('visits.report-issue');
+
+        Route::post('/visits/{visit}/report-issue', [CaregiverController::class, 'storeReportIssue'])
+            ->name('visits.report-issue.store');
+
+        Route::get('/emar', [CaregiverEmarController::class, 'index'])
+            ->name('emar.index');
+
+        Route::post('/emar/{medication}/administer', [CaregiverEmarController::class, 'administer'])
+            ->name('emar.administer');
+    });
+/*
+|--------------------------------------------------------------------------
+| Profile + alerts
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    Route::get('/alerts', [AlertController::class, 'index'])->name('alerts.index');
+    Route::get('/notifications/fetch', [AlertController::class, 'fetch'])->name('notifications.fetch');
+    Route::post('/notifications/read-all', [AlertController::class, 'markAllRead'])->name('notifications.readAll');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Compliance dashboard
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/compliance', [ComplianceController::class, 'index'])
+    ->middleware('auth')
+    ->name('compliance.dashboard');
+
+/*
+|--------------------------------------------------------------------------
+| Client diagnosis routes
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth')->group(function () {
+    Route::get('/clients/{client}/diagnoses/create', [DiagnosisController::class, 'create'])
+        ->name('diagnoses.create');
+
+    Route::post('/clients/{client}/diagnoses', [DiagnosisController::class, 'store'])
+        ->name('diagnoses.store');
+
+    Route::get('/clients/{client}/diagnoses/{diagnosis}/edit', [DiagnosisController::class, 'edit'])
+        ->name('diagnoses.edit');
+
+    Route::put('/clients/{client}/diagnoses/{diagnosis}', [DiagnosisController::class, 'update'])
+        ->name('diagnoses.update');
+
+    Route::delete('/clients/{client}/diagnoses/{diagnosis}', [DiagnosisController::class, 'destroy'])
+        ->name('diagnoses.destroy');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Client medication routes
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth')->group(function () {
+    Route::get('/clients/{client}/medications/create', [MedicationController::class, 'create'])
+        ->name('medications.create');
+
+    Route::post('/clients/{client}/medications', [MedicationController::class, 'store'])
+        ->name('medications.store');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Client timeline
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth')->group(function () {
+    Route::get('/clients/{client}/timeline', [PatientTimelineController::class, 'show'])
+        ->name('patient.timeline.show');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Billing
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth')->group(function () {
+    Route::get('/billing', [BillingController::class, 'index'])->name('billing.index');
+    Route::post('/subscribe', [BillingController::class, 'subscribe'])->name('billing.subscribe');
+    Route::get('/billing/success', [BillingController::class, 'success'])->name('billing.success');
+    Route::get('/billing/notice', [BillingController::class, 'notice'])->name('billing.notice');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Stripe webhook
+|--------------------------------------------------------------------------
+*/
+
+Route::post('/stripe/webhook', [StripeWebhookController::class, 'handleWebhook'])
+    ->name('cashier.webhook');
+Route::get('/register-provider', function () {
+    return view('auth.register-provider');
+})->name('register-provider');
+
+Route::post('/register-provider', [\App\Http\Controllers\Auth\ProviderRegisterController::class, 'store'])
+    ->name('register-provider.store');

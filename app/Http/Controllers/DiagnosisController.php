@@ -8,19 +8,82 @@ use Illuminate\Http\Request;
 
 class DiagnosisController extends Controller
 {
+    /**
+     * Return the active facility context for the authenticated user.
+     */
+    private function currentFacilityId($user): ?int
+    {
+        $facilityId = session('facility_id') ?? ($user->facility_id ?? null);
+
+        return $facilityId !== null ? (int) $facilityId : null;
+    }
+
+    /**
+     * Authorize access to a patient through direct provider ownership
+     * or through the active facility context.
+     */
+    private function authorizeClientAccess(Client $client): void
+    {
+        $user = auth()->user();
+
+        abort_if(!$user, 403, 'Unauthorized.');
+
+        if (
+            $user->role === 'provider'
+            && (int) $client->provider_id === (int) $user->id
+        ) {
+            return;
+        }
+
+        $facilityId = $this->currentFacilityId($user);
+
+        if (
+            $facilityId !== null
+            && $client->facility_id !== null
+            && (int) $client->facility_id === $facilityId
+        ) {
+            return;
+        }
+
+        /*
+         * Preserve the previous unrestricted behavior for privileged users
+         * who do not operate inside a facility context.
+         */
+        if ($user->role !== 'provider' && $facilityId === null) {
+            return;
+        }
+
+        abort(403, 'Unauthorized.');
+    }
+
     public function index()
     {
         $user = auth()->user();
+
         abort_if(!$user, 403, 'Unauthorized.');
 
-        $facilityId = session('facility_id') ?? ($user->facility_id ?? null);
+        $facilityId = $this->currentFacilityId($user);
 
         $diagnoses = Diagnosis::with(['client', 'user'])
-            ->when($facilityId, function ($query) use ($facilityId) {
-                $query->whereHas('client', function ($clientQuery) use ($facilityId) {
-                    $clientQuery->where('facility_id', $facilityId);
+            ->when($user->role === 'provider', function ($query) use ($user, $facilityId) {
+                $query->whereHas('client', function ($clientQuery) use ($user, $facilityId) {
+                    $clientQuery->where(function ($visibilityQuery) use ($user, $facilityId) {
+                        $visibilityQuery->where('provider_id', $user->id);
+
+                        if ($facilityId !== null) {
+                            $visibilityQuery->orWhere('facility_id', $facilityId);
+                        }
+                    });
                 });
             })
+            ->when(
+                $user->role !== 'provider' && $facilityId !== null,
+                function ($query) use ($facilityId) {
+                    $query->whereHas('client', function ($clientQuery) use ($facilityId) {
+                        $clientQuery->where('facility_id', $facilityId);
+                    });
+                }
+            )
             ->latest()
             ->get();
 
@@ -30,13 +93,8 @@ class DiagnosisController extends Controller
     public function create(Client $client)
     {
         $user = auth()->user();
-        abort_if(!$user, 403, 'Unauthorized.');
 
-        $facilityId = session('facility_id') ?? ($user->facility_id ?? null);
-
-        if ($facilityId) {
-            abort_if((int) $client->facility_id !== (int) $facilityId, 403, 'Unauthorized.');
-        }
+        $this->authorizeClientAccess($client);
 
         return view('diagnoses.create', compact('client'));
     }
@@ -44,13 +102,8 @@ class DiagnosisController extends Controller
     public function store(Request $request, Client $client)
     {
         $user = auth()->user();
-        abort_if(!$user, 403, 'Unauthorized.');
 
-        $facilityId = session('facility_id') ?? ($user->facility_id ?? null);
-
-        if ($facilityId) {
-            abort_if((int) $client->facility_id !== (int) $facilityId, 403, 'Unauthorized.');
-        }
+        $this->authorizeClientAccess($client);
 
         $validated = $request->validate([
             'diagnosis_name' => ['required', 'string', 'max:255'],
@@ -79,13 +132,8 @@ class DiagnosisController extends Controller
     public function edit(Client $client, Diagnosis $diagnosis)
     {
         $user = auth()->user();
-        abort_if(!$user, 403, 'Unauthorized.');
 
-        $facilityId = session('facility_id') ?? ($user->facility_id ?? null);
-
-        if ($facilityId) {
-            abort_if((int) $client->facility_id !== (int) $facilityId, 403, 'Unauthorized.');
-        }
+        $this->authorizeClientAccess($client);
 
         abort_if((int) $diagnosis->client_id !== (int) $client->id, 404);
 
@@ -95,13 +143,8 @@ class DiagnosisController extends Controller
     public function update(Request $request, Client $client, Diagnosis $diagnosis)
     {
         $user = auth()->user();
-        abort_if(!$user, 403, 'Unauthorized.');
 
-        $facilityId = session('facility_id') ?? ($user->facility_id ?? null);
-
-        if ($facilityId) {
-            abort_if((int) $client->facility_id !== (int) $facilityId, 403, 'Unauthorized.');
-        }
+        $this->authorizeClientAccess($client);
 
         abort_if((int) $diagnosis->client_id !== (int) $client->id, 404);
 
@@ -131,13 +174,8 @@ class DiagnosisController extends Controller
     public function destroy(Client $client, Diagnosis $diagnosis)
     {
         $user = auth()->user();
-        abort_if(!$user, 403, 'Unauthorized.');
 
-        $facilityId = session('facility_id') ?? ($user->facility_id ?? null);
-
-        if ($facilityId) {
-            abort_if((int) $client->facility_id !== (int) $facilityId, 403, 'Unauthorized.');
-        }
+        $this->authorizeClientAccess($client);
 
         abort_if((int) $diagnosis->client_id !== (int) $client->id, 404);
 

@@ -22,6 +22,7 @@ use App\Http\Controllers\VisitController;
 use App\Http\Controllers\EvvController;
 use App\Http\Controllers\DiagnosisController;
 use App\Http\Controllers\MedicationController;
+use App\Http\Controllers\MedicationAdministrationController;
 use App\Http\Controllers\PatientTimelineController;
 use App\Http\Controllers\PatientDocumentController;
 use App\Http\Controllers\AdmissionPacketController;
@@ -206,6 +207,9 @@ Route::post('/admission-packets/{admissionPacket}/send-email', [AdmissionPacketC
 
 Route::post('/compliance-marketplace/{state}/install', [ComplianceMarketplaceController::class, 'install'])
     ->name('compliance-marketplace.install');
+
+Route::post('/medications/{medication}/administrations', [MedicationAdministrationController::class, 'store'])
+    ->name('medications.administrations.store');
 
 
         Route::get('/document-templates/{documentTemplate}', [DocumentTemplateController::class, 'show'])

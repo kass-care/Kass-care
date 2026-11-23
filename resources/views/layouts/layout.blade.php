@@ -68,6 +68,12 @@
                         @endif
 
                         @if ($isProvider)
+                            @if (\Illuminate\Support\Facades\Route::has('provider.patients.index'))
+                                <a href="{{ route('provider.patients.index') }}" class="hover:text-indigo-600 transition">
+                                    My Patients
+                                </a>
+                            @endif
+
                             @if (\Illuminate\Support\Facades\Route::has('provider.calendar'))
                                 <a href="{{ route('provider.calendar') }}" class="hover:text-indigo-600 transition">
                                     Calendar
